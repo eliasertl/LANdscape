@@ -77,7 +77,7 @@ export function WidgetSettingsDialog({ widgetId }: { widgetId: string }) {
             key={field.key}
             label={field.label}
             value={String(value)}
-            options={field.options ?? []}
+            options={typeof field.options === 'function' ? field.options() : (field.options ?? [])}
             onChange={(v) => setSettings({ ...settings, [field.key]: v })}
           />
         );

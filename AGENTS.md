@@ -33,7 +33,9 @@ Server/src/             Fastify server
 Client/src/             React + Vite app
   Design/               tokens (CSS custom properties), typography, springs, theme
   Components/           small reusable controls (Button, Menu, Dialog, ...)
-  Desktop/, Windows/, Taskbar/, StartMenu/, LockScreen/, Phone/
+  Desktop/              wallpaper, icons, context menus, dialogs, Overlays (menus/dialogs/toasts shared with Phone/)
+  Windows/              window manager: WindowManager, Window, TitleBar, ResizeHandles, IframeContent, WindowContent
+  Taskbar/, StartMenu/, LockScreen/, Phone/ (PhoneShell + PhoneWindow below 768 px)
   Apps/<Name>/          built-in apps behind Apps/Registry.ts
   Widgets/<Name>/       widgets behind Widgets/Registry.ts
   Store/                zustand stores
@@ -60,7 +62,9 @@ Scratch/                gitignored local material
 | `npm run hash-password -- 'pw'` | print a bcrypt hash |
 | `npm start` | run the built server |
 
-Local dev env (`Scratch/.env`): `LOGIN_USERNAME`, `LOGIN_PASSWORD_HASH`, `DATA_DIR=./.data`, optionally `SSH_*`, `HOST_PROC`, `HOST_SYS`, `DOCKER_SOCKET`.
+Local dev env (`Scratch/.env`): `LOGIN_USERNAME`, `LOGIN_PASSWORD_HASH`, `DATA_DIR=./.data`, optionally `SSH_*`, `HOST_PROC`, `HOST_SYS`, `DOCKER_SOCKET` (on Windows `//./pipe/docker_engine` works). The SSH apps can be tested against a `lscr.io/linuxserver/openssh-server` container that trusts a key in `.data/ssh/` (see README → Development). Host metrics need a Linux host: build the image and run it with the `/proc`, `/sys` mounts (Docker Desktop's VM is enough for a smoke check).
+
+Verification before a milestone is "done": `npm run typecheck && npm run lint && npm test && npm run build && npm run test:e2e`, plus a manual or scripted click-through (Playwright scripts in `Scratch/` are fine) and, for server-facing features, a run of the built image.
 
 ## Conventions
 

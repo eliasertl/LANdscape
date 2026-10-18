@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from 'react';
 import { ArrowDown, ArrowUp } from '@phosphor-icons/react';
 import type { WidgetProps } from '../Types';
 import { WidgetFrame } from '../WidgetFrame';
@@ -6,10 +7,19 @@ import { Sparkline } from '../../Components/Sparkline';
 import { formatRate } from '../Format';
 import styles from '../Widgets.module.css';
 
+/** Interface names seen in the latest sample, for the settings dialog's picker. */
+let knownInterfaces: string[] = [];
+export function networkInterfaceOptions(): { value: string; label: string }[] {
+  return [{ value: 'all', label: 'All interfaces' }, ...knownInterfaces.map((name) => ({ value: name, label: name }))];
+}
+
 export function NetworkWidget({ widget }: WidgetProps) {
   const state = useMetric('network', widget.settings.intervalMs);
   const selected = typeof widget.settings.interface === 'string' ? widget.settings.interface : 'all';
-  const interfaces = state.status === 'ok' ? state.data.interfaces : [];
+  const interfaces = useMemo(() => (state.status === 'ok' ? state.data.interfaces : []), [state]);
+  useEffect(() => {
+    if (interfaces.length > 0) knownInterfaces = interfaces.map((i) => i.name);
+  }, [interfaces]);
   const shown = selected === 'all' ? interfaces : interfaces.filter((i) => i.name === selected);
   const rx = shown.reduce((sum, i) => sum + i.rxBytesPerSecond, 0);
   const tx = shown.reduce((sum, i) => sum + i.txBytesPerSecond, 0);

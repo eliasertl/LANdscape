@@ -10,7 +10,8 @@ export interface WidgetSettingsField {
   key: string;
   label: string;
   type: 'select' | 'toggle';
-  options?: { value: string; label: string }[];
+  /** Static options, or a function for options that depend on live data (e.g. interface names). */
+  options?: { value: string; label: string }[] | (() => { value: string; label: string }[]);
   defaultValue: unknown;
 }
 

@@ -131,8 +131,23 @@ test.describe('desktop', () => {
 test.describe('phone', () => {
   test.skip(({ viewport }) => (viewport?.width ?? 1000) >= 768, 'phone layout only');
 
-  test('logs in and shows the launcher', async ({ page }) => {
+  test('logs in, filters the launcher and opens a full-screen app', async ({ page }) => {
     await login(page);
-    await expect(page.getByRole('searchbox')).toBeVisible();
+    const search = page.getByRole('searchbox');
+    await expect(search).toBeVisible();
+    await search.fill('sett');
+    await expect(page.locator('[data-launcher-entry]')).toHaveCount(1);
+    await page.locator('[data-launcher-entry="app:settings"]').click();
+    const win = page.getByRole('dialog', { name: 'Settings' });
+    await expect(win).toBeVisible();
+    const box = await win.boundingBox();
+    expect(Math.round(box!.width)).toBe(390);
+    await expect(page.getByRole('button', { name: 'About' })).toBeVisible();
+    await page.getByRole('button', { name: 'Back to home' }).click();
+    await expect(search).toBeVisible();
+    await page.getByRole('button', { name: /^Settings$/ }).first().click();
+    await expect(win).toBeVisible();
+    await win.getByRole('button', { name: 'Close window' }).click();
+    await expect(win).toBeHidden();
   });
 });

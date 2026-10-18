@@ -55,6 +55,7 @@ LABEL org.opencontainers.image.title="LANdscape" \
       org.opencontainers.image.source="https://github.com/eliasertl/LANdscape" \
       org.opencontainers.image.licenses="MIT"
 
+# su-exec drops privileges, tini reaps processes.
 RUN apk add --no-cache su-exec tini
 
 WORKDIR /app

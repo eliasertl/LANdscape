@@ -51,7 +51,7 @@ cat /DATA/AppData/landscape/ssh/id_ed25519.pub >> ~/.ssh/authorized_keys
 chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys
 ```
 
-The private key stays in `/DATA/AppData/landscape/ssh/` (the container reads it from `/etc/landscape/ssh/id_ed25519`). Set `SSH_USER` to the user whose `authorized_keys` you edited. LANdscape stores the host key fingerprint on first connection and refuses to connect if it changes.
+The private key stays in `/DATA/AppData/landscape/ssh/` (the container reads it from `/etc/landscape/ssh/id_ed25519`). Set `SSH_USER` to the user whose `authorized_keys` you edited. On start, the container fixes ownership and permissions of the `ssh/` folder so its unprivileged server user can read the key. LANdscape stores the host key fingerprint on first connection (`ssh/known_host`) and refuses to connect if it changes.
 
 ### 4. Install the app
 
@@ -123,15 +123,32 @@ The container starts as root only to fix ownership of the data directory and to 
 - **A shortcut shows "This site can't be embedded"** — the site sends `X-Frame-Options` or `frame-ancestors`. Use "Open in new tab" or edit the shortcut and choose "Try embedding anyway" if you know better.
 - **Logged out after a restart** — set `SESSION_SECRET` explicitly or make sure the data directory is persisted (the generated secret lives there).
 - **Lock screen says too many attempts** — wait 15 minutes, or restart the container (lockouts are kept in memory).
+- **"Cannot write the host key store"** — the data directory's `ssh/` folder is not writable by the server user. The entrypoint normally fixes this on start; if you run with `user:` in compose, make the folder writable or set `PUID`/`PGID` to its owner.
+- **Ctrl+Space does nothing** — keyboard focus is inside an iframe (a shortcut window). Click the desktop or the search icon in the taskbar.
+- **A login inside an embedded site does not stick** — sites on a different host than LANdscape are third-party iframes; Safari and Chrome block their cookies. Services on the same host but another port are fine.
+
+## Which sites embed?
+
+Self-hosted services usually allow framing unless they set `X-Frame-Options` or a `frame-ancestors` policy themselves (Grafana needs `allow_embedding = true`). Of the big public sites, Wikipedia embeds; Google, YouTube, Reddit, GitHub, MDN, DuckDuckGo and Hacker News do not. LANdscape detects this when you add the shortcut and offers "Open in new tab" instead.
 
 ## Development
 
 ```sh
 npm install
-cp Scratch/.env.example Scratch/.env   # or create it: LOGIN_USERNAME, LOGIN_PASSWORD_HASH, DATA_DIR=./.data
+# create Scratch/.env with LOGIN_USERNAME, LOGIN_PASSWORD_HASH (npm run hash-password -- 'pw'), DATA_DIR=./.data
 npm run dev                            # server on :8080, client on :5173
 npm run typecheck && npm run lint && npm test && npm run build
 npm run test:e2e                       # Playwright smoke test against the built server
+npm run seed                           # optional: load shortcuts from Scratch/Seed.json
+```
+
+To exercise the SSH apps locally without a Linux host, run an SSH server container that trusts a dev key:
+
+```sh
+mkdir -p .data/ssh && ssh-keygen -t ed25519 -N "" -f .data/ssh/id_ed25519
+docker run -d --name landscape-sshd -p 2222:2222 -e PUID=1000 -e PGID=1000 -e USER_NAME=landscape \
+  -e "PUBLIC_KEY=$(cat .data/ssh/id_ed25519.pub)" lscr.io/linuxserver/openssh-server
+# Scratch/.env: SSH_HOST=127.0.0.1 SSH_PORT=2222 SSH_USER=landscape SSH_KEY_PATH=./.data/ssh/id_ed25519
 ```
 
 See [AGENTS.md](AGENTS.md) for the repository structure, conventions and rules (including: no GitHub Actions).

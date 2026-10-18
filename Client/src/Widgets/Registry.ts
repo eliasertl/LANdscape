@@ -5,7 +5,7 @@ import { ClockWidget } from './Clock/ClockWidget';
 import { CpuWidget } from './Cpu/CpuWidget';
 import { RamWidget } from './Ram/RamWidget';
 import { DiskWidget } from './Disk/DiskWidget';
-import { NetworkWidget } from './Network/NetworkWidget';
+import { NetworkWidget, networkInterfaceOptions } from './Network/NetworkWidget';
 import { TemperatureWidget } from './Temperature/TemperatureWidget';
 import { UptimeWidget } from './Uptime/UptimeWidget';
 import { DockerCountWidget } from './DockerCount/DockerCountWidget';
@@ -60,7 +60,7 @@ export const WIDGETS: WidgetDefinition[] = [
     metric: 'network',
     size: { width: 260, height: 150 },
     settingsFields: [
-      { key: 'interface', label: 'Interface', type: 'select', options: [{ value: 'all', label: 'All interfaces' }], defaultValue: 'all' },
+      { key: 'interface', label: 'Interface', type: 'select', options: networkInterfaceOptions, defaultValue: 'all' },
       { key: 'showAddresses', label: 'Show IP addresses', type: 'toggle', defaultValue: true },
     ],
   },
