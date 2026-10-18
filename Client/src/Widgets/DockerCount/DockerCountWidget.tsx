@@ -8,7 +8,7 @@ import styles from '../Widgets.module.css';
 export function DockerCountWidget({ widget }: WidgetProps) {
   const state = useMetric('dockerCount', widget.settings.intervalMs);
   return (
-    <WidgetFrame widget={widget} title="Docker" width={184} height={104} unavailable={state.status === 'unavailable' ? state.reason : null}>
+    <WidgetFrame widget={widget} title="Docker" unavailable={state.status === 'unavailable' ? state.reason : null}>
       {state.status === 'ok' ? (
         <div className={styles.stack} style={{ cursor: 'default' }} onDoubleClick={() => openApp('docker')} title="Double-click to open the Docker app">
           <div className={styles.row}>

@@ -297,13 +297,13 @@ function sendImage(reply: FastifyReply, fullPath: string, fileName: string, cach
 /**
  * Fallback placement when the client sends no position (the client normally
  * picks the cell, since only it knows the viewport and widget sizes).
- * Assumes a 1080p-ish desktop and reserves 6×3 cells per widget.
+ * Assumes a 1080p-ish desktop and reserves 3×2 icon cells per widget.
  */
 function freeSlot(shortcuts: Shortcut[], widgets: Widget[]): { x: number; y: number } {
-  const bounds = { cols: 36, rows: 16 };
+  const bounds = { cols: 19, rows: 8 };
   const occupied = [
     ...shortcuts.map((s) => ({ ...pxToCell(s.x, s.y), ...ICON_CELLS })),
-    ...widgets.map((w) => ({ ...pxToCell(w.x, w.y), cols: 6, rows: 3 })),
+    ...widgets.map((w) => ({ ...pxToCell(w.x, w.y), cols: 3, rows: 2 })),
   ];
   const spot = findFirstFree(ICON_CELLS.cols, ICON_CELLS.rows, occupied, bounds);
   return cellToPx(spot.col, spot.row);

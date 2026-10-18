@@ -1,6 +1,6 @@
 import { createElement, memo, useEffect, useRef, type ReactNode } from 'react';
 import { GearSix, Trash, WarningCircle } from '@phosphor-icons/react';
-import { cellsForSize, sizeForCells, type Widget } from '@landscape/shared';
+import { sizeForCells, type Widget } from '@landscape/shared';
 import { useDesktopStore } from '../Store/DesktopStore';
 import { useUiStore } from '../Store/UiStore';
 import { useGridDrag } from '../Desktop/UseGridDrag';
@@ -14,14 +14,11 @@ interface WidgetFrameProps {
   children: ReactNode;
   /** Shown instead of the content when the metric is unavailable. */
   unavailable?: string | null;
-  /** Size hint in px; the frame rounds it up to whole grid units. */
-  width: number;
-  height: number;
   className?: string;
 }
 
 /** Draggable frosted card on the desktop grid; right-click offers settings and removal. */
-export const WidgetFrame = memo(function WidgetFrame({ widget, title, children, unavailable, width, height, className }: WidgetFrameProps) {
+export const WidgetFrame = memo(function WidgetFrame({ widget, title, children, unavailable, className }: WidgetFrameProps) {
   const moveWidget = useDesktopStore((s) => s.moveWidget);
   const removeWidget = useDesktopStore((s) => s.removeWidget);
   const openContextMenu = useUiStore((s) => s.openContextMenu);
@@ -29,8 +26,8 @@ export const WidgetFrame = memo(function WidgetFrame({ widget, title, children, 
   const requestConfirm = useUiStore((s) => s.requestConfirm);
   const ref = useRef<HTMLDivElement>(null);
 
-  // The "not available" explanation needs two rows regardless of the widget's normal size.
-  const cells = cellsForSize(width, unavailable ? Math.max(height, 104) : height);
+  // Always a whole number of app-icon cells, as declared in the registry.
+  const cells = getWidget(widget.type)?.size ?? { cols: 2, rows: 1 };
   const size = sizeForCells(cells.cols, cells.rows);
 
   const { onPointerDown, dragging, settling } = useGridDrag({

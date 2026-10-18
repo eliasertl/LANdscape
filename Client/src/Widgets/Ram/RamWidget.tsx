@@ -9,7 +9,7 @@ export function RamWidget({ widget }: WidgetProps) {
   const state = useMetric('memory', widget.settings.intervalMs);
   const showSwap = widget.settings.showSwap !== false;
   return (
-    <WidgetFrame widget={widget} title="Memory" width={232} height={104} unavailable={state.status === 'unavailable' ? state.reason : null}>
+    <WidgetFrame widget={widget} title="Memory" unavailable={state.status === 'unavailable' ? state.reason : null}>
       {state.status === 'ok' ? (
         <div className={styles.stack}>
           {(() => {

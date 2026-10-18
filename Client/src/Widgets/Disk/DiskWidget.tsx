@@ -8,9 +8,8 @@ import styles from '../Widgets.module.css';
 export function DiskWidget({ widget }: WidgetProps) {
   const state = useMetric('disks', widget.settings.intervalMs);
   const disks = state.status === 'ok' ? state.data.disks : [];
-  const height = Math.max(96, 44 + disks.length * 40);
   return (
-    <WidgetFrame widget={widget} title="Disks" width={280} height={Math.min(height, 320)} unavailable={state.status === 'unavailable' ? state.reason : null}>
+    <WidgetFrame widget={widget} title="Disks" unavailable={state.status === 'unavailable' ? state.reason : null}>
       {state.status === 'ok' ? (
         <div className={`${styles.list} scroll`} style={{ overflowY: 'auto' }}>
           {disks.map((disk) => {

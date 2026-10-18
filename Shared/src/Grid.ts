@@ -1,12 +1,12 @@
 /**
- * The desktop grid shared by shortcut icons and widgets. Positions are stored
- * in px but always land on grid points. A shortcut icon spans 2×2 units; a
- * widget spans as many units as its size needs (its rendered size is
- * cols*unitX - gap by rows*unitY - gap so neighbours keep a gap).
+ * The desktop grid shared by shortcut icons and widgets. One cell is exactly
+ * one app icon (96 × 112 px). Icons take one cell; every widget spans a whole
+ * number of icon cells (rendered at cols*unitX - gap by rows*unitY - gap so
+ * neighbours keep a gap). Positions are stored in px but always land on cells.
  */
-export const DESKTOP_GRID = { unitX: 48, unitY: 56, originX: 16, originY: 16, gap: 8 } as const;
+export const DESKTOP_GRID = { unitX: 96, unitY: 112, originX: 16, originY: 16, gap: 8 } as const;
 
-export const ICON_CELLS = { cols: 2, rows: 2 } as const;
+export const ICON_CELLS = { cols: 1, rows: 1 } as const;
 
 export interface CellRect {
   col: number;

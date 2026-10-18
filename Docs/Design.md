@@ -30,7 +30,9 @@ Public Sans (variable) for UI, JetBrains Mono for terminal and editor; the macOS
 
 ## Desktop grid
 
-Shortcut icons and widgets share one grid (`Shared/src/Grid.ts`): units of 48 × 56 px from a 16 px origin. An icon spans 2 × 2 units; a widget spans as many units as its size needs and renders at `cols·48 − 8` by `rows·56 − 8` so neighbours keep an 8 px gap. Dragging is free; a faint outline shows the target cell (the nearest free one), and on release the item glides into it and the snapped position is saved. New shortcuts take the first free cell column by column from the top left; new widgets the free cell nearest to where the menu was opened. When the window is smaller than the saved layout, items are clamped into view and step aside on screen if that makes them collide, without changing their saved positions. Layouts saved with genuinely colliding positions are untangled once after load.
+Shortcut icons and widgets share one grid (`Shared/src/Grid.ts`) whose cell is exactly one app icon: 96 × 112 px, starting 16 px from the top left. An icon takes one cell. Every widget spans a whole number of icon cells, declared in `Widgets/Registry.ts` (`size: { cols, rows }`), and renders at `cols·96 − 8` by `rows·112 − 8` so neighbours keep an 8 px gap. Current sizes: Clock, Memory, Uptime and Docker 2×1; CPU, Disks and Network 3×2; Temperatures 2×2.
+
+Dragging is free; a faint outline shows the target cell (the nearest free one), and on release the item glides into it and the snapped position is saved. New shortcuts take the first free cell column by column from the top left; new widgets the free cell nearest to where the menu was opened. When the window is smaller than the saved layout, items are clamped into view and step aside on screen if that makes them collide, without changing their saved positions. Layouts saved with genuinely colliding positions are untangled once after load.
 
 ## Themes
 

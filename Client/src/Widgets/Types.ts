@@ -23,7 +23,8 @@ export interface WidgetDefinition {
   component: ComponentType<WidgetProps>;
   /** Server metric this widget subscribes to, or null for client-only widgets (clock). */
   metric: MetricName | null;
-  size: { width: number; height: number };
+  /** Size in app-icon cells (always whole numbers). */
+  size: { cols: number; rows: number };
   /** Extra per-widget settings besides the update interval. */
   settingsFields?: WidgetSettingsField[];
 }

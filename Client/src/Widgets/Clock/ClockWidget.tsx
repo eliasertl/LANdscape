@@ -19,7 +19,7 @@ export function ClockWidget({ widget }: WidgetProps) {
   const time = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', second: showSeconds ? '2-digit' : undefined }).format(now);
 
   return (
-    <WidgetFrame widget={widget} title="Clock" width={232} height={104}>
+    <WidgetFrame widget={widget} title="Clock">
       <div className={styles.clock}>
         <span className={`${styles.time} text-tabular`}>{time}</span>
         <span className={styles.date}>{dateFormat.format(now)}</span>

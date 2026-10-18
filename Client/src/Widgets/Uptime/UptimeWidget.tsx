@@ -18,7 +18,7 @@ export function UptimeWidget({ widget }: WidgetProps) {
   }, []);
   const seconds = state.status === 'ok' ? state.data.seconds + Math.max(0, now - state.at) / 1000 : null;
   return (
-    <WidgetFrame widget={widget} title="Uptime" width={184} height={104} unavailable={state.status === 'unavailable' ? state.reason : null}>
+    <WidgetFrame widget={widget} title="Uptime" unavailable={state.status === 'unavailable' ? state.reason : null}>
       {state.status === 'ok' && seconds !== null ? (
         <div className={styles.stack}>
           <span className={styles.big} style={{ fontSize: 24, lineHeight: '28px' }}>

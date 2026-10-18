@@ -1,6 +1,6 @@
 import { createElement } from 'react';
 import { ArrowSquareOut, ArrowsClockwise, GearSix, Image, PencilSimple, Plus, SquaresFour, Trash, WindowsLogo } from '@phosphor-icons/react';
-import { cellToPx, cellsForSize, findNearestFree, pxToCell, type Shortcut } from '@landscape/shared';
+import { cellToPx, findNearestFree, pxToCell, type Shortcut } from '@landscape/shared';
 import type { MenuItem } from '../Components/Menu';
 import { useDesktopStore } from '../Store/DesktopStore';
 import { useUiStore } from '../Store/UiStore';
@@ -24,7 +24,7 @@ export function desktopMenuItems(at: { x: number; y: number }): MenuItem[] {
         icon: createElement(widget.icon),
         onSelect: () => {
           // Place on the free grid cell closest to where the menu was opened.
-          const cells = cellsForSize(widget.size.width, widget.size.height);
+          const cells = widget.size;
           const spot = findNearestFree({ ...pxToCell(at.x - 20, at.y - 20), ...cells }, occupiedCells(null), viewportBounds());
           const position = cellToPx(spot.col, spot.row);
           void desktop.addWidget(widget.type, position.x, position.y).catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not add widget'));

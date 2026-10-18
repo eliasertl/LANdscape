@@ -1,7 +1,6 @@
 import {
   ICON_CELLS,
   cellToPx,
-  cellsForSize,
   clampCell,
   findNearestFree,
   gridBounds,
@@ -26,8 +25,7 @@ export function widgetCells(id: string, type: Parameters<typeof getWidget>[0]): 
   const cols = Number(element?.dataset.gridCols);
   const rows = Number(element?.dataset.gridRows);
   if (cols > 0 && rows > 0) return { cols, rows };
-  const hint = getWidget(type)?.size ?? { width: 232, height: 104 };
-  return cellsForSize(hint.width, hint.height);
+  return getWidget(type)?.size ?? { cols: 2, rows: 1 };
 }
 
 /** The cell an item is shown at: its stored position snapped and kept inside the viewport. */
