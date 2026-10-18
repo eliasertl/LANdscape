@@ -1,0 +1,15 @@
+.git
+.github
+node_modules
+**/node_modules
+**/dist
+Scratch
+.data
+data
+test-results
+playwright-report
+coverage
+*.log
+.env
+.env.*
+Client/public/wallpapers

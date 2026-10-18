@@ -1,0 +1,39 @@
+# Local-only material (test links, local env, compose overrides, seeds)
+Scratch/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+Client/dist/
+Server/dist/
+Scripts/dist/
+*.tsbuildinfo
+
+# Generated wallpapers (produced at build time, never committed)
+Client/public/wallpapers/
+Wallpapers/
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# Test artifacts
+test-results/
+playwright-report/
+blob-report/
+coverage/
+
+# Local data directories used for dev runs
+.data/
+data/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log

@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"],
+    "paths": {
+      "@landscape/shared": ["../Shared/src/index.ts"],
+      "@server/*": ["../Server/src/*"]
+    }
+  },
+  "include": ["Server", "E2E", "../Server/src", "../Shared/src"]
+}
