@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ArrowsClockwise, CheckCircle, Question, UploadSimple, WarningCircle } from '@phosphor-icons/react';
-import { ICON_UPLOAD_MAX_BYTES, httpUrlSchema, type EmbedCheckResult, type IconMode, type OpenMode } from '@landscape/shared';
+import { ICON_CELLS, ICON_UPLOAD_MAX_BYTES, cellToPx, findFirstFree, httpUrlSchema, type EmbedCheckResult, type IconMode, type OpenMode } from '@landscape/shared';
+import { occupiedCells, viewportBounds } from './DesktopGrid';
 import { api, errorMessage } from '../Api/Http';
 import { useDesktopStore, shortcutIconUrl } from '../Store/DesktopStore';
 import { useUiStore, type ShortcutDialogState } from '../Store/UiStore';
@@ -110,7 +111,11 @@ export function ShortcutDialog({ state }: { state: NonNullable<ShortcutDialogSta
     try {
       const payload = { name: name.trim(), url: target, iconMode, iconFile: iconMode === 'upload' ? iconFile : null, openMode };
       if (editing) await updateShortcut(editing.id, payload);
-      else await createShortcut(payload);
+      else {
+        // New icons take the first free grid cell, column by column from the top left.
+        const spot = findFirstFree(ICON_CELLS.cols, ICON_CELLS.rows, occupiedCells(null), viewportBounds());
+        await createShortcut({ ...payload, ...cellToPx(spot.col, spot.row) });
+      }
       close(null);
     } catch (error) {
       toast.error(errorMessage(error));

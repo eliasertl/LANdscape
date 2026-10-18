@@ -1,13 +1,13 @@
 import { createElement } from 'react';
 import { ArrowSquareOut, ArrowsClockwise, GearSix, Image, PencilSimple, Plus, SquaresFour, Trash, WindowsLogo } from '@phosphor-icons/react';
-import { ICON_CELL, type Shortcut } from '@landscape/shared';
+import { cellToPx, cellsForSize, findNearestFree, pxToCell, type Shortcut } from '@landscape/shared';
 import type { MenuItem } from '../Components/Menu';
 import { useDesktopStore } from '../Store/DesktopStore';
 import { useUiStore } from '../Store/UiStore';
 import { WIDGETS } from '../Widgets/Registry';
 import { openApp, openShortcut } from './Launch';
 import { toast } from '../Components/Toast';
-import { clampIconPosition } from './ShortcutIcon';
+import { occupiedCells, viewportBounds } from './DesktopGrid';
 
 /** Right-click on empty desktop. */
 export function desktopMenuItems(at: { x: number; y: number }): MenuItem[] {
@@ -23,7 +23,10 @@ export function desktopMenuItems(at: { x: number; y: number }): MenuItem[] {
         label: widget.name,
         icon: createElement(widget.icon),
         onSelect: () => {
-          const position = clampIconPosition(at.x - 20, at.y - 20);
+          // Place on the free grid cell closest to where the menu was opened.
+          const cells = cellsForSize(widget.size.width, widget.size.height);
+          const spot = findNearestFree({ ...pxToCell(at.x - 20, at.y - 20), ...cells }, occupiedCells(null), viewportBounds());
+          const position = cellToPx(spot.col, spot.row);
           void desktop.addWidget(widget.type, position.x, position.y).catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not add widget'));
         },
       })),
@@ -69,5 +72,3 @@ export function shortcutMenuItems(shortcut: Shortcut): MenuItem[] {
     },
   ];
 }
-
-export const ICON_GRID = ICON_CELL;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { useDesktopStore } from '../Store/DesktopStore';
 import { useUiStore } from '../Store/UiStore';
 import { useSessionStore } from '../Store/SessionStore';
@@ -6,6 +6,9 @@ import { Wallpaper } from './Wallpaper';
 import { ShortcutIcon } from './ShortcutIcon';
 import { desktopMenuItems } from './DesktopContextMenu';
 import { Overlays } from './Overlays';
+import { SnapPreview } from './SnapPreview';
+import { refreshDisplayLayout, resolveOverlaps } from './DesktopGrid';
+import { useViewportSize } from '../Hooks/UseViewportSize';
 import { WindowManager } from '../Windows/WindowManager';
 import { Taskbar } from '../Taskbar/Taskbar';
 import { StartMenu } from '../StartMenu/StartMenu';
@@ -56,6 +59,22 @@ function DesktopShell() {
   const logout = useSessionStore((s) => s.logout);
   const surfaceRef = useRef<HTMLDivElement>(null);
 
+  const widgets = useDesktopStore((s) => s.widgets);
+  const viewport = useViewportSize();
+
+  // Once widgets have rendered (their grid size is read from the DOM), untangle stored collisions.
+  useEffect(() => {
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => resolveOverlaps());
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  // Keep the shown layout collision-free whenever items or the viewport change.
+  useLayoutEffect(() => {
+    refreshDisplayLayout();
+  }, [shortcuts, widgets, viewport]);
+
   useKeyboardShortcut({ key: ' ', ctrl: true }, toggleStartMenu);
   useKeyboardShortcut({ key: 'Escape' }, () => setStartMenuOpen(false));
 
@@ -82,6 +101,7 @@ function DesktopShell() {
           }
         }}
       >
+        <SnapPreview />
         {shortcuts.map((shortcut) => (
           <ShortcutIcon key={shortcut.id} shortcut={shortcut} />
         ))}

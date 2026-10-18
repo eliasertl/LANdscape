@@ -17,7 +17,7 @@ export function TemperatureWidget({ widget }: WidgetProps) {
   const hottest = sensors.reduce<(typeof sensors)[number] | null>((best, s) => (!best || s.celsius > best.celsius ? s : best), null);
   const rows = sensors.slice(0, 6);
   return (
-    <WidgetFrame widget={widget} title="Temperatures" width={240} height={Math.min(260, 78 + rows.length * 20)} unavailable={state.status === 'unavailable' ? state.reason : null}>
+    <WidgetFrame widget={widget} title="Temperatures" width={232} height={Math.min(272, 78 + rows.length * 20)} unavailable={state.status === 'unavailable' ? state.reason : null}>
       {state.status === 'ok' && hottest ? (
         <div className={styles.stack}>
           <div className={styles.row}>

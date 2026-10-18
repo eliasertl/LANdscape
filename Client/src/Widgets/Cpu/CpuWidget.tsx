@@ -11,7 +11,7 @@ export function CpuWidget({ widget }: WidgetProps) {
   const history = useHistory(total, 40);
   const showCores = widget.settings.showCores !== false;
   return (
-    <WidgetFrame widget={widget} title="CPU" width={240} height={showCores ? 150 : 132} unavailable={state.status === 'unavailable' ? state.reason : null}>
+    <WidgetFrame widget={widget} title="CPU" width={232} height={150} unavailable={state.status === 'unavailable' ? state.reason : null}>
       {state.status === 'ok' ? (
         <div className={styles.stack}>
           <div className={styles.row}>
@@ -22,7 +22,7 @@ export function CpuWidget({ widget }: WidgetProps) {
               </span>
             )}
           </div>
-          <Sparkline values={history} max={100} width={216} height={36} />
+          <Sparkline values={history} max={100} width={208} height={36} />
           {showCores && (
             <div className={styles.cores} aria-label={`${state.data.cores.length} cores`}>
               {state.data.cores.map((core, i) => (

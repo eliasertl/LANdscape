@@ -30,7 +30,7 @@ export function NetworkWidget({ widget }: WidgetProps) {
   const height = 128 + (showIps ? Math.min(3, Math.ceil(addresses.length / 2)) * 20 : 0);
 
   return (
-    <WidgetFrame widget={widget} title={selected === 'all' ? 'Network' : `Network · ${selected}`} width={260} height={height} unavailable={state.status === 'unavailable' ? state.reason : null}>
+    <WidgetFrame widget={widget} title={selected === 'all' ? 'Network' : `Network · ${selected}`} width={280} height={height} unavailable={state.status === 'unavailable' ? state.reason : null}>
       {state.status === 'ok' ? (
         <div className={styles.stack}>
           <div className={styles.row}>
@@ -43,10 +43,10 @@ export function NetworkWidget({ widget }: WidgetProps) {
           </div>
           <div style={{ position: 'relative', height: 36 }}>
             <div style={{ position: 'absolute', inset: 0 }}>
-              <Sparkline values={rxHistory} width={236} height={36} color="var(--system-green)" />
+              <Sparkline values={rxHistory} width={256} height={36} color="var(--system-green)" />
             </div>
             <div style={{ position: 'absolute', inset: 0 }}>
-              <Sparkline values={txHistory} width={236} height={36} color="var(--system-blue)" />
+              <Sparkline values={txHistory} width={256} height={36} color="var(--system-blue)" />
             </div>
           </div>
           {showIps && addresses.length > 0 && (

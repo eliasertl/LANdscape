@@ -1,3 +1,4 @@
+import { cellToPx } from '@landscape/shared';
 import type { Database } from '../Database';
 import { SessionsRepository } from './SessionsRepository';
 import { SettingsRepository } from './SettingsRepository';
@@ -27,9 +28,11 @@ export function createRepositories(db: Database): Repositories {
 export function seedDefaults(repos: Repositories): void {
   if (repos.settings.getFlag('seeded')) return;
   if (repos.widgets.count() === 0) {
-    repos.widgets.create('clock', 24, 24);
-    repos.widgets.create('cpu', 24, 200);
-    repos.widgets.create('ram', 24, 376);
+    // Stacked in the first grid columns: clock (2 rows), CPU (3 rows), RAM (2 rows).
+    const at = (row: number) => cellToPx(0, row);
+    repos.widgets.create('clock', at(0).x, at(0).y);
+    repos.widgets.create('cpu', at(2).x, at(2).y);
+    repos.widgets.create('ram', at(5).x, at(5).y);
   }
   repos.settings.setFlag('seeded', true);
 }

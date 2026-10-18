@@ -19,7 +19,7 @@ export const WIDGETS: WidgetDefinition[] = [
     icon: Clock,
     component: ClockWidget,
     metric: null,
-    size: { width: 220, height: 120 },
+    size: { width: 232, height: 104 },
     settingsFields: [{ key: 'showSeconds', label: 'Show seconds', type: 'toggle', defaultValue: false }],
   },
   {
@@ -29,7 +29,7 @@ export const WIDGETS: WidgetDefinition[] = [
     icon: Cpu,
     component: CpuWidget,
     metric: 'cpu',
-    size: { width: 240, height: 150 },
+    size: { width: 232, height: 150 },
     settingsFields: [{ key: 'showCores', label: 'Show per-core bars', type: 'toggle', defaultValue: true }],
   },
   {
@@ -39,7 +39,7 @@ export const WIDGETS: WidgetDefinition[] = [
     icon: Memory,
     component: RamWidget,
     metric: 'memory',
-    size: { width: 240, height: 136 },
+    size: { width: 232, height: 104 },
     settingsFields: [{ key: 'showSwap', label: 'Show swap', type: 'toggle', defaultValue: true }],
   },
   {
@@ -49,7 +49,7 @@ export const WIDGETS: WidgetDefinition[] = [
     icon: HardDrives,
     component: DiskWidget,
     metric: 'disks',
-    size: { width: 260, height: 160 },
+    size: { width: 280, height: 150 },
   },
   {
     type: 'network',
@@ -58,7 +58,7 @@ export const WIDGETS: WidgetDefinition[] = [
     icon: Network,
     component: NetworkWidget,
     metric: 'network',
-    size: { width: 260, height: 150 },
+    size: { width: 280, height: 150 },
     settingsFields: [
       { key: 'interface', label: 'Interface', type: 'select', options: networkInterfaceOptions, defaultValue: 'all' },
       { key: 'showAddresses', label: 'Show IP addresses', type: 'toggle', defaultValue: true },
@@ -71,7 +71,7 @@ export const WIDGETS: WidgetDefinition[] = [
     icon: Thermometer,
     component: TemperatureWidget,
     metric: 'temperatures',
-    size: { width: 240, height: 160 },
+    size: { width: 232, height: 150 },
   },
   {
     type: 'uptime',
@@ -80,7 +80,7 @@ export const WIDGETS: WidgetDefinition[] = [
     icon: Timer,
     component: UptimeWidget,
     metric: 'uptime',
-    size: { width: 220, height: 100 },
+    size: { width: 184, height: 104 },
   },
   {
     type: 'docker-count',
@@ -89,7 +89,7 @@ export const WIDGETS: WidgetDefinition[] = [
     icon: Cube,
     component: DockerCountWidget,
     metric: 'dockerCount',
-    size: { width: 200, height: 100 },
+    size: { width: 184, height: 104 },
   },
 ];
 

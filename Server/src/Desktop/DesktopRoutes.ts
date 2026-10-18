@@ -2,8 +2,11 @@ import { createReadStream, existsSync, statSync } from 'node:fs';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import {
-  ICON_CELL,
+  ICON_CELLS,
   ICON_UPLOAD_MAX_BYTES,
+  cellToPx,
+  findFirstFree,
+  pxToCell,
   WALLPAPER_UPLOAD_MAX_BYTES,
   appKeySchema,
   embedCheckSchema,
@@ -292,26 +295,16 @@ function sendImage(reply: FastifyReply, fullPath: string, fileName: string, cach
 }
 
 /**
- * First free grid slot on the desktop (column-major like macOS Finder),
- * skipping cells covered by shortcuts or widgets.
+ * Fallback placement when the client sends no position (the client normally
+ * picks the cell, since only it knows the viewport and widget sizes).
+ * Assumes a 1080p-ish desktop and reserves 6×3 cells per widget.
  */
 function freeSlot(shortcuts: Shortcut[], widgets: Widget[]): { x: number; y: number } {
-  const margin = { x: 24, y: 24 };
-  const boxes = [
-    ...shortcuts.map((s) => ({ x: s.x, y: s.y, width: ICON_CELL.width, height: ICON_CELL.height })),
-    ...widgets.map((w) => ({ x: w.x, y: w.y, width: WIDGET_RESERVED.width, height: WIDGET_RESERVED.height })),
+  const bounds = { cols: 36, rows: 16 };
+  const occupied = [
+    ...shortcuts.map((s) => ({ ...pxToCell(s.x, s.y), ...ICON_CELLS })),
+    ...widgets.map((w) => ({ ...pxToCell(w.x, w.y), cols: 6, rows: 3 })),
   ];
-  const overlaps = (x: number, y: number) =>
-    boxes.some((b) => x < b.x + b.width - 8 && x + ICON_CELL.width - 8 > b.x && y < b.y + b.height - 8 && y + ICON_CELL.height - 8 > b.y);
-  for (let col = 0; col < 50; col += 1) {
-    for (let row = 0; row < 7; row += 1) {
-      const x = margin.x + col * ICON_CELL.width;
-      const y = margin.y + row * ICON_CELL.height;
-      if (!overlaps(x, y)) return { x, y };
-    }
-  }
-  return { x: margin.x, y: margin.y };
+  const spot = findFirstFree(ICON_CELLS.cols, ICON_CELLS.rows, occupied, bounds);
+  return cellToPx(spot.col, spot.row);
 }
-
-/** Generous bounding box for a widget when reserving desktop space. */
-const WIDGET_RESERVED = { width: 260, height: 170 };

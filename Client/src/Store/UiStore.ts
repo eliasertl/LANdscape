@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { ReactNode } from 'react';
-import type { Shortcut } from '@landscape/shared';
+import type { CellRect, Shortcut } from '@landscape/shared';
 import type { MenuItem, MenuPosition } from '../Components/Menu';
 
 export interface ConfirmRequest {
@@ -25,7 +25,13 @@ interface UiState {
   wallpaperDialogOpen: boolean;
   widgetSettingsId: string | null;
   confirm: ConfirmRequest | null;
-  openContextMenu: (items: MenuItem[], position: MenuPosition) => void;
+  /** Outline of the grid cell a dragged icon or widget will snap to. */
+  snapPreview: { x: number; y: number; width: number; height: number } | null;
+  setSnapPreview: (preview: UiState['snapPreview']) => void;
+  /** Cell each desktop item is shown at (see Desktop/DesktopGrid.ts). */
+  displayLayout: Record<string, CellRect>;
+  setDisplayLayout: (layout: Record<string, CellRect>) => void;
+  openContextMenu:(items: MenuItem[], position: MenuPosition) => void;
   closeContextMenu: () => void;
   setInteracting: (value: boolean) => void;
   selectShortcut: (id: string | null) => void;
@@ -46,6 +52,12 @@ export const useUiStore = create<UiState>((set, get) => ({
   wallpaperDialogOpen: false,
   widgetSettingsId: null,
   confirm: null,
+  snapPreview: null,
+  setSnapPreview: (preview) => set({ snapPreview: preview }),
+  displayLayout: {},
+  setDisplayLayout: (layout) => {
+    if (JSON.stringify(layout) !== JSON.stringify(get().displayLayout)) set({ displayLayout: layout });
+  },
   openContextMenu: (items, position) => set({ contextMenu: { items, position }, startMenuOpen: false }),
   closeContextMenu: () => {
     if (get().contextMenu) set({ contextMenu: null });

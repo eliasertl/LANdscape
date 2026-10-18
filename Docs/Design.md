@@ -28,6 +28,10 @@ Public Sans (variable) for UI, JetBrains Mono for terminal and editor; the macOS
 
 `Design/Spring.ts` implements Carbon's spring model: `response` (seconds) and `dampingFraction` (1 = critical). Presets: `standard` (0.3, 1), `quick` (0.18, 1), `bounce` (0.35, 0.8), `window` (0.26, 0.92). Springs are solved analytically per frame, so they are frame-rate independent and retargeting mid-flight keeps velocity. Used for window open/close, minimize-to-taskbar, menus, the start menu and dialogs. `prefers-reduced-motion` makes springs jump to their target; theme switches animate over 350 ms (150 ms reduced).
 
+## Desktop grid
+
+Shortcut icons and widgets share one grid (`Shared/src/Grid.ts`): units of 48 × 56 px from a 16 px origin. An icon spans 2 × 2 units; a widget spans as many units as its size needs and renders at `cols·48 − 8` by `rows·56 − 8` so neighbours keep an 8 px gap. Dragging is free; a faint outline shows the target cell (the nearest free one), and on release the item glides into it and the snapped position is saved. New shortcuts take the first free cell column by column from the top left; new widgets the free cell nearest to where the menu was opened. When the window is smaller than the saved layout, items are clamped into view and step aside on screen if that makes them collide, without changing their saved positions. Layouts saved with genuinely colliding positions are untangled once after load.
+
 ## Themes
 
 `data-theme="light|dark"` on `<html>`; `system` follows `prefers-color-scheme`. `Client/public/ThemeInit.js` applies the stored choice before first paint to avoid a flash (an external file, because the CSP forbids inline scripts).
