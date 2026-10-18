@@ -1,4 +1,5 @@
 import type { RawData, WebSocket } from 'ws';
+import type { FastifyBaseLogger } from 'fastify';
 
 /** Converts a ws RawData frame into a string. */
 export function rawToString(raw: RawData): string {
@@ -18,4 +19,33 @@ export function rawToBuffer(raw: RawData): Buffer {
 
 export function sendJson(socket: WebSocket, message: unknown): void {
   if (socket.readyState === socket.OPEN) socket.send(JSON.stringify(message));
+}
+
+/**
+ * Wraps a WebSocket message handler so a thrown error closes that socket
+ * instead of crashing the process (ws emits handlers outside Fastify's
+ * error boundary).
+ */
+export function guardSocket(socket: WebSocket, log: FastifyBaseLogger, handler: (raw: RawData, isBinary: boolean) => void | Promise<void>): void {
+  socket.on('message', (raw, isBinary) => {
+    try {
+      const result = handler(raw, isBinary);
+      if (result && typeof result.catch === 'function') {
+        result.catch((error: unknown) => fail(socket, log, error));
+      }
+    } catch (error) {
+      fail(socket, log, error);
+    }
+  });
+}
+
+function fail(socket: WebSocket, log: FastifyBaseLogger, error: unknown): void {
+  const message = error instanceof Error ? error.message : String(error);
+  log.error({ err: error }, 'WebSocket handler failed');
+  sendJson(socket, { type: 'error', message });
+  try {
+    socket.close(1011, 'handler error');
+  } catch {
+    // ignore
+  }
 }

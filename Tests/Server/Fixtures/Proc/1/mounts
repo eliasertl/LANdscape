@@ -1,0 +1,14 @@
+sysfs /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0
+proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0
+udev /dev devtmpfs rw,nosuid,relatime,size=8000000k 0 0
+tmpfs /run tmpfs rw,nosuid,nodev,noexec,relatime,size=1600000k 0 0
+/dev/nvme0n1p2 / ext4 rw,relatime,errors=remount-ro 0 0
+/dev/nvme0n1p1 /boot/efi vfat rw,relatime 0 0
+/dev/sda1 /DATA ext4 rw,relatime 0 0
+/dev/sda1 /var/lib/docker/volumes ext4 rw,relatime 0 0
+/dev/sdb1 /mnt/media\040disk xfs rw,relatime 0 0
+192.168.1.9:/export /mnt/nas nfs4 rw,relatime 0 0
+overlay /var/lib/docker/overlay2/abc/merged overlay rw,relatime 0 0
+/dev/loop3 /snap/core/1234 squashfs ro,nodev,relatime 0 0
+tmpfs /dev/shm tmpfs rw,nosuid,nodev 0 0
+/dev/nvme0n1p2 /home/user/bind ext4 rw,relatime 0 0

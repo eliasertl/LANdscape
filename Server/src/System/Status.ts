@@ -25,6 +25,9 @@ function mountStatus(probePath: string, okDetail: string, hint: string): Integra
 
 function dockerStatus(config: Config): IntegrationStatus {
   const socket = config.dockerSocket;
+  if (socket.startsWith('//./pipe/') || socket.startsWith('\\\\.\\pipe\\')) {
+    return { ok: true, detail: `Using the Docker named pipe ${socket}.`, hint: null };
+  }
   if (!existsSync(socket)) {
     return { ok: false, detail: `${socket} is not mounted.`, hint: 'Mount /var/run/docker.sock:/var/run/docker.sock (root-equivalent access).' };
   }

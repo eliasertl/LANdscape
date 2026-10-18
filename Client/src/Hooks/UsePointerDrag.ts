@@ -23,7 +23,8 @@ export interface PointerDragOptions {
 /**
  * Pointer-capture based dragging with a movement threshold. Returns the
  * onPointerDown handler to spread onto the draggable element. Works with
- * mouse, touch and pen.
+ * mouse, touch and pen. The pointer is captured immediately on pointer down
+ * so that moving over iframes (which swallow events) cannot break the drag.
  */
 export function usePointerDrag(options: PointerDragOptions) {
   const optionsRef = useRef(options);
@@ -42,17 +43,18 @@ export function usePointerDrag(options: PointerDragOptions) {
     let dragging = false;
     let last: DragInfo = { dx: 0, dy: 0, clientX: startX, clientY: startY, shiftKey: event.shiftKey };
 
+    try {
+      target.setPointerCapture(pointerId);
+    } catch {
+      // capture is best-effort; window listeners below still work for most cases
+    }
+
     const onMove = (e: PointerEvent) => {
       if (e.pointerId !== pointerId) return;
       last = { dx: e.clientX - startX, dy: e.clientY - startY, clientX: e.clientX, clientY: e.clientY, shiftKey: e.shiftKey };
       if (!dragging) {
         if (Math.hypot(last.dx, last.dy) < (optionsRef.current.threshold ?? 4)) return;
         dragging = true;
-        try {
-          target.setPointerCapture(pointerId);
-        } catch {
-          // element may be gone
-        }
         optionsRef.current.onStart?.(last);
       }
       e.preventDefault();
@@ -64,20 +66,21 @@ export function usePointerDrag(options: PointerDragOptions) {
       target.removeEventListener('pointermove', onMove);
       target.removeEventListener('pointerup', finish);
       target.removeEventListener('pointercancel', finish);
+      target.removeEventListener('lostpointercapture', finish);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', finish);
       window.removeEventListener('pointercancel', finish);
-      if (dragging) {
-        try {
-          target.releasePointerCapture(pointerId);
-        } catch {
-          // ignore
-        }
+      try {
+        if (target.hasPointerCapture(pointerId)) target.releasePointerCapture(pointerId);
+      } catch {
+        // ignore
       }
       optionsRef.current.onEnd?.(last, dragging);
     };
 
-    // Listen on window until capture kicks in (after the threshold).
+    target.addEventListener('pointermove', onMove);
+    target.addEventListener('pointerup', finish);
+    target.addEventListener('pointercancel', finish);
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', finish);
     window.addEventListener('pointercancel', finish);

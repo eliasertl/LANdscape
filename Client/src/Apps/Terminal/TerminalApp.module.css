@@ -1,0 +1,49 @@
+.app {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  background: var(--color-background);
+}
+
+.terminal {
+  flex: 1;
+  min-height: 0;
+  padding: 6px 0 4px 8px;
+}
+
+.terminal :global(.xterm) {
+  height: 100%;
+}
+
+.terminal :global(.xterm-viewport) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-scroll-indicator) transparent;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: color-mix(in srgb, var(--color-background) 80%, transparent);
+  backdrop-filter: blur(4px);
+  color: var(--color-secondary-label);
+  padding: 24px;
+  text-align: center;
+}
+
+.connecting {
+  background: transparent;
+  backdrop-filter: none;
+  pointer-events: none;
+}
+
+.overlayText {
+  color: var(--color-label);
+  max-width: 480px;
+  user-select: text;
+}

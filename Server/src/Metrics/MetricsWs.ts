@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { metricsClientMessageSchema, type MetricsServerMessage } from '@landscape/shared';
 import type { ServerContext } from '../Context';
-import { rawToString } from '../Http/WsUtils';
+import { guardSocket, rawToString } from '../Http/WsUtils';
 
 /**
  * /ws/metrics: the client subscribes per metric with an interval; the hub
@@ -14,7 +14,7 @@ export function registerMetricsWs(app: FastifyInstance, ctx: ServerContext): voi
     };
     const subscriber = ctx.metrics.addSubscriber(send);
 
-    socket.on('message', (raw) => {
+    guardSocket(socket, ctx.log, (raw) => {
       let parsed: unknown;
       try {
         parsed = JSON.parse(rawToString(raw));

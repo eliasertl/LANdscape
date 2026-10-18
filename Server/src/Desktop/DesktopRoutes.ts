@@ -43,8 +43,8 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
       settings,
       windowMemory: ctx.repos.windowMemory.all(),
       integrations: {
-        ssh: Boolean(ctx.config.ssh.user) && existsSync(ctx.config.ssh.keyPath),
-        docker: existsSync(ctx.config.dockerSocket),
+        ssh: ctx.ssh.configured,
+        docker: ctx.docker.available,
         hostProc: existsSync(`${ctx.config.hostProc}/stat`),
         hostSys: existsSync(`${ctx.config.hostSys}/class`),
       },

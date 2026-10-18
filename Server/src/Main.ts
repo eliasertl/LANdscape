@@ -28,6 +28,9 @@ async function main(): Promise<void> {
   };
   process.on('SIGINT', () => void shutdown('SIGINT'));
   process.on('SIGTERM', () => void shutdown('SIGTERM'));
+  // Last resort: log instead of dying on stray errors from sockets or SSH streams.
+  process.on('uncaughtException', (error) => built.app.log.error({ err: error }, 'Uncaught exception'));
+  process.on('unhandledRejection', (reason) => built.app.log.error({ err: reason }, 'Unhandled rejection'));
 
   await built.app.listen({ port: config.port, host: config.host });
   built.app.log.info(`LANdscape ${config.version} listening on http://${config.host}:${config.port}`);

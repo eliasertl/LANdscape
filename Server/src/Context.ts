@@ -5,6 +5,9 @@ import type { Repositories } from './Db/Repositories';
 import type { SessionService } from './Auth/Sessions';
 import type { Lockout } from './Auth/Lockout';
 import type { MetricsHub } from './Metrics/Hub';
+import type { DockerClient } from './Docker/Client';
+import type { SshPool } from './Ssh/Connection';
+import type { SftpService } from './Ssh/Sftp';
 
 /** Everything route modules need, passed explicitly instead of via decorators. */
 export interface ServerContext {
@@ -14,5 +17,8 @@ export interface ServerContext {
   sessions: SessionService;
   lockout: Lockout;
   metrics: MetricsHub;
+  docker: DockerClient;
+  ssh: SshPool;
+  sftp: SftpService;
   log: FastifyBaseLogger;
 }

@@ -36,10 +36,12 @@ export const WidgetFrame = memo(function WidgetFrame({ widget, title, children, 
     return { x: Math.min(Math.max(0, x), maxX), y: Math.min(Math.max(0, y), maxY) };
   };
 
+  const setInteracting = useUiStore((s) => s.setInteracting);
   const onPointerDown = usePointerDrag({
     onStart: () => {
       startRef.current = { x: widget.x, y: widget.y };
       setDragging(true);
+      setInteracting(true);
     },
     onMove: ({ dx, dy }) => {
       const next = clamp(startRef.current.x + dx, startRef.current.y + dy);
@@ -48,6 +50,7 @@ export const WidgetFrame = memo(function WidgetFrame({ widget, title, children, 
     onEnd: ({ dx, dy }, dragged) => {
       setDragging(false);
       if (dragged) {
+        setInteracting(false);
         const next = clamp(startRef.current.x + dx, startRef.current.y + dy);
         moveWidget(widget.id, next.x, next.y);
       }
@@ -56,6 +59,8 @@ export const WidgetFrame = memo(function WidgetFrame({ widget, title, children, 
 
   const position = dragging ? null : clamp(widget.x, widget.y);
   const definition = getWidget(widget.type);
+  // The "not available" explanation needs room regardless of the widget's normal size.
+  if (unavailable) height = Math.max(height, 118);
 
   return (
     <div

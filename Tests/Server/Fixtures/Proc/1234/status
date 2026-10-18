@@ -1,0 +1,10 @@
+Name:	my (weird) proc
+Umask:	0022
+State:	S (sleeping)
+Tgid:	1234
+Pid:	1234
+PPid:	1
+Uid:	1000	1000	1000	1000
+Gid:	1000	1000	1000	1000
+VmPeak:	  100000 kB
+VmRSS:	   8192 kB

@@ -33,10 +33,12 @@ export const ShortcutIcon = memo(function ShortcutIcon({ shortcut }: { shortcut:
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  const setInteracting = useUiStore((s) => s.setInteracting);
   const onPointerDown = usePointerDrag({
     onStart: () => {
       startRef.current = { x: shortcut.x, y: shortcut.y };
       setDragging(true);
+      setInteracting(true);
       selectShortcut(shortcut.id);
     },
     onMove: ({ dx, dy }) => {
@@ -47,6 +49,7 @@ export const ShortcutIcon = memo(function ShortcutIcon({ shortcut }: { shortcut:
     onEnd: ({ dx, dy }, dragged) => {
       setDragging(false);
       if (!dragged) return;
+      setInteracting(false);
       const next = clampIconPosition(startRef.current.x + dx, startRef.current.y + dy);
       moveShortcut(shortcut.id, next.x, next.y);
     },

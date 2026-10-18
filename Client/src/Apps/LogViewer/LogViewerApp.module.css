@@ -1,0 +1,21 @@
+.app {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sourceBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: var(--border-width) solid var(--color-separator);
+  background: var(--color-secondary-background);
+  flex-wrap: wrap;
+}
+
+.grow {
+  flex: 1;
+  min-width: 160px;
+}

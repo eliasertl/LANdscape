@@ -5,16 +5,11 @@ import { useSessionStore } from '../Store/SessionStore';
 import { Wallpaper } from './Wallpaper';
 import { ShortcutIcon } from './ShortcutIcon';
 import { desktopMenuItems } from './DesktopContextMenu';
-import { ShortcutDialog } from './ShortcutDialog';
-import { WallpaperDialog } from './WallpaperDialog';
+import { Overlays } from './Overlays';
 import { WindowManager } from '../Windows/WindowManager';
 import { Taskbar } from '../Taskbar/Taskbar';
 import { StartMenu } from '../StartMenu/StartMenu';
 import { WidgetLayer } from '../Widgets/WidgetLayer';
-import { WidgetSettingsDialog } from '../Widgets/WidgetSettingsDialog';
-import { Menu } from '../Components/Menu';
-import { ConfirmDialog } from '../Components/Dialog';
-import { ToastHost, toast } from '../Components/Toast';
 import { Spinner } from '../Components/Spinner';
 import { Button } from '../Components/Button';
 import { useKeyboardShortcut } from '../Hooks/UseKeyboardShortcut';
@@ -54,15 +49,8 @@ export function Desktop() {
 
 function DesktopShell() {
   const shortcuts = useDesktopStore((s) => s.shortcuts);
-  const contextMenu = useUiStore((s) => s.contextMenu);
-  const closeContextMenu = useUiStore((s) => s.closeContextMenu);
   const openContextMenu = useUiStore((s) => s.openContextMenu);
   const selectShortcut = useUiStore((s) => s.selectShortcut);
-  const shortcutDialog = useUiStore((s) => s.shortcutDialog);
-  const wallpaperDialogOpen = useUiStore((s) => s.wallpaperDialogOpen);
-  const widgetSettingsId = useUiStore((s) => s.widgetSettingsId);
-  const confirm = useUiStore((s) => s.confirm);
-  const requestConfirm = useUiStore((s) => s.requestConfirm);
   const toggleStartMenu = useUiStore((s) => s.toggleStartMenu);
   const setStartMenuOpen = useUiStore((s) => s.setStartMenuOpen);
   const logout = useSessionStore((s) => s.logout);
@@ -79,17 +67,6 @@ function DesktopShell() {
     },
     [openContextMenu, selectShortcut],
   );
-
-  const onConfirm = async () => {
-    if (!confirm) return;
-    try {
-      await confirm.onConfirm();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Action failed');
-    } finally {
-      requestConfirm(null);
-    }
-  };
 
   return (
     <div className={styles.desktop}>
@@ -113,21 +90,7 @@ function DesktopShell() {
       <WindowManager />
       <Taskbar />
       <StartMenu onLogout={() => void logout()} />
-      {contextMenu && <Menu items={contextMenu.items} position={contextMenu.position} onClose={closeContextMenu} ariaLabel="Context menu" />}
-      {shortcutDialog && <ShortcutDialog state={shortcutDialog} />}
-      {wallpaperDialogOpen && <WallpaperDialog />}
-      {widgetSettingsId && <WidgetSettingsDialog widgetId={widgetSettingsId} />}
-      {confirm && (
-        <ConfirmDialog
-          title={confirm.title}
-          message={confirm.message}
-          confirmLabel={confirm.confirmLabel}
-          danger={confirm.danger}
-          onConfirm={() => void onConfirm()}
-          onCancel={() => requestConfirm(null)}
-        />
-      )}
-      <ToastHost />
+      <Overlays />
     </div>
   );
 }

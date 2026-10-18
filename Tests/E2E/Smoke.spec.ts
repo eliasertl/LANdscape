@@ -71,18 +71,27 @@ test.describe('desktop', () => {
     await page.locator('[data-taskbar-app]').click({ button: 'right' });
     await page.getByRole('menuitemcheckbox', { name: /minimized/ }).click();
     await expect(win).toBeVisible();
-    // Clicking the focused group button minimizes the focused window; clicking again restores one.
+    // Clicking the group button minimizes the focused window (one per click); once all are minimized it restores one.
     await page.locator('[data-taskbar-app]').click();
     await expect(win).toBeHidden({ timeout: 5_000 });
     await page.locator('[data-taskbar-app]').click();
-    await expect(page.locator('[data-window-id]:visible')).toHaveCount(2);
+    await expect(page.locator('[data-window-id]:visible')).toHaveCount(0);
+    await page.locator('[data-taskbar-app]').click();
+    await expect(page.locator('[data-window-id]:visible')).toHaveCount(1);
+    await page.locator('[data-taskbar-app]').click({ button: 'right' });
+    await page.getByRole('menuitemcheckbox', { name: /minimized/ }).click();
+    await expect(win).toBeVisible();
     await settled(page);
-    await win.getByRole('button', { name: 'Maximize window' }).click();
-    const maximized = await win.boundingBox();
-    expect(maximized!.width).toBeGreaterThan(before.width + 100);
-    await win.getByRole('button', { name: 'Restore window' }).click();
-    const restored = await win.boundingBox();
-    expect(Math.round(restored!.width)).toBe(Math.round(after!.width));
+
+    // Maximize and restore the window that is now on top (the one restored last).
+    const top = page.locator('[data-window-id]').first();
+    const topBefore = await top.boundingBox();
+    await top.getByRole('button', { name: 'Maximize window' }).click();
+    const maximized = await top.boundingBox();
+    expect(maximized!.width).toBeGreaterThan(topBefore!.width + 100);
+    await top.getByRole('button', { name: 'Restore window' }).click();
+    const restored = await top.boundingBox();
+    expect(Math.round(restored!.width)).toBe(Math.round(topBefore!.width));
 
     // Drag the icon and reload: position persists.
     const iconBox = await icon.boundingBox();
@@ -98,11 +107,12 @@ test.describe('desktop', () => {
     expect(Math.round(afterReload!.x)).toBe(Math.round(moved!.x));
     expect(Math.round(afterReload!.y)).toBe(Math.round(moved!.y));
 
-    // Window memory: reopening uses the moved position.
+    // Window memory: reopening uses the geometry of the window touched last (the restored one).
     await icon.dblclick();
     await settled(page);
     const reopened = await page.locator('[data-window-id]').last().boundingBox();
-    expect(Math.round(reopened!.x)).toBe(Math.round(after!.x));
+    expect(Math.round(reopened!.x)).toBe(Math.round(restored!.x));
+    expect(Math.round(reopened!.width)).toBe(Math.round(restored!.width));
   });
 
   test('start menu filters and opens apps with the keyboard', async ({ page }) => {

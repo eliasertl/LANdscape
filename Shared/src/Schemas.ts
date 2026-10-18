@@ -110,17 +110,14 @@ export const remotePathSchema = z
   .max(4096)
   .refine((p) => p.startsWith('/') && !p.includes('\0'), 'Path must be absolute');
 
-export const logsClientMessageSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('close') }),
+export const logSourceSchema = z.discriminatedUnion('source', [
   z.object({
-    type: z.literal('open'),
     source: z.literal('docker'),
     containerId: z.string().regex(/^[A-Za-z0-9_.-]{1,128}$/),
     tail: z.number().int().min(1).max(10000).default(500),
     follow: z.boolean().default(true),
   }),
   z.object({
-    type: z.literal('open'),
     source: z.literal('journal'),
     unit: z
       .string()
@@ -131,11 +128,16 @@ export const logsClientMessageSchema = z.discriminatedUnion('type', [
     follow: z.boolean().default(true),
   }),
   z.object({
-    type: z.literal('open'),
     source: z.literal('file'),
     path: remotePathSchema,
     follow: z.boolean().default(true),
   }),
+]);
+
+/** Plain union: the "open" variants share the type literal and differ by source. */
+export const logsClientMessageSchema = z.union([
+  z.object({ type: z.literal('close') }),
+  z.object({ type: z.literal('open') }).and(logSourceSchema),
 ]);
 
 export const killSignalSchema = z.object({ signal: z.enum(['TERM', 'KILL']).default('TERM') });

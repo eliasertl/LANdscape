@@ -22,6 +22,15 @@ import { registerDesktopRoutes } from './Desktop/DesktopRoutes';
 import { MetricsHub } from './Metrics/Hub';
 import { registerMetricsWs } from './Metrics/MetricsWs';
 import { registerSystemRoutes } from './System/SystemRoutes';
+import { registerSamplers } from './Metrics/Samplers';
+import { DockerClient } from './Docker/Client';
+import { SshPool } from './Ssh/Connection';
+import { SftpService } from './Ssh/Sftp';
+import { registerFileRoutes } from './Ssh/FileRoutes';
+import { registerTerminalWs } from './Ssh/TerminalWs';
+import { registerProcessRoutes } from './Ssh/ProcessRoutes';
+import { registerContainerRoutes } from './Docker/ContainerRoutes';
+import { registerLogsWs } from './Logs/LogsWs';
 
 export interface BuiltApp {
   app: FastifyInstance;
@@ -55,7 +64,15 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
   const sessions = new SessionService(repos.sessions);
   const lockout = new Lockout();
   const metrics = new MetricsHub();
-  const ctx: ServerContext = { config, db, repos, sessions, lockout, metrics, log: app.log };
+  const docker = new DockerClient(config);
+  const ssh = new SshPool(config, app.log);
+  const sftp = new SftpService(ssh);
+  const ctx: ServerContext = { config, db, repos, sessions, lockout, metrics, docker, ssh, sftp, log: app.log };
+  registerSamplers(metrics, {
+    config,
+    docker,
+    sshExec: ssh.configured ? async (command) => (await ssh.exec(command, { timeoutMs: 15_000 })).stdout : null,
+  });
 
   const secret = loadOrCreateSessionSecret(config.sessionSecret, config.dataDir);
 
@@ -70,7 +87,12 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
   registerAuthRoutes(app, ctx);
   registerDesktopRoutes(app, ctx);
   registerMetricsWs(app, ctx);
-  registerSystemRoutes(app, ctx, null);
+  registerSystemRoutes(app, ctx, ssh.configured ? () => ssh.probe() : null);
+  registerFileRoutes(app, ctx);
+  registerTerminalWs(app, ctx);
+  registerProcessRoutes(app, ctx);
+  registerContainerRoutes(app, ctx);
+  registerLogsWs(app, ctx);
   await installStatic(app, config.clientDir);
 
   const pruneTimer = setInterval(
@@ -92,6 +114,7 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
     async close() {
       clearInterval(pruneTimer);
       metrics.stop();
+      ssh.close();
       await app.close();
       db.close();
     },

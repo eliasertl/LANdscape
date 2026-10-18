@@ -7,8 +7,10 @@ export interface ConfirmRequest {
   title: ReactNode;
   message: ReactNode;
   confirmLabel?: string;
+  cancelLabel?: string;
   danger?: boolean;
   onConfirm: () => void | Promise<void>;
+  onCancel?: () => void;
 }
 
 export type ShortcutDialogState = { mode: 'create' } | { mode: 'edit'; shortcut: Shortcut } | null;
@@ -61,3 +63,14 @@ export const useUiStore = create<UiState>((set, get) => ({
   openWidgetSettings: (id) => set({ widgetSettingsId: id, contextMenu: null }),
   requestConfirm: (request) => set({ confirm: request, contextMenu: null }),
 }));
+
+/** Promise flavour of the confirm dialog (used by close guards). */
+export function confirmAsync(request: Omit<ConfirmRequest, 'onConfirm' | 'onCancel'>): Promise<boolean> {
+  return new Promise((resolve) => {
+    useUiStore.getState().requestConfirm({
+      ...request,
+      onConfirm: () => resolve(true),
+      onCancel: () => resolve(false),
+    });
+  });
+}
