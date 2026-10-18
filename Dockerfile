@@ -77,6 +77,7 @@ COPY --from=build /app/Shared/src ./Shared/src
 COPY --from=build /app/Server/package.json ./Server/package.json
 COPY --from=build /app/Server/dist ./Server/dist
 COPY --from=build /app/Client/dist ./Client/dist
+COPY --from=build /app/Scripts/package.json ./Scripts/package.json
 COPY --from=build /app/Scripts/dist ./Scripts/dist
 COPY Scripts/Entrypoint.sh /usr/local/bin/landscape-entrypoint
 COPY Scripts/HashPassword.sh /usr/local/bin/hash-password

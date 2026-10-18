@@ -21,6 +21,13 @@ if [ "$(id -u)" != "0" ]; then
   exec "$@"
 fi
 
+if [ "$PUID" = "0" ]; then
+  # Explicit opt-in to run as root (e.g. Docker Desktop, where the socket is root-only).
+  echo "[LANdscape] PUID=0: running as root." >&2
+  mkdir -p "$DATA_DIR"
+  exec "$@"
+fi
+
 # Align the node user with the requested uid/gid.
 if [ "$PUID" != "$(id -u node)" ] || [ "$PGID" != "$(id -g node)" ]; then
   if ! getent group "$PGID" >/dev/null 2>&1; then
