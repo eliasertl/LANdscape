@@ -1,0 +1,140 @@
+# LANdscape — CasaOS custom-install compose file.
+#
+# 1. Build the image on the server first:
+#      docker build -t landscape:latest https://github.com/eliasertl/LANdscape.git#main
+# 2. Generate the password hash:
+#      docker run --rm -it landscape:latest hash-password
+#    IMPORTANT: in this file every "$" in the hash must be written as "$$".
+# 3. Put the SSH private key at /DATA/AppData/landscape/ssh/id_ed25519 (see README).
+# 4. CasaOS → App Store → Custom Install → Import this file → fill in the variables.
+
+name: landscape
+
+services:
+  landscape:
+    image: landscape:latest
+    container_name: landscape
+    restart: unless-stopped
+    ports:
+      - target: 8080
+        published: "${PORT:-8080}"
+        protocol: tcp
+    environment:
+      # --- required -------------------------------------------------------
+      LOGIN_USERNAME: ${LOGIN_USERNAME:-admin}
+      # bcrypt hash; remember "$$" escaping, e.g. $$2b$$10$$abc...
+      LOGIN_PASSWORD_HASH: ${LOGIN_PASSWORD_HASH:-}
+      # --- optional -------------------------------------------------------
+      # Leave empty to auto-generate once and persist in the data directory.
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      # SSH to the host: used by Terminal, Files, Text Editor, Task Manager kill and Log Viewer.
+      SSH_HOST: ${SSH_HOST:-host.docker.internal}
+      SSH_PORT: ${SSH_PORT:-22}
+      SSH_USER: ${SSH_USER:-}
+      SSH_KEY_PATH: /etc/landscape/ssh/id_ed25519
+      # Host mounts for metrics (match the volumes below).
+      HOST_PROC: /host/proc
+      HOST_SYS: /host/sys
+      HOST_ROOT: /host/root
+      DOCKER_SOCKET: /var/run/docker.sock
+      # uid/gid the server runs as; the entrypoint chowns the data dir to match.
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      # Set to "true" only when LANdscape sits behind a reverse proxy that sets X-Forwarded-For.
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      # Persistent data: SQLite database, uploaded icons/wallpapers, SSH key, session secret.
+      - /DATA/AppData/landscape:/etc/landscape
+      # Host metrics (read-only). Required for the CPU/RAM/network/temperature/disk widgets and Task Manager.
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      # Disk usage of host file systems (read-only). Optional: without it, disk usage comes from SSH (df).
+      - /:/host/root:ro
+      # Docker API. WARNING: access to this socket is equivalent to root on the host.
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      # Lets the container reach the host's SSH server as "host.docker.internal".
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+# ---------------------------------------------------------------------------
+# Alternative (less reliable): let CasaOS build the image itself from GitHub.
+# Replace "image: landscape:latest" with:
+#     build: https://github.com/eliasertl/LANdscape.git#main
+# CasaOS does not always show build output or errors, so the manual build above is recommended.
+# ---------------------------------------------------------------------------
+
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+  main: landscape
+  author: eliasertl
+  developer: eliasertl
+  category: Utilities
+  icon: https://raw.githubusercontent.com/eliasertl/LANdscape/main/Assets/Icon.png
+  thumbnail: https://raw.githubusercontent.com/eliasertl/LANdscape/main/Assets/Icon.png
+  title:
+    en_us: LANdscape
+  tagline:
+    en_us: A macOS-style web desktop for your homeserver.
+  description:
+    en_us: >-
+      LANdscape turns your self-hosted services into desktop shortcuts that open in draggable windows,
+      shows live host statistics as widgets and bundles admin apps (Terminal, Files, Docker, Task Manager,
+      Log Viewer). Single user, LAN/VPN use. Requires a bcrypt password hash and an SSH key for the host.
+  port_map: "8080"
+  scheme: http
+  index: /
+  store_app_id: landscape
+  tips:
+    before_install:
+      en_us: >-
+        Build the image first with `docker build -t landscape:latest https://github.com/eliasertl/LANdscape.git#main`.
+        Generate LOGIN_PASSWORD_HASH with `docker run --rm -it landscape:latest hash-password` and write every "$" as "$$".
+        Put an SSH private key at /DATA/AppData/landscape/ssh/id_ed25519 and set SSH_USER.
+  envs:
+    - container: LOGIN_USERNAME
+      description:
+        en_us: Login user name.
+    - container: LOGIN_PASSWORD_HASH
+      description:
+        en_us: bcrypt hash of the login password (write "$" as "$$").
+    - container: SSH_USER
+      description:
+        en_us: Host user for SSH/SFTP (Terminal, Files, Log Viewer). Leave empty to disable those apps.
+    - container: SSH_HOST
+      description:
+        en_us: SSH host; host.docker.internal reaches the Docker host.
+    - container: SSH_PORT
+      description:
+        en_us: SSH port.
+    - container: SESSION_SECRET
+      description:
+        en_us: Optional session signing secret. Auto-generated and persisted when empty.
+  volumes:
+    - container: /etc/landscape
+      description:
+        en_us: Persistent data (database, icons, wallpapers, SSH key).
+    - container: /host/proc
+      description:
+        en_us: Host /proc (read-only) for metrics.
+    - container: /host/sys
+      description:
+        en_us: Host /sys (read-only) for temperatures and devices.
+    - container: /host/root
+      description:
+        en_us: Host root (read-only) for disk usage. Optional.
+    - container: /var/run/docker.sock
+      description:
+        en_us: Docker socket (root-equivalent) for the Docker app and container count widget.
+  ports:
+    - container: "8080"
+      description:
+        en_us: Web UI.

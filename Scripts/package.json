@@ -1,0 +1,23 @@
+{
+  "name": "@landscape/scripts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Build-time and maintenance scripts for LANdscape.",
+  "scripts": {
+    "wallpapers": "tsx src/GenerateWallpapers.ts",
+    "seed": "tsx --env-file-if-exists=../Scratch/.env src/SeedDev.ts",
+    "hash-password": "tsx src/HashPassword.ts",
+    "build": "esbuild src/HashPassword.ts --bundle --platform=node --target=node24 --format=esm --packages=external --alias:@landscape/shared=../Shared/src/index.ts --outfile=dist/HashPassword.js",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@landscape/shared": "*",
+    "bcryptjs": "^3.0.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "sharp": "^0.35.5",
+    "tsx": "^4.23.15"
+  }
+}
