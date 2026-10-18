@@ -1,0 +1,110 @@
+.titleBar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: var(--titlebar-height);
+  flex: none;
+  padding: 0 12px;
+  background: var(--material-titlebar);
+  border-bottom: var(--border-width) solid var(--color-separator);
+  touch-action: none;
+  cursor: default;
+}
+
+.lights {
+  display: flex;
+  gap: 8px;
+  flex: none;
+  z-index: 1;
+}
+
+.light {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--traffic-inactive);
+  box-shadow: inset 0 0 0 0.5px var(--traffic-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 9px;
+}
+
+.light > svg {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.lights:hover .light > svg,
+.lights:focus-within .light > svg {
+  opacity: 1;
+}
+
+.focused .close {
+  background: var(--traffic-close);
+}
+
+.focused .minimize {
+  background: var(--traffic-minimize);
+}
+
+.focused .maximize {
+  background: var(--traffic-maximize);
+}
+
+.light:active {
+  filter: brightness(0.8);
+}
+
+.light:focus-visible {
+  outline-offset: 2px;
+}
+
+.title {
+  position: absolute;
+  left: 80px;
+  right: 80px;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  pointer-events: none;
+  color: var(--color-secondary-label);
+}
+
+.focused .title {
+  color: var(--color-label);
+}
+
+.icon {
+  display: inline-flex;
+  flex: none;
+  line-height: 0;
+}
+
+.text {
+  font-weight: 600;
+  font-size: 13px;
+  max-width: 100%;
+}
+
+.spacer {
+  flex: 1;
+}
+
+@media (max-width: 767px) {
+  .light {
+    width: 16px;
+    height: 16px;
+    font-size: 11px;
+  }
+
+  .light > svg {
+    opacity: 1;
+  }
+}

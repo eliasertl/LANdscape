@@ -16,6 +16,7 @@ import {
   windowGeometrySchema,
   type DesktopBootstrap,
   type Shortcut,
+  type Widget,
 } from '@landscape/shared';
 import type { ServerContext } from '../Context';
 import { badRequest, notFound, parseOrThrow, tooLarge } from '../Http/Errors';
@@ -63,7 +64,8 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
 
   app.post('/api/shortcuts', async (request, reply) => {
     const input = parseOrThrow(shortcutCreateSchema, request.body);
-    const position = input.x !== undefined && input.y !== undefined ? { x: input.x, y: input.y } : freeSlot(ctx.repos.shortcuts.list());
+    const position =
+      input.x !== undefined && input.y !== undefined ? { x: input.x, y: input.y } : freeSlot(ctx.repos.shortcuts.list(), ctx.repos.widgets.list());
     const check = await checkEmbeddable(input.url, expectedOrigin(request));
     const created = ctx.repos.shortcuts.create({
       name: input.name,
@@ -289,16 +291,27 @@ function sendImage(reply: FastifyReply, fullPath: string, fileName: string, cach
   return reply.send(createReadStream(fullPath));
 }
 
-/** First free grid slot on the desktop (column-major like macOS Finder). */
-function freeSlot(shortcuts: Shortcut[]): { x: number; y: number } {
+/**
+ * First free grid slot on the desktop (column-major like macOS Finder),
+ * skipping cells covered by shortcuts or widgets.
+ */
+function freeSlot(shortcuts: Shortcut[], widgets: Widget[]): { x: number; y: number } {
   const margin = { x: 24, y: 24 };
-  const occupied = new Set(shortcuts.map((s) => `${Math.round((s.x - margin.x) / ICON_CELL.width)},${Math.round((s.y - margin.y) / ICON_CELL.height)}`));
+  const boxes = [
+    ...shortcuts.map((s) => ({ x: s.x, y: s.y, width: ICON_CELL.width, height: ICON_CELL.height })),
+    ...widgets.map((w) => ({ x: w.x, y: w.y, width: WIDGET_RESERVED.width, height: WIDGET_RESERVED.height })),
+  ];
+  const overlaps = (x: number, y: number) =>
+    boxes.some((b) => x < b.x + b.width - 8 && x + ICON_CELL.width - 8 > b.x && y < b.y + b.height - 8 && y + ICON_CELL.height - 8 > b.y);
   for (let col = 0; col < 50; col += 1) {
     for (let row = 0; row < 7; row += 1) {
-      if (!occupied.has(`${col},${row}`)) {
-        return { x: margin.x + col * ICON_CELL.width, y: margin.y + row * ICON_CELL.height };
-      }
+      const x = margin.x + col * ICON_CELL.width;
+      const y = margin.y + row * ICON_CELL.height;
+      if (!overlaps(x, y)) return { x, y };
     }
   }
   return { x: margin.x, y: margin.y };
 }
+
+/** Generous bounding box for a widget when reserving desktop space. */
+const WIDGET_RESERVED = { width: 260, height: 170 };

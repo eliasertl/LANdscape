@@ -1,0 +1,40 @@
+.setup {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px;
+  text-align: center;
+  overflow: auto;
+  background: var(--color-secondary-background);
+}
+
+.icon {
+  font-size: 56px;
+  color: var(--color-accent);
+  line-height: 0;
+  margin-bottom: 6px;
+}
+
+.detail {
+  color: var(--system-orange);
+  max-width: 460px;
+  user-select: text;
+}
+
+.steps {
+  margin: 8px 0 4px;
+  padding-left: 20px;
+  list-style: decimal;
+  text-align: left;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 15px;
+  user-select: text;
+}

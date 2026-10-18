@@ -10,7 +10,7 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/dist/**',
       'Scratch/**',
-      'Client/public/wallpapers/**',
+      'Client/public/**',
       'test-results/**',
       'playwright-report/**',
     ],

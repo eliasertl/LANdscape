@@ -1,0 +1,46 @@
+.window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-background);
+  border-radius: var(--radius-window);
+  box-shadow: var(--shadow-window-inactive);
+  outline: var(--border-width) solid var(--color-window-border);
+  overflow: hidden;
+  will-change: transform, opacity;
+  transform-origin: center center;
+  contain: layout paint;
+}
+
+@supports (corner-shape: squircle) {
+  .window {
+    corner-shape: superellipse(1.4);
+  }
+}
+
+.focused {
+  box-shadow: var(--shadow-window);
+}
+
+.maximized {
+  border-radius: 0;
+  outline: none;
+}
+
+.hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.resizing {
+  user-select: none;
+}
+
+.content {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-background);
+}

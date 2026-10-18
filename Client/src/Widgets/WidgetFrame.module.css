@@ -1,0 +1,83 @@
+.frame {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 12px;
+  border-radius: 16px;
+  background: var(--material-widget);
+  border: var(--border-width) solid rgba(255, 255, 255, 0.18);
+  box-shadow: var(--shadow-widget);
+  color: var(--color-label);
+  touch-action: none;
+  will-change: transform;
+  overflow: hidden;
+}
+
+:global(:root[data-theme='light']) .frame {
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+@supports (corner-shape: squircle) {
+  .frame {
+    corner-shape: superellipse(1.6);
+  }
+}
+
+.dragging {
+  z-index: 60;
+  opacity: 0.92;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--color-secondary-label);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.unavailable {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--color-secondary-label);
+}
+
+.unavailable > svg {
+  flex: none;
+  font-size: 16px;
+  color: var(--system-orange);
+}
+
+.unavailable strong {
+  color: var(--color-label);
+}
+
+.unavailableReason {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}

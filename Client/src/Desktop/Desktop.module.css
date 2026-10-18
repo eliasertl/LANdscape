@@ -1,0 +1,24 @@
+.desktop {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.surface {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.boot {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-secondary-label);
+  background: var(--color-background);
+}

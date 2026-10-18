@@ -1,0 +1,71 @@
+.handle {
+  position: absolute;
+  z-index: 5;
+  touch-action: none;
+}
+
+.n,
+.s {
+  left: 10px;
+  right: 10px;
+  height: 6px;
+}
+
+.e,
+.w {
+  top: 10px;
+  bottom: 10px;
+  width: 6px;
+}
+
+.n {
+  top: -3px;
+  cursor: ns-resize;
+}
+
+.s {
+  bottom: -3px;
+  cursor: ns-resize;
+}
+
+.e {
+  right: -3px;
+  cursor: ew-resize;
+}
+
+.w {
+  left: -3px;
+  cursor: ew-resize;
+}
+
+.ne,
+.nw,
+.se,
+.sw {
+  width: 14px;
+  height: 14px;
+}
+
+.ne {
+  top: -4px;
+  right: -4px;
+  cursor: nesw-resize;
+}
+
+.nw {
+  top: -4px;
+  left: -4px;
+  cursor: nwse-resize;
+}
+
+.se {
+  bottom: -4px;
+  right: -4px;
+  cursor: nwse-resize;
+}
+
+.sw {
+  bottom: -4px;
+  left: -4px;
+  cursor: nesw-resize;
+}

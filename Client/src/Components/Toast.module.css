@@ -1,0 +1,88 @@
+.host {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 11000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(380px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 10px 10px 12px;
+  border-radius: var(--radius-overlay);
+  background: var(--material-menu);
+  border: var(--border-width) solid var(--color-overlay-border);
+  box-shadow: var(--shadow-menu);
+  pointer-events: auto;
+  animation: slide 320ms cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+
+.icon {
+  flex: none;
+  font-size: 18px;
+  margin-top: -1px;
+}
+
+.info .icon {
+  color: var(--color-accent);
+}
+
+.success .icon {
+  color: var(--system-green);
+}
+
+.error .icon {
+  color: var(--color-destructive);
+}
+
+.message {
+  flex: 1;
+  user-select: text;
+}
+
+.close {
+  flex: none;
+  display: inline-flex;
+  border: 0;
+  background: transparent;
+  color: var(--color-secondary-label);
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.close:hover {
+  background: var(--color-control-fill);
+}
+
+@keyframes slide {
+  from {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .host {
+    top: auto;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    max-width: none;
+  }
+}

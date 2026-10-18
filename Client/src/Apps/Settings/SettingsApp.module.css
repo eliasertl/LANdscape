@@ -1,0 +1,155 @@
+.app {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.sidebar {
+  width: 180px;
+  flex: none;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--color-secondary-background);
+  border-right: var(--border-width) solid var(--color-separator);
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-label);
+  font-size: 13px;
+  text-align: left;
+}
+
+.navItem > svg {
+  font-size: 17px;
+  color: var(--color-accent);
+}
+
+.navItem:hover {
+  background: var(--color-control-fill);
+}
+
+.navActive {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.navActive > svg {
+  color: inherit;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  padding: 20px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.phone {
+  flex-direction: column;
+}
+
+.phone .sidebar {
+  width: auto;
+  flex-direction: row;
+  border-right: 0;
+  border-bottom: var(--border-width) solid var(--color-separator);
+  overflow-x: auto;
+}
+
+.phone .navItem {
+  flex: 1;
+  justify-content: center;
+}
+
+.phone .content {
+  padding: 16px;
+}
+
+/* Shared section styles */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionTitle {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-secondary-background);
+  border: var(--border-width) solid var(--color-separator);
+  border-radius: var(--radius-group);
+  overflow: hidden;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 14px;
+  min-height: 44px;
+}
+
+.row + .row {
+  border-top: var(--border-width) solid var(--color-separator);
+}
+
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rowLabel {
+  font-weight: 500;
+}
+
+.rowDetail {
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--color-secondary-label);
+  user-select: text;
+}
+
+.rowHint {
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--system-orange);
+  user-select: text;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.statusOk {
+  color: var(--system-green);
+}
+
+.statusBad {
+  color: var(--system-orange);
+}

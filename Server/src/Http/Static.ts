@@ -18,7 +18,8 @@ export async function installStatic(app: FastifyInstance, clientDir: string): Pr
   await app.register(fastifyStatic, {
     root: clientDir,
     prefix: '/',
-    wildcard: false,
+    // wildcard serves whatever is on disk at request time (files added after startup included).
+    wildcard: true,
     index: false,
     cacheControl: false,
     setHeaders(reply, filePath) {

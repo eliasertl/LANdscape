@@ -1,0 +1,17 @@
+.center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-secondary-label);
+  padding: 24px;
+  text-align: center;
+}
+
+/* Covers iframes while windows are dragged or resized so they do not swallow pointer events. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: transparent;
+}

@@ -21,6 +21,7 @@ import type { ServerContext } from './Context';
 import { registerDesktopRoutes } from './Desktop/DesktopRoutes';
 import { MetricsHub } from './Metrics/Hub';
 import { registerMetricsWs } from './Metrics/MetricsWs';
+import { registerSystemRoutes } from './System/SystemRoutes';
 
 export interface BuiltApp {
   app: FastifyInstance;
@@ -69,6 +70,7 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
   registerAuthRoutes(app, ctx);
   registerDesktopRoutes(app, ctx);
   registerMetricsWs(app, ctx);
+  registerSystemRoutes(app, ctx, null);
   await installStatic(app, config.clientDir);
 
   const pruneTimer = setInterval(
