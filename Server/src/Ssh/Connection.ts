@@ -77,6 +77,7 @@ export class SshPool {
     const entry: PooledConnection = { client, channels: 0, ready: Promise.resolve(), closed: false, sftp: null, sftpPromise: null };
     const key = readSshKey(this.config) as string;
     const { host, port, user } = this.config.ssh;
+    let verifierError: string | null = null;
     entry.ready = new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => {
         reject(new Error(`Timed out connecting to ${host}:${port}`));
@@ -89,7 +90,9 @@ export class SshPool {
       });
       client.on('error', (error: Error) => {
         clearTimeout(timer);
-        this.lastError = describeSshError(error);
+        // A host-key problem surfaces as a generic "Host denied"; prefer the verifier's own message.
+        this.lastError = verifierError ?? describeSshError(error);
+        verifierError = null;
         reject(new Error(this.lastError));
       });
       client.on('close', () => {
@@ -110,7 +113,11 @@ export class SshPool {
           try {
             return this.hostKeys.verify(host, port, rawKey);
           } catch (error) {
-            this.lastError = error instanceof Error ? error.message : String(error);
+            const message = error instanceof Error ? error.message : String(error);
+            verifierError = /EACCES|EPERM|EROFS/.test(message)
+              ? `Cannot write the host key store at ${this.hostKeys.file} (${message}). The ssh/ directory must be writable by the server user.`
+              : message;
+            this.lastError = verifierError;
             return false;
           }
         },
@@ -285,6 +292,7 @@ function hintFor(message: string): string {
   if (/timed out/i.test(message)) return 'Check the network path from the container to the host (firewall, SSH_PORT).';
   if (/authentication failed/i.test(message)) return 'Append the public key to ~/.ssh/authorized_keys of SSH_USER on the host.';
   if (/host key changed/i.test(message)) return 'Delete the known_host file in the data directory if the host was reinstalled.';
+  if (/host key store/i.test(message)) return 'Fix ownership of the data directory ssh/ folder (the entrypoint does this on start) or set PUID/PGID to match.';
   if (/parse privateKey/i.test(message)) return 'Use an unencrypted ed25519 or RSA key in OpenSSH format.';
   return 'See the README troubleshooting section.';
 }

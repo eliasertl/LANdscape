@@ -44,11 +44,16 @@ if [ "$(stat -c %u "$DATA_DIR")" != "$(id -u node)" ]; then
   chown -R node:"$(id -g node)" "$DATA_DIR" 2>/dev/null || \
     echo "[LANdscape] Warning: could not chown $DATA_DIR; the server may fail to write its database." >&2
 fi
-# The SSH private key must be readable by node but should stay 0600.
-if [ -f "$DATA_DIR/ssh/id_ed25519" ]; then
-  chown node "$DATA_DIR/ssh/id_ed25519" 2>/dev/null || true
-  chmod 600 "$DATA_DIR/ssh/id_ed25519" 2>/dev/null || true
-fi
+# The ssh/ directory is usually created by the admin as root. The server must be
+# able to read the key and write its known_host file, so hand it to node.
+mkdir -p "$DATA_DIR/ssh"
+chown node:"$(id -g node)" "$DATA_DIR/ssh" 2>/dev/null || true
+chmod 700 "$DATA_DIR/ssh" 2>/dev/null || true
+for f in "$DATA_DIR"/ssh/*; do
+  [ -e "$f" ] || continue
+  chown node:"$(id -g node)" "$f" 2>/dev/null || true
+  case "$f" in *.pub) chmod 644 "$f" 2>/dev/null || true ;; *) chmod 600 "$f" 2>/dev/null || true ;; esac
+done
 
 # Docker socket: add node to a group with the socket's gid so dockerode can connect.
 if [ -S "$DOCKER_SOCKET" ]; then
