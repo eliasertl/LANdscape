@@ -1,0 +1,87 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.label {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
+  color: var(--color-secondary-label);
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--control-height);
+  padding: 0 8px;
+  border: var(--border-width) solid var(--color-separator);
+  border-radius: var(--radius);
+  background: var(--color-background);
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+:global(:root[data-theme='dark']) .control {
+  background: rgba(120, 120, 128, 0.14);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.control:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 var(--focus-ring-width) var(--color-focus-ring);
+}
+
+.invalid {
+  border-color: var(--color-destructive);
+}
+
+.invalid:focus-within {
+  box-shadow: 0 0 0 var(--focus-ring-width) rgba(255, 59, 48, 0.4);
+}
+
+.large {
+  height: var(--control-height-large);
+  padding: 0 10px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--color-tertiary-label);
+}
+
+.adornment {
+  display: inline-flex;
+  color: var(--color-secondary-label);
+  font-size: 1.2em;
+  line-height: 0;
+}
+
+.hint,
+.error {
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.hint {
+  color: var(--color-secondary-label);
+}
+
+.error {
+  color: var(--color-destructive);
+}

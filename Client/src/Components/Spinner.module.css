@@ -1,0 +1,29 @@
+.spinner {
+  position: relative;
+  display: inline-block;
+  flex: none;
+}
+
+.blade {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10%;
+  height: 28%;
+  margin-left: -5%;
+  margin-top: -14%;
+  border-radius: 20%;
+  background: currentColor;
+  transform-origin: center center;
+  animation: fade 800ms linear infinite;
+  opacity: 0.25;
+}
+
+@keyframes fade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.2;
+  }
+}

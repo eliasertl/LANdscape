@@ -1,0 +1,189 @@
+/*
+ * Design tokens — every color, radius and metric used by LANdscape.
+ * Values follow Carbon (the owner's UI library) and Apple's semantic colors.
+ * Light = Apple light palette, Dark = pure black (OLED).
+ */
+:root {
+  /* ---- Metrics (Carbon StyleVar defaults) ---- */
+  --radius: 6px;
+  --radius-group: 10px;
+  --radius-overlay: 10px;
+  --radius-window: 12px;
+  --radius-pill: 999px;
+  --spacing: 8px;
+  --control-height: 24px;
+  --control-height-large: 32px;
+  --control-padding: 10px;
+  --border-width: 1px;
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 1px;
+  --disabled-opacity: 0.4;
+  --hover-amount: 0.07;
+  --pressed-amount: 0.14;
+  --scroll-indicator-width: 7px;
+  --blur: 24px;
+  --saturate: 1.8;
+  --titlebar-height: 38px;
+  --taskbar-height: 56px;
+  --icon-size: 56px;
+
+  /* ---- Typography ---- */
+  --font-ui: 'Public Sans Variable', 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* ---- System palette (charts, status) ---- */
+  --system-red: #ff3b30;
+  --system-orange: #ff9500;
+  --system-yellow: #ffcc00;
+  --system-green: #34c759;
+  --system-mint: #00c7be;
+  --system-teal: #30b0c7;
+  --system-cyan: #32ade6;
+  --system-blue: #007aff;
+  --system-indigo: #5856d6;
+  --system-purple: #af52de;
+  --system-pink: #ff2d55;
+  --system-brown: #a2845e;
+  --system-gray: #8e8e93;
+
+  /* ---- Semantic colors: light ---- */
+  --color-background: #ffffff;
+  --color-secondary-background: #f2f2f7;
+  --color-tertiary-background: #ffffff;
+  --color-elevated-background: #ffffff;
+  --color-label: #000000;
+  --color-secondary-label: #6e6e73;
+  --color-tertiary-label: #aeaeb2;
+  --color-quaternary-label: #c7c7cc;
+  --color-separator: #dcdce0;
+  --color-opaque-separator: #c6c6c8;
+  --color-control-fill: rgba(120, 120, 128, 0.16);
+  --color-control-fill-hover: rgba(120, 120, 128, 0.23);
+  --color-control-fill-pressed: rgba(120, 120, 128, 0.3);
+  --color-accent: #007aff;
+  --color-accent-hover: #0071eb;
+  --color-accent-pressed: #0066d6;
+  --color-on-accent: #ffffff;
+  --color-destructive: #ff3b30;
+  --color-destructive-hover: #e5352b;
+  --color-selection: rgba(0, 122, 255, 0.15);
+  --color-selection-strong: rgba(0, 122, 255, 0.28);
+  --color-focus-ring: rgba(0, 122, 255, 0.55);
+  --color-overlay-border: rgba(0, 0, 0, 0.12);
+  --color-window-border: rgba(0, 0, 0, 0.18);
+  --color-scrim: rgba(0, 0, 0, 0.25);
+  --color-scroll-indicator: rgba(0, 0, 0, 0.35);
+  --color-text-on-wallpaper: #ffffff;
+  --color-text-on-wallpaper-shadow: 0 1px 3px rgba(0, 0, 0, 0.55), 0 0 12px rgba(0, 0, 0, 0.35);
+
+  /* ---- Materials (translucent, blurred) ---- */
+  --material-bar: rgba(246, 246, 248, 0.72);
+  --material-menu: rgba(246, 246, 248, 0.82);
+  --material-titlebar: rgba(238, 238, 240, 0.86);
+  --material-card: rgba(255, 255, 255, 0.66);
+  --material-widget: rgba(255, 255, 255, 0.6);
+  --material-sheet: rgba(255, 255, 255, 0.9);
+
+  /* ---- Shadows ---- */
+  --shadow-window: 0 22px 70px rgba(0, 0, 0, 0.32), 0 1px 0 rgba(255, 255, 255, 0.35) inset;
+  --shadow-window-inactive: 0 10px 30px rgba(0, 0, 0, 0.2);
+  --shadow-menu: 0 12px 40px rgba(0, 0, 0, 0.22);
+  --shadow-widget: 0 8px 24px rgba(0, 0, 0, 0.16);
+  --shadow-bar: 0 10px 40px rgba(0, 0, 0, 0.22);
+  --shadow-control: 0 1px 2px rgba(0, 0, 0, 0.12);
+
+  /* Traffic lights */
+  --traffic-close: #ff5f57;
+  --traffic-minimize: #febc2e;
+  --traffic-maximize: #28c840;
+  --traffic-inactive: #d9d9d9;
+  --traffic-border: rgba(0, 0, 0, 0.12);
+
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --color-background: #000000;
+  --color-secondary-background: #1c1c1e;
+  --color-tertiary-background: #2c2c2e;
+  --color-elevated-background: #1c1c1e;
+  --color-label: #ffffff;
+  --color-secondary-label: #98989f;
+  --color-tertiary-label: #636366;
+  --color-quaternary-label: #48484a;
+  --color-separator: #38383a;
+  --color-opaque-separator: #38383a;
+  --color-control-fill: rgba(120, 120, 128, 0.32);
+  --color-control-fill-hover: rgba(120, 120, 128, 0.4);
+  --color-control-fill-pressed: rgba(120, 120, 128, 0.48);
+  --color-accent: #0a84ff;
+  --color-accent-hover: #2b94ff;
+  --color-accent-pressed: #4aa3ff;
+  --color-on-accent: #ffffff;
+  --color-destructive: #ff453a;
+  --color-destructive-hover: #ff5f55;
+  --color-selection: rgba(10, 132, 255, 0.22);
+  --color-selection-strong: rgba(10, 132, 255, 0.4);
+  --color-focus-ring: rgba(10, 132, 255, 0.6);
+  --color-overlay-border: rgba(255, 255, 255, 0.12);
+  --color-window-border: rgba(255, 255, 255, 0.16);
+  --color-scrim: rgba(0, 0, 0, 0.5);
+  --color-scroll-indicator: rgba(255, 255, 255, 0.35);
+
+  --material-bar: rgba(28, 28, 30, 0.66);
+  --material-menu: rgba(36, 36, 40, 0.8);
+  --material-titlebar: rgba(32, 32, 34, 0.88);
+  --material-card: rgba(28, 28, 30, 0.7);
+  --material-widget: rgba(20, 20, 22, 0.62);
+  --material-sheet: rgba(28, 28, 30, 0.92);
+
+  --shadow-window: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  --shadow-window-inactive: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --shadow-menu: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-widget: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-bar: 0 10px 40px rgba(0, 0, 0, 0.5);
+  --shadow-control: 0 1px 2px rgba(0, 0, 0, 0.4);
+
+  --traffic-inactive: #4a4a4c;
+  --traffic-border: rgba(0, 0, 0, 0.35);
+
+  --system-red: #ff453a;
+  --system-orange: #ff9f0a;
+  --system-yellow: #ffd60a;
+  --system-green: #30d158;
+  --system-mint: #63e6e2;
+  --system-teal: #40c8e0;
+  --system-cyan: #64d2ff;
+  --system-blue: #0a84ff;
+  --system-indigo: #5e5ce6;
+  --system-purple: #bf5af2;
+  --system-pink: #ff375f;
+  --system-brown: #ac8e68;
+  --system-gray: #8e8e93;
+
+  color-scheme: dark;
+}
+
+/* Reduced transparency: materials become opaque surfaces. */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --blur: 0px;
+    --saturate: 1;
+    --material-bar: var(--color-secondary-background);
+    --material-menu: var(--color-elevated-background);
+    --material-titlebar: var(--color-secondary-background);
+    --material-card: var(--color-background);
+    --material-widget: var(--color-secondary-background);
+    --material-sheet: var(--color-background);
+  }
+}
+
+/* Phone: larger touch targets. */
+@media (max-width: 767px) {
+  :root {
+    --control-height: 36px;
+    --control-height-large: 44px;
+    --control-padding: 14px;
+    --titlebar-height: 48px;
+  }
+}
