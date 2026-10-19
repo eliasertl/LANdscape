@@ -42,7 +42,8 @@ export async function startFixtureService(name = 'Fixture'): Promise<FixtureServ
           return;
         case '/echo':
           res.writeHead(200, { 'content-type': 'application/json' });
-          res.end(JSON.stringify({ method: req.method, url: req.url, headers: req.headers, body }));
+          // rawNames: header names exactly as they arrived on the wire.
+          res.end(JSON.stringify({ method: req.method, url: req.url, headers: req.headers, rawNames: req.rawHeaders.filter((_, i) => i % 2 === 0), body }));
           return;
         case '/login':
           res.writeHead(302, {

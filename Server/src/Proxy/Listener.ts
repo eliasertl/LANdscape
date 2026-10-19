@@ -3,7 +3,7 @@ import https from 'node:https';
 import type { Duplex } from 'node:stream';
 import type { Socket } from 'node:net';
 import type { FastifyBaseLogger } from 'fastify';
-import { forwardRequestHeaders, proxyOriginFromHost, rewriteResponseHeaders } from './Rewrite';
+import { forwardRequestHeaders, proxyOriginFromHost, restoreHeaderCase, rewriteResponseHeaders } from './Rewrite';
 import { LOGIN_REQUIRED, sendProxyPage } from './Pages';
 
 /** What one proxy port forwards to. */
@@ -129,7 +129,7 @@ export class ProxyListener {
       return;
     }
     const targetOrigin = route.target.origin;
-    const headers = forwardRequestHeaders(req.headers, { targetOrigin, proxyOrigin, cookiePrefix: route.cookiePrefix });
+    const headers = restoreHeaderCase(forwardRequestHeaders(req.headers, { targetOrigin, proxyOrigin, cookiePrefix: route.cookiePrefix }), req.rawHeaders);
     const upstream = transport(route.target).request(requestOptions(route.target, req.method ?? 'GET', req.url, headers, false));
 
     upstream.setTimeout(RESPONSE_TIMEOUT_MS, () => upstream.destroy(new Error('timeout')));
@@ -183,7 +183,7 @@ export class ProxyListener {
     }
     const targetOrigin = route.target.origin;
     const context = { targetOrigin, proxyOrigin, cookiePrefix: route.cookiePrefix };
-    const headers = forwardRequestHeaders(req.headers, context, { upgrade: true });
+    const headers = restoreHeaderCase(forwardRequestHeaders(req.headers, context, { upgrade: true }), req.rawHeaders);
     const upstream = transport(route.target).request(requestOptions(route.target, req.method ?? 'GET', req.url, headers, true));
     upstream.setTimeout(RESPONSE_TIMEOUT_MS, () => upstream.destroy(new Error('timeout')));
 
