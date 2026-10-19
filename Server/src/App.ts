@@ -11,7 +11,7 @@ import { createRepositories, seedDefaults } from './Db/Repositories';
 import { SessionService } from './Auth/Sessions';
 import { Lockout } from './Auth/Lockout';
 import { loadOrCreateSessionSecret } from './Auth/SecretStore';
-import { installGuard } from './Auth/Guard';
+import { installGuard, readSessionIdFromHeader } from './Auth/Guard';
 import { registerAuthRoutes } from './Auth/AuthRoutes';
 import { errorHandler } from './Http/Errors';
 import { installSecurityHeaders } from './Http/SecurityHeaders';
@@ -31,6 +31,8 @@ import { registerTerminalWs } from './Ssh/TerminalWs';
 import { registerProcessRoutes } from './Ssh/ProcessRoutes';
 import { registerContainerRoutes } from './Docker/ContainerRoutes';
 import { registerLogsWs } from './Logs/LogsWs';
+import { ProxyService } from './Proxy/ProxyService';
+import { registerProxyRoutes } from './Proxy/ProxyRoutes';
 
 export interface BuiltApp {
   app: FastifyInstance;
@@ -67,7 +69,16 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
   const docker = new DockerClient(config);
   const ssh = new SshPool(config, app.log);
   const sftp = new SftpService(ssh);
-  const ctx: ServerContext = { config, db, repos, sessions, lockout, metrics, docker, ssh, sftp, log: app.log };
+  const proxy = new ProxyService({
+    db,
+    repos,
+    range: config.proxyPorts,
+    host: config.host,
+    // Evaluated per request, after the cookie plugin below has decorated the instance.
+    isAuthenticated: (cookieHeader) => sessions.validate(readSessionIdFromHeader(app, cookieHeader)) !== null,
+    log: app.log,
+  });
+  const ctx: ServerContext = { config, db, repos, sessions, lockout, metrics, docker, ssh, sftp, proxy, log: app.log };
   registerSamplers(metrics, {
     config,
     docker,
@@ -93,6 +104,7 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
   registerProcessRoutes(app, ctx);
   registerContainerRoutes(app, ctx);
   registerLogsWs(app, ctx);
+  registerProxyRoutes(app, ctx);
   await installStatic(app, config.clientDir);
 
   const pruneTimer = setInterval(
@@ -108,6 +120,10 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
   );
   pruneTimer.unref();
 
+  // Assign ports to shortcuts that need one (e.g. blocked "auto" shortcuts after an upgrade
+  // or a changed range). Listeners open later, in start(), once LANdscape itself listens.
+  proxy.reconcile();
+
   return {
     app,
     ctx,
@@ -115,6 +131,7 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
       clearInterval(pruneTimer);
       metrics.stop();
       ssh.close();
+      await proxy.stop();
       await app.close();
       db.close();
     },

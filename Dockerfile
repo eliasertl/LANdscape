@@ -86,7 +86,8 @@ RUN chmod +x /usr/local/bin/landscape-entrypoint /usr/local/bin/hash-password \
  && mkdir -p /etc/landscape && chown node:node /etc/landscape
 
 VOLUME ["/etc/landscape"]
-EXPOSE 8080
+# 8080: web UI. 8081-8100: embed proxy, one port per proxied shortcut (PROXY_PORT_START/END).
+EXPOSE 8080 8081-8100
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||8080)+'/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"

@@ -29,7 +29,7 @@ const shortcutFields = {
   url: httpUrlSchema,
   iconMode: z.enum(['favicon', 'upload']),
   iconFile: z.string().max(128).nullable().optional(),
-  openMode: z.enum(['auto', 'embed', 'newtab']),
+  openMode: z.enum(['auto', 'embed', 'proxy', 'newtab']),
   x: coordinate.optional(),
   y: coordinate.optional(),
 };
@@ -93,6 +93,7 @@ export const settingsUpdateSchema = z.object({
     })
     .optional(),
   enabledApps: enabledAppsSchema.partial().optional(),
+  proxyIndicator: z.enum(['badge', 'none']).optional(),
 });
 
 export const metricsClientMessageSchema = z.discriminatedUnion('type', [

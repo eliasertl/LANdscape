@@ -26,6 +26,20 @@ export function readSessionId(request: FastifyRequest): string | null {
 }
 
 /**
+ * Same as readSessionId, for a raw Cookie header outside Fastify's request
+ * cycle (the embed proxy ports). Browsers send LANdscape's cookie to every
+ * port on the host, so the proxy can check it on each request.
+ */
+export function readSessionIdFromHeader(app: FastifyInstance, cookieHeader: string | undefined): string | null {
+  if (!cookieHeader) return null;
+  const raw = app.parseCookie(cookieHeader)[SESSION_COOKIE_NAME];
+  if (!raw) return null;
+  const unsigned = app.unsignCookie(raw);
+  if (!unsigned.valid || !unsigned.value) return null;
+  return unsigned.value;
+}
+
+/**
  * Installs the global session guard. Static client files stay public (the
  * lock screen has to load), everything that touches data or the host needs a
  * valid session. WebSocket upgrades additionally require a same-origin Origin.
