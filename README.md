@@ -144,6 +144,7 @@ Proxied windows show a small ⇄ badge next to the title (with the port on phone
 - Apps that build links to their *own original address* in JavaScript (for example a configured "public URL" like `http://192.168.2.116:35957`) can leave the proxy; links or API calls to that address then go to the app directly.
 - Cookies that an app sets *from JavaScript* (`document.cookie`) are not namespaced and are not forwarded, and apps whose JavaScript reads a server-set cookie by name (some CSRF schemes, e.g. `XSRF-TOKEN`) will not find it under its original name. Most apps use server-set, httpOnly session cookies and are unaffected.
 - Redirects to another site (single sign-on, OAuth) leave the proxy and open that site directly, which usually cannot be framed either.
+- Proxied windows are sandboxed against navigating the LANdscape tab (`top.location = …`). Pages that only consist of such a redirect stay blank; point the shortcut at the redirect's destination.
 
 ## Security
 
@@ -166,6 +167,7 @@ Proxied windows show a small ⇄ badge next to the title (with the port on phone
 - **A shortcut shows "This site can't be embedded"** — the site blocks framing and every proxy port is taken (the hint in the window says so). Free a port by switching another shortcut to *Direct* or *New tab*, delete one, or widen `PROXY_PORT_START`/`PROXY_PORT_END` (and publish the new ports).
 - **"All 20 proxy ports are in use"** when saving a shortcut with *Via proxy* — same cause as above. Settings → Proxy shows which shortcuts hold the ports.
 - **Proxy port not reachable** (the window stays blank or "can't connect" on `:8081`…) — the port is not published or is published under a different host port. Check the app's ports in CasaOS: 8081–8100 must be mapped to the same numbers. Settings → Proxy shows "Not listening" with a reason if LANdscape itself could not open the port (e.g. another program uses it). A firewall on the server must allow the range too.
+- **A proxied window stays blank, or used to send the whole tab to the service** — the service's start page is a JavaScript "frame-buster" (`top.location = …`, common on routers, switches and NAS UIs). Proxied windows are not allowed to navigate the LANdscape tab, so such a page has nowhere to go. Point the shortcut at the page it redirects to instead (for example `http://<switch>/login.cgi` instead of `http://<switch>/`).
 - **A proxied window says "Log in to LANdscape to use this service."** — your LANdscape session expired or you logged out; log in again and reopen the window.
 - **A proxied window says "The service is not reachable"** — LANdscape could not connect to the shortcut's address from inside the container. Check that the URL works from the server itself.
 - **Logged out after a restart** — set `SESSION_SECRET` explicitly or make sure the data directory is persisted (the generated secret lives there).

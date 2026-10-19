@@ -7,6 +7,26 @@ import { Spinner } from '../Components/Spinner';
 import { resolveShortcutFrame } from './ShortcutFrame';
 import styles from './IframeContent.module.css';
 
+/**
+ * Proxied sites forbid framing, so they often also carry JavaScript frame-busters
+ * (`top.location = …`) that would navigate the whole LANdscape tab away. Everything a
+ * normal page needs stays allowed; only navigating the top window is not.
+ */
+const PROXY_SANDBOX = [
+  'allow-scripts',
+  'allow-same-origin',
+  'allow-forms',
+  'allow-popups',
+  'allow-popups-to-escape-sandbox',
+  'allow-modals',
+  'allow-downloads',
+  'allow-pointer-lock',
+  'allow-presentation',
+  'allow-orientation-lock',
+  'allow-storage-access-by-user-activation',
+  'allow-top-navigation-to-custom-protocols',
+].join(' ');
+
 export function IframeContent({ shortcut }: { shortcut: Shortcut }) {
   const total = useDesktopStore((s) => proxyTotal(s.proxy));
   const frame = resolveShortcutFrame(shortcut, total);
@@ -58,6 +78,7 @@ export function IframeContent({ shortcut }: { shortcut: Shortcut }) {
         onLoad={() => setLoaded(true)}
         allow="clipboard-read; clipboard-write; fullscreen; autoplay; camera; microphone; geolocation; display-capture"
         referrerPolicy="no-referrer-when-downgrade"
+        sandbox={frame.kind === 'proxy' ? PROXY_SANDBOX : undefined}
         data-frame-kind={frame.kind}
       />
     </div>

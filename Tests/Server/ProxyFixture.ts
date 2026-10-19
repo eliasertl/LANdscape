@@ -58,6 +58,11 @@ export async function startFixtureService(name = 'Fixture'): Promise<FixtureServ
           res.end(match ? `logged in as ${match[1]}` : 'anonymous');
           return;
         }
+        case '/bust':
+          // A frame-buster, like old router/switch UIs: blocks framing and tries to take over the tab.
+          res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'x-frame-options': 'SAMEORIGIN' });
+          res.end('<!doctype html><title>Bust</title><script>top.location.href = "/";</script>');
+          return;
         case '/away':
           res.writeHead(302, { location: 'https://elsewhere.example/sso' });
           res.end();

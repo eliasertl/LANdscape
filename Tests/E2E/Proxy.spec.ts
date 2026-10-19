@@ -21,11 +21,11 @@ async function login(page: Page) {
 }
 
 /** Creates a shortcut through the API with the page's session (same-origin, like the client). */
-async function createShortcut(page: Page, name: string) {
+async function createShortcut(page: Page, name: string, path = '/') {
   const baseURL = new URL(page.url()).origin;
   const response = await page.request.post('/api/shortcuts', {
     headers: { origin: baseURL },
-    data: { name, url: `${service.origin}/`, iconMode: 'upload', iconFile: null },
+    data: { name, url: `${service.origin}${path}`, iconMode: 'upload', iconFile: null },
   });
   expect(response.status()).toBe(201);
   return (await response.json()) as { id: string; proxyPort: number | null };
@@ -86,6 +86,23 @@ test.describe('embed proxy on the desktop', () => {
     await page.getByRole('button', { name: 'Save' }).click();
     await expect(frame).toHaveAttribute('data-frame-kind', 'direct');
     await expect(badge).toHaveCount(0);
+  });
+
+  test('keeps LANdscape in the tab when a proxied page tries to bust out of its frame', async ({ page }) => {
+    await login(page);
+    await expect(page.locator('[data-taskbar-search]')).toBeVisible();
+    const landscape = page.url();
+    const created = await createShortcut(page, 'Frame buster', '/bust');
+    expect(created.proxyPort).not.toBeNull();
+    await page.reload();
+    // A real double-click: Chrome only lets a cross-origin frame navigate the top window after a user gesture.
+    await page.locator(`[data-shortcut-id="${created.id}"]`).dblclick();
+    const frame = page.locator('[data-window-id] iframe').last();
+    await expect(frame).toHaveAttribute('data-frame-kind', 'proxy');
+    await page.waitForTimeout(2000);
+    expect(page.url()).toBe(landscape);
+    await expect(page.locator('[data-taskbar-search]')).toBeVisible();
+    await expect(frame).toHaveAttribute('sandbox', /allow-scripts/);
   });
 });
 
