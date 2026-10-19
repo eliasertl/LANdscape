@@ -2,6 +2,7 @@ import type { PointerEvent as ReactPointerEvent } from 'react';
 import { ArrowsOutSimple, Minus, X } from '@phosphor-icons/react';
 import { useWindowStore, type DesktopWindow } from '../Store/WindowStore';
 import { WindowIcon } from './WindowIcon';
+import { ProxyBadge } from './ProxyBadge';
 import styles from './TitleBar.module.css';
 
 interface TitleBarProps {
@@ -43,6 +44,7 @@ export function TitleBar({ win, focused, onPointerDown, onDoubleClick }: TitleBa
           <WindowIcon win={win} size={16} />
         </span>
         <span className={`${styles.text} text-truncate`}>{win.title}</span>
+        <ProxyBadge win={win} />
       </div>
       <div className={styles.spacer} />
     </div>

@@ -3,6 +3,7 @@ import { ArrowLeft, X } from '@phosphor-icons/react';
 import { useWindowStore, type DesktopWindow } from '../Store/WindowStore';
 import { WindowContent } from '../Windows/WindowContent';
 import { WindowIcon } from '../Windows/WindowIcon';
+import { ProxyBadge } from '../Windows/ProxyBadge';
 import { SPRING } from '../Design/Spring';
 import { useSpringStyle, useSpringValue } from '../Design/UseSpring';
 import styles from './PhoneShell.module.css';
@@ -47,6 +48,7 @@ export const PhoneWindow = memo(function PhoneWindow({ win, active }: { win: Des
         <span className={styles.barTitle}>
           <WindowIcon win={win} size={18} />
           <span className="text-truncate">{win.title}</span>
+          <ProxyBadge win={win} showPort />
         </span>
         <button type="button" className={styles.barButton} aria-label="Close window" onClick={() => void requestClose(win.id)}>
           <X weight="bold" />

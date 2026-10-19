@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type {
   DesktopBootstrap,
+  ProxyRange,
   Settings,
   SettingsUpdateInput,
   Shortcut,
@@ -23,6 +24,7 @@ interface DesktopState {
   settings: Settings | null;
   windowMemory: WindowMemory;
   integrations: DesktopBootstrap['integrations'];
+  proxy: ProxyRange;
   version: string;
   load: () => Promise<void>;
   createShortcut: (input: ShortcutCreateInput) => Promise<Shortcut>;
@@ -74,6 +76,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
   settings: null,
   windowMemory: {},
   integrations: { ssh: false, docker: false, hostProc: false, hostSys: false },
+  proxy: { start: 0, end: -1 },
   version: '',
 
   async load() {
@@ -87,6 +90,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
         settings: data.settings,
         windowMemory: data.windowMemory,
         integrations: data.integrations,
+        proxy: data.proxy,
         version: data.version,
       });
       applyTheme(data.settings.theme, false);
@@ -180,6 +184,11 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 export function shortcutIconUrl(shortcut: Shortcut): string | null {
   if (!shortcut.iconFile) return null;
   return `/icons/${shortcut.iconFile}?v=${encodeURIComponent(shortcut.updatedAt)}`;
+}
+
+/** Number of embed proxy ports configured on the server. */
+export function proxyTotal(range: ProxyRange): number {
+  return Math.max(0, range.end - range.start + 1);
 }
 
 export function wallpaperUrl(settings: Settings | null): string | null {

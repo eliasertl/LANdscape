@@ -50,6 +50,10 @@
   margin-top: -1px;
 }
 
+.portError {
+  color: var(--color-destructive);
+}
+
 .statusIdle {
   background: var(--color-control-fill);
   color: var(--color-secondary-label);
