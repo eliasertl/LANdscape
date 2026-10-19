@@ -19,6 +19,69 @@ services:
       - target: 8080
         published: "${PORT:-8080}"
         protocol: tcp
+      # Embed proxy (PROXY_PORT_START-PROXY_PORT_END): one port per shortcut that is shown through
+      # the proxy. The published port must equal the container port, because the browser is sent
+      # to the same number. Listed one by one because the CasaOS editor handles single ports.
+      - target: 8081
+        published: "8081"
+        protocol: tcp
+      - target: 8082
+        published: "8082"
+        protocol: tcp
+      - target: 8083
+        published: "8083"
+        protocol: tcp
+      - target: 8084
+        published: "8084"
+        protocol: tcp
+      - target: 8085
+        published: "8085"
+        protocol: tcp
+      - target: 8086
+        published: "8086"
+        protocol: tcp
+      - target: 8087
+        published: "8087"
+        protocol: tcp
+      - target: 8088
+        published: "8088"
+        protocol: tcp
+      - target: 8089
+        published: "8089"
+        protocol: tcp
+      - target: 8090
+        published: "8090"
+        protocol: tcp
+      - target: 8091
+        published: "8091"
+        protocol: tcp
+      - target: 8092
+        published: "8092"
+        protocol: tcp
+      - target: 8093
+        published: "8093"
+        protocol: tcp
+      - target: 8094
+        published: "8094"
+        protocol: tcp
+      - target: 8095
+        published: "8095"
+        protocol: tcp
+      - target: 8096
+        published: "8096"
+        protocol: tcp
+      - target: 8097
+        published: "8097"
+        protocol: tcp
+      - target: 8098
+        published: "8098"
+        protocol: tcp
+      - target: 8099
+        published: "8099"
+        protocol: tcp
+      - target: 8100
+        published: "8100"
+        protocol: tcp
     environment:
       # --- required -------------------------------------------------------
       LOGIN_USERNAME: ${LOGIN_USERNAME:-admin}
@@ -42,6 +105,9 @@ services:
       PGID: ${PGID:-1000}
       # Set to "true" only when LANdscape sits behind a reverse proxy that sets X-Forwarded-For.
       TRUST_PROXY: ${TRUST_PROXY:-false}
+      # Embed proxy port range. If you change it, change the published ports above to match.
+      PROXY_PORT_START: "8081"
+      PROXY_PORT_END: "8100"
       LOG_LEVEL: ${LOG_LEVEL:-info}
     volumes:
       # Persistent data: SQLite database, uploaded icons/wallpapers, SSH key, session secret.
@@ -138,3 +204,63 @@ x-casaos:
     - container: "8080"
       description:
         en_us: Web UI.
+    - container: "8081"
+      description:
+        en_us: Embed proxy port 1 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8082"
+      description:
+        en_us: Embed proxy port 2 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8083"
+      description:
+        en_us: Embed proxy port 3 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8084"
+      description:
+        en_us: Embed proxy port 4 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8085"
+      description:
+        en_us: Embed proxy port 5 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8086"
+      description:
+        en_us: Embed proxy port 6 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8087"
+      description:
+        en_us: Embed proxy port 7 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8088"
+      description:
+        en_us: Embed proxy port 8 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8089"
+      description:
+        en_us: Embed proxy port 9 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8090"
+      description:
+        en_us: Embed proxy port 10 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8091"
+      description:
+        en_us: Embed proxy port 11 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8092"
+      description:
+        en_us: Embed proxy port 12 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8093"
+      description:
+        en_us: Embed proxy port 13 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8094"
+      description:
+        en_us: Embed proxy port 14 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8095"
+      description:
+        en_us: Embed proxy port 15 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8096"
+      description:
+        en_us: Embed proxy port 16 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8097"
+      description:
+        en_us: Embed proxy port 17 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8098"
+      description:
+        en_us: Embed proxy port 18 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8099"
+      description:
+        en_us: Embed proxy port 19 of 20 (shortcuts shown through the LANdscape proxy).
+    - container: "8100"
+      description:
+        en_us: Embed proxy port 20 of 20 (shortcuts shown through the LANdscape proxy).

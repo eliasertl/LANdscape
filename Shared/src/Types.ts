@@ -4,8 +4,13 @@ export type Theme = 'light' | 'dark' | 'system';
 
 export type IconMode = 'favicon' | 'upload';
 export type Embeddable = 'yes' | 'no' | 'unknown';
-/** auto = follow the embed check; embed = try anyway; newtab = always open in a new tab. */
-export type OpenMode = 'auto' | 'embed' | 'newtab';
+/**
+ * auto = follow the embed check (blocked sites go through the proxy); embed = direct iframe even if
+ * the check says no; proxy = always through the LANdscape embed proxy; newtab = always open in a new tab.
+ */
+export type OpenMode = 'auto' | 'embed' | 'proxy' | 'newtab';
+/** Whether windows opened through the embed proxy show a small badge next to the title. */
+export type ProxyIndicator = 'badge' | 'none';
 
 export interface Shortcut {
   id: string;
@@ -20,6 +25,8 @@ export interface Shortcut {
   embedCheckedAt: string | null;
   embedReason: string | null;
   openMode: OpenMode;
+  /** Embed proxy port assigned to this shortcut, or null when it does not use the proxy. */
+  proxyPort: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -58,6 +65,7 @@ export interface Settings {
   theme: Theme;
   wallpaper: WallpaperChoice;
   enabledApps: Record<AppId, boolean>;
+  proxyIndicator: ProxyIndicator;
 }
 
 export interface WallpaperInfo {
@@ -89,12 +97,37 @@ export interface SystemStatus {
   hostRoot: IntegrationStatus;
 }
 
+export interface ProxyRange {
+  start: number;
+  end: number;
+}
+
+export interface ProxyPortStatus {
+  port: number;
+  shortcutId: string;
+  name: string;
+  /** Origin the port forwards to. */
+  target: string;
+  listening: boolean;
+  /** Why the listener is not running, if it failed. */
+  error: string | null;
+}
+
+export interface ProxyOverview extends ProxyRange {
+  total: number;
+  used: number;
+  ports: ProxyPortStatus[];
+  /** Shortcuts that would use the proxy but got no port because the range is full. */
+  waiting: { shortcutId: string; name: string }[];
+}
+
 export interface DesktopBootstrap {
   shortcuts: Shortcut[];
   widgets: Widget[];
   settings: Settings;
   windowMemory: WindowMemory;
   integrations: { ssh: boolean; docker: boolean; hostProc: boolean; hostSys: boolean };
+  proxy: ProxyRange;
   version: string;
 }
 

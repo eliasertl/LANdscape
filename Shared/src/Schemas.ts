@@ -24,17 +24,24 @@ export const loginSchema = z.object({
   password: z.string().min(1).max(1024),
 });
 
-export const shortcutCreateSchema = z.object({
+const shortcutFields = {
   name: z.string().trim().min(1, 'Name is required').max(SHORTCUT_NAME_MAX),
   url: httpUrlSchema,
-  iconMode: z.enum(['favicon', 'upload']).default('favicon'),
+  iconMode: z.enum(['favicon', 'upload']),
   iconFile: z.string().max(128).nullable().optional(),
-  openMode: z.enum(['auto', 'embed', 'newtab']).default('auto'),
+  openMode: z.enum(['auto', 'embed', 'proxy', 'newtab']),
   x: coordinate.optional(),
   y: coordinate.optional(),
+};
+
+export const shortcutCreateSchema = z.object({
+  ...shortcutFields,
+  iconMode: shortcutFields.iconMode.default('favicon'),
+  openMode: shortcutFields.openMode.default('auto'),
 });
 
-export const shortcutUpdateSchema = shortcutCreateSchema.partial();
+/** No defaults here: a partial update must never reset fields it does not mention. */
+export const shortcutUpdateSchema = z.object(shortcutFields).partial();
 
 export const shortcutPositionsSchema = z.object({
   positions: z.array(z.object({ id: z.string().min(1).max(64), x: coordinate, y: coordinate })).max(500),
@@ -86,6 +93,7 @@ export const settingsUpdateSchema = z.object({
     })
     .optional(),
   enabledApps: enabledAppsSchema.partial().optional(),
+  proxyIndicator: z.enum(['badge', 'none']).optional(),
 });
 
 export const metricsClientMessageSchema = z.discriminatedUnion('type', [

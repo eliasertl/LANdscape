@@ -7,6 +7,7 @@ import {
   cellToPx,
   findFirstFree,
   pxToCell,
+  proxyPortsFullMessage,
   WALLPAPER_UPLOAD_MAX_BYTES,
   appKeySchema,
   embedCheckSchema,
@@ -22,7 +23,7 @@ import {
   type Widget,
 } from '@landscape/shared';
 import type { ServerContext } from '../Context';
-import { badRequest, notFound, parseOrThrow, tooLarge } from '../Http/Errors';
+import { badRequest, conflict, notFound, parseOrThrow, tooLarge } from '../Http/Errors';
 import { expectedOrigin } from '../Http/RequestUtils';
 import { checkEmbeddable } from './EmbedCheck';
 import { IconStore } from './IconStore';
@@ -51,6 +52,7 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
         hostProc: existsSync(`${ctx.config.hostProc}/stat`),
         hostSys: existsSync(`${ctx.config.hostSys}/class`),
       },
+      proxy: ctx.proxy.range,
       version: ctx.config.version,
     };
     return bootstrap;
@@ -70,6 +72,9 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
     const position =
       input.x !== undefined && input.y !== undefined ? { x: input.x, y: input.y } : freeSlot(ctx.repos.shortcuts.list(), ctx.repos.widgets.list());
     const check = await checkEmbeddable(input.url, expectedOrigin(request));
+    if (!ctx.proxy.hasRoomFor({ id: '', openMode: input.openMode, embeddable: check.status, proxyPort: null, createdAt: new Date().toISOString() })) {
+      throw conflict(proxyPortsFullMessage(ctx.proxy.total));
+    }
     const created = ctx.repos.shortcuts.create({
       name: input.name,
       url: input.url,
@@ -81,13 +86,13 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
       embedReason: check.reason,
       openMode: input.openMode,
     });
-    let result: Shortcut = created;
+    ctx.proxy.reconcile();
     if (created.iconMode === 'favicon') {
       const file = await icons.fetchFavicon(created.id, created.url, check.html, check.finalUrl).catch(() => null);
-      result = ctx.repos.shortcuts.update(created.id, { iconFile: file }) ?? created;
+      ctx.repos.shortcuts.update(created.id, { iconFile: file });
     }
     void reply.status(201);
-    return result;
+    return ctx.repos.shortcuts.find(created.id) ?? created;
   });
 
   app.patch('/api/shortcuts/:id', async (request) => {
@@ -108,6 +113,17 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
       finalUrl = check.finalUrl;
     }
 
+    // A new target origin means a new proxy assignment: the old cookies belong to the old service.
+    const originChanged = urlChanged && new URL(input.url as string).origin !== new URL(existing.url).origin;
+    const next = {
+      id,
+      openMode: input.openMode ?? existing.openMode,
+      embeddable: embed.embeddable ?? existing.embeddable,
+      proxyPort: originChanged ? null : existing.proxyPort,
+      createdAt: existing.createdAt,
+    };
+    if (!ctx.proxy.hasRoomFor(next)) throw conflict(proxyPortsFullMessage(ctx.proxy.total));
+
     let iconFile: string | null | undefined = undefined;
     const nextMode = input.iconMode ?? existing.iconMode;
     if (nextMode === 'upload') {
@@ -121,7 +137,8 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
       iconFile = await icons.fetchFavicon(existing.id, input.url ?? existing.url, html, finalUrl).catch(() => null);
     }
 
-    const updated = ctx.repos.shortcuts.update(id, {
+    if (originChanged) ctx.proxy.release(id);
+    ctx.repos.shortcuts.update(id, {
       name: input.name,
       url: input.url,
       iconMode: input.iconMode,
@@ -131,19 +148,23 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
       y: input.y,
       ...embed,
     });
-    return updated;
+    ctx.proxy.reconcile();
+    return ctx.repos.shortcuts.find(id);
   });
 
   app.post('/api/shortcuts/:id/recheck', async (request) => {
     const { id } = parseOrThrow(idParams, request.params);
     const existing = ctx.repos.shortcuts.find(id);
     if (!existing) throw notFound('Shortcut not found');
+    // Always the direct result, also for proxied shortcuts: it explains why the proxy is used.
     const check = await checkEmbeddable(existing.url, expectedOrigin(request));
-    return ctx.repos.shortcuts.update(id, {
+    ctx.repos.shortcuts.update(id, {
       embeddable: check.status,
       embedReason: check.reason,
       embedCheckedAt: new Date().toISOString(),
     });
+    ctx.proxy.reconcile();
+    return ctx.repos.shortcuts.find(id);
   });
 
   app.post('/api/shortcuts/:id/refresh-icon', async (request) => {
@@ -169,6 +190,7 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
     icons.deleteFaviconsFor(existing.id);
     ctx.repos.shortcuts.delete(id);
     ctx.repos.windowMemory.delete(`shortcut:${id}`);
+    ctx.proxy.reconcile();
     return { ok: true };
   });
 

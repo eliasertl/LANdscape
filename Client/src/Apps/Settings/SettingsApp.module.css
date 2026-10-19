@@ -38,7 +38,8 @@
   background: var(--color-control-fill);
 }
 
-.navActive {
+.navActive,
+.navActive:hover {
   background: var(--color-accent);
   color: var(--color-on-accent);
 }
@@ -88,6 +89,24 @@
   font-size: 15px;
   line-height: 20px;
   font-weight: 600;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.sectionCount {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-secondary-label);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .group {

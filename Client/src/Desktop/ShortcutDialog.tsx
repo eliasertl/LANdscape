@@ -1,9 +1,20 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ArrowsClockwise, CheckCircle, Question, UploadSimple, WarningCircle } from '@phosphor-icons/react';
-import { ICON_CELLS, ICON_UPLOAD_MAX_BYTES, cellToPx, findFirstFree, httpUrlSchema, type EmbedCheckResult, type IconMode, type OpenMode } from '@landscape/shared';
+import {
+  ICON_CELLS,
+  ICON_UPLOAD_MAX_BYTES,
+  cellToPx,
+  findFirstFree,
+  httpUrlSchema,
+  proxyPortsFullMessage,
+  shortcutWantsProxy,
+  type EmbedCheckResult,
+  type IconMode,
+  type OpenMode,
+} from '@landscape/shared';
 import { occupiedCells, viewportBounds } from './DesktopGrid';
 import { api, errorMessage } from '../Api/Http';
-import { useDesktopStore, shortcutIconUrl } from '../Store/DesktopStore';
+import { useDesktopStore, shortcutIconUrl, proxyTotal } from '../Store/DesktopStore';
 import { useUiStore, type ShortcutDialogState } from '../Store/UiStore';
 import { Dialog } from '../Components/Dialog';
 import { Button } from '../Components/Button';
@@ -16,11 +27,28 @@ import styles from './ShortcutDialog.module.css';
 
 type CheckState = { status: 'idle' } | { status: 'checking' } | { status: 'done'; result: EmbedCheckResult };
 
+const OPEN_MODE_HELP: Record<OpenMode, string> = {
+  auto: 'Opens in a window. Sites that block embedding are shown through the LANdscape proxy.',
+  embed: 'Try embedding anyway: always loads the site directly, even if the check says it blocks embedding.',
+  proxy: 'Always shows the site through the LANdscape proxy on its own port, without its framing restrictions.',
+  newtab: 'Never embeds; double-click opens a new browser tab.',
+};
+
+function sameOrigin(a: string, b: string): boolean {
+  try {
+    return new URL(a).origin === new URL(b).origin;
+  } catch {
+    return false;
+  }
+}
+
 export function ShortcutDialog({ state }: { state: NonNullable<ShortcutDialogState> }) {
   const close = useUiStore((s) => s.openShortcutDialog);
   const createShortcut = useDesktopStore((s) => s.createShortcut);
   const updateShortcut = useDesktopStore((s) => s.updateShortcut);
+  const total = useDesktopStore((s) => proxyTotal(s.proxy));
   const editing = state.mode === 'edit' ? state.shortcut : null;
+  const portsUsedByOthers = useDesktopStore((s) => s.shortcuts.filter((x) => x.proxyPort !== null && x.id !== editing?.id).length);
 
   const [name, setName] = useState(editing?.name ?? '');
   const [url, setUrl] = useState(editing?.url ?? '');
@@ -127,6 +155,18 @@ export function ShortcutDialog({ state }: { state: NonNullable<ShortcutDialogSta
   const title = editing ? 'Edit Shortcut' : 'Add new Shortcut';
   const checkedUrlDiffers = editing !== null && normalisedUrl(url) !== editing.url;
 
+  // Proxy port outlook for the current choice, mirroring the server's assignment rules.
+  const embeddable = check.status === 'done' ? check.result.status : 'unknown';
+  const needsProxy = shortcutWantsProxy({ openMode, embeddable });
+  const keptPort = editing?.proxyPort != null && sameOrigin(normalisedUrl(url), editing.url) ? editing.proxyPort : null;
+  const freePorts = total - portsUsedByOthers;
+  const proxyFull = needsProxy && keptPort === null && freePorts <= 0;
+  let portNote: { text: string; error: boolean } | null = null;
+  if (needsProxy && keptPort !== null) portNote = { text: `Shown through proxy port :${keptPort}.`, error: false };
+  else if (proxyFull && openMode === 'proxy') portNote = { text: proxyPortsFullMessage(total), error: true };
+  else if (proxyFull) portNote = { text: `${proxyPortsFullMessage(total)} Until then it offers a new tab.`, error: false };
+  else if (needsProxy) portNote = { text: `Gets a proxy port when saved (${freePorts} of ${total} free).`, error: false };
+
   return (
     <Dialog
       title={title}
@@ -139,7 +179,13 @@ export function ShortcutDialog({ state }: { state: NonNullable<ShortcutDialogSta
           <Button onClick={() => close(null)} disabled={saving}>
             Cancel
           </Button>
-          <Button variant="primary" type="submit" form="shortcut-form" loading={saving} disabled={!name.trim() || !url.trim() || uploading}>
+          <Button
+            variant="primary"
+            type="submit"
+            form="shortcut-form"
+            loading={saving}
+            disabled={!name.trim() || !url.trim() || uploading || (proxyFull && openMode === 'proxy')}
+          >
             {editing ? 'Save' : 'Add Shortcut'}
           </Button>
         </>
@@ -177,7 +223,7 @@ export function ShortcutDialog({ state }: { state: NonNullable<ShortcutDialogSta
           </div>
         </div>
 
-        <EmbedStatus check={check} onRecheck={() => void runCheck(url)} />
+        <EmbedStatus check={check} openMode={openMode} onRecheck={() => void runCheck(url)} />
 
         <div className={styles.section}>
           <span className={styles.sectionLabel}>Icon</span>
@@ -220,23 +266,32 @@ export function ShortcutDialog({ state }: { state: NonNullable<ShortcutDialogSta
             value={openMode}
             onChange={(value) => setOpenMode(value)}
             options={[
-              { value: 'auto', label: 'Automatic' },
-              { value: 'embed', label: 'Try embedding anyway' },
-              { value: 'newtab', label: 'Always new tab' },
+              { value: 'auto', label: 'Auto' },
+              { value: 'embed', label: 'Direct' },
+              { value: 'proxy', label: 'Via proxy' },
+              { value: 'newtab', label: 'New tab' },
             ]}
           />
-          <span className="text-footnote text-secondary">
-            {openMode === 'auto' && 'Opens in a window when the site allows embedding, otherwise offers a new tab.'}
-            {openMode === 'embed' && 'Always tries the iframe, even if the check says the site blocks it.'}
-            {openMode === 'newtab' && 'Never embeds; double-click opens a new browser tab.'}
-          </span>
+          <span className="text-footnote text-secondary">{OPEN_MODE_HELP[openMode]}</span>
+          {portNote && (
+            <span className={`text-footnote ${portNote.error ? styles.portError : 'text-secondary'}`} role={portNote.error ? 'alert' : undefined} data-proxy-note>
+              {portNote.text}
+            </span>
+          )}
         </div>
       </form>
     </Dialog>
   );
 }
 
-function EmbedStatus({ check, onRecheck }: { check: CheckState; onRecheck: () => void }) {
+const BLOCKED_HEADLINE: Record<OpenMode, string> = {
+  auto: 'Blocks embedding — will open through the LANdscape proxy',
+  proxy: 'Blocks embedding — the LANdscape proxy removes the restriction',
+  embed: 'Blocks embedding — a direct window will probably stay empty',
+  newtab: 'Blocks embedding',
+};
+
+function EmbedStatus({ check, openMode, onRecheck }: { check: CheckState; openMode: OpenMode; onRecheck: () => void }) {
   if (check.status === 'idle') {
     return (
       <div className={`${styles.status} ${styles.statusIdle}`}>
@@ -256,7 +311,7 @@ function EmbedStatus({ check, onRecheck }: { check: CheckState; onRecheck: () =>
   const { result } = check;
   const Icon = result.status === 'yes' ? CheckCircle : result.status === 'no' ? WarningCircle : Question;
   const cls = result.status === 'yes' ? styles.statusOk : result.status === 'no' ? styles.statusBlocked : styles.statusUnknown;
-  const headline = result.status === 'yes' ? 'Can be embedded' : result.status === 'no' ? "Can't be embedded — will offer “Open in new tab”" : 'Could not be checked';
+  const headline = result.status === 'yes' ? 'Can be embedded' : result.status === 'no' ? BLOCKED_HEADLINE[openMode] : 'Could not be checked';
   return (
     <div className={`${styles.status} ${cls}`}>
       <Icon weight="fill" />

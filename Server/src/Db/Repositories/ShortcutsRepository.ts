@@ -14,6 +14,8 @@ interface ShortcutRow extends Row {
   embed_checked_at: string | null;
   embed_reason: string | null;
   open_mode: string;
+  proxy_port: number | null;
+  proxy_tag: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -31,6 +33,7 @@ function toShortcut(row: ShortcutRow): Shortcut {
     embedCheckedAt: row.embed_checked_at,
     embedReason: row.embed_reason,
     openMode: row.open_mode as OpenMode,
+    proxyPort: row.proxy_port === null ? null : Number(row.proxy_port),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -49,6 +52,15 @@ export interface ShortcutInsert {
 }
 
 export type ShortcutPatch = Partial<ShortcutInsert & { embedCheckedAt: string | null }>;
+
+/** Server-only view of a proxy assignment (the cookie tag is never sent to the client). */
+export interface ProxyAssignmentRow {
+  id: string;
+  name: string;
+  url: string;
+  port: number;
+  tag: string;
+}
 
 export class ShortcutsRepository {
   constructor(private readonly db: Database) {}
@@ -117,6 +129,17 @@ export class ShortcutsRepository {
       id,
     );
     return this.find(id);
+  }
+
+  /** Sets or clears a shortcut's proxy port and cookie tag without touching updated_at. */
+  setProxy(id: string, port: number | null, tag: string | null): void {
+    this.db.run('UPDATE shortcuts SET proxy_port = ?, proxy_tag = ? WHERE id = ?', port, tag, id);
+  }
+
+  proxyAssignments(): ProxyAssignmentRow[] {
+    return this.db
+      .all<ShortcutRow>('SELECT * FROM shortcuts WHERE proxy_port IS NOT NULL ORDER BY proxy_port')
+      .map((row) => ({ id: row.id, name: row.name, url: row.url, port: Number(row.proxy_port), tag: row.proxy_tag ?? '' }));
   }
 
   updatePositions(positions: { id: string; x: number; y: number }[]): void {

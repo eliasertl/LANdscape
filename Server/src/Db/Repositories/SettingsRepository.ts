@@ -1,4 +1,4 @@
-import { APP_IDS, type AppId, type Settings, type Theme, type WallpaperChoice } from '@landscape/shared';
+import { APP_IDS, type AppId, type ProxyIndicator, type Settings, type Theme, type WallpaperChoice } from '@landscape/shared';
 import type { Database } from '../Database';
 
 export const DEFAULT_WALLPAPER: WallpaperChoice = { kind: 'bundled', file: 'aurora.webp' };
@@ -32,12 +32,19 @@ export class SettingsRepository {
     const theme = this.getRaw<Theme>('theme') ?? 'system';
     const wallpaper = this.getRaw<WallpaperChoice>('wallpaper') ?? DEFAULT_WALLPAPER;
     const enabledApps = { ...defaultEnabledApps(), ...(this.getRaw<Partial<Record<AppId, boolean>>>('enabledApps') ?? {}) };
-    return { theme, wallpaper, enabledApps };
+    const proxyIndicator = this.getRaw<ProxyIndicator>('proxyIndicator') === 'none' ? 'none' : 'badge';
+    return { theme, wallpaper, enabledApps, proxyIndicator };
   }
 
-  update(patch: { theme?: Theme; wallpaper?: WallpaperChoice; enabledApps?: Partial<Record<AppId, boolean>> }): Settings {
+  update(patch: {
+    theme?: Theme;
+    wallpaper?: WallpaperChoice;
+    enabledApps?: Partial<Record<AppId, boolean>>;
+    proxyIndicator?: ProxyIndicator;
+  }): Settings {
     this.db.transaction(() => {
       if (patch.theme) this.setRaw('theme', patch.theme);
+      if (patch.proxyIndicator) this.setRaw('proxyIndicator', patch.proxyIndicator);
       if (patch.wallpaper) this.setRaw('wallpaper', patch.wallpaper);
       if (patch.enabledApps) {
         const current = this.get().enabledApps;

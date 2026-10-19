@@ -5,6 +5,7 @@ import { useUiStore } from '../Store/UiStore';
 import { PlaceholderIcon } from './PlaceholderIcon';
 import { shortcutMenuItems } from './DesktopContextMenu';
 import { openShortcut } from './Launch';
+import { opensOutsideWindow } from '../Windows/ShortcutFrame';
 import { useGridDrag } from './UseGridDrag';
 import styles from './ShortcutIcon.module.css';
 
@@ -53,7 +54,7 @@ export const ShortcutIcon = memo(function ShortcutIcon({ shortcut }: { shortcut:
     >
       <span className={styles.image}>
         {iconUrl ? <img src={iconUrl} alt="" draggable={false} /> : <PlaceholderIcon name={shortcut.name} size={56} />}
-        {shortcut.embeddable === 'no' && shortcut.openMode !== 'embed' && <span className={styles.badge} title="Opens in a new tab" />}
+        {opensOutsideWindow(shortcut) && <span className={styles.badge} title="Opens in a new tab" />}
       </span>
       <span className={styles.label}>{shortcut.name}</span>
     </button>

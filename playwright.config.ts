@@ -7,6 +7,8 @@ import { join } from 'node:path';
 // directory and well-known test credentials (password: "landscape-test").
 const dataDir = process.env.E2E_DATA_DIR ?? mkdtempSync(join(tmpdir(), 'landscape-e2e-'));
 const port = Number(process.env.E2E_PORT ?? 8091);
+// Embed proxy ports for the E2E server (the default 8081-8100 would contain the server's own port).
+const E2E_PROXY_PORTS = { start: port + 10, end: port + 12 };
 const passwordHash = '$2b$10$8XiDH4Dqh6zcEsZiDF9AxusXmJhj3GZ.W7aitTZVk9zLyEV97/v3e';
 
 export default defineConfig({
@@ -37,6 +39,8 @@ export default defineConfig({
       LOGIN_PASSWORD_HASH: passwordHash,
       SESSION_SECRET: 'e2e-session-secret-not-for-production-use',
       LOG_LEVEL: 'warn',
+      PROXY_PORT_START: String(E2E_PROXY_PORTS.start),
+      PROXY_PORT_END: String(E2E_PROXY_PORTS.end),
     },
   },
 });

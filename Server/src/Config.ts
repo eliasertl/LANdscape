@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
+import { PROXY_PORT_END_DEFAULT, PROXY_PORT_START_DEFAULT } from '@landscape/shared';
 
 export interface Config {
   port: number;
@@ -21,6 +22,8 @@ export interface Config {
   /** Optional read-only mount of the host root, used for disk usage via statfs. */
   hostRoot: string | null;
   dockerSocket: string;
+  /** Inclusive port range for the embed proxy; one port per proxied shortcut. */
+  proxyPorts: { start: number; end: number };
   trustProxy: boolean;
   logLevel: string;
   /** Directory containing the built client (index.html, assets, wallpapers). */
@@ -62,6 +65,24 @@ function envBool(name: string, fallback: boolean): boolean {
   const raw = env(name);
   if (raw === undefined) return fallback;
   return ['1', 'true', 'yes', 'on'].includes(raw.toLowerCase());
+}
+
+/** Upper bound for the proxy range: every port is published by the container, so keep it reasonable. */
+export const PROXY_PORTS_MAX = 500;
+
+/** Validates the embed proxy port range against the main port. Throws ConfigError with an actionable message. */
+export function validateProxyPorts(range: { start: number; end: number }, mainPort: number): void {
+  const { start, end } = range;
+  if (start < 1024 || end > 65535) {
+    throw new ConfigError(`PROXY_PORT_START/END must be between 1024 and 65535 (got ${start}–${end}); the server does not run as root.`);
+  }
+  if (start > end) throw new ConfigError(`PROXY_PORT_START (${start}) must not be greater than PROXY_PORT_END (${end}).`);
+  if (end - start + 1 > PROXY_PORTS_MAX) {
+    throw new ConfigError(`The proxy port range ${start}–${end} has ${end - start + 1} ports; at most ${PROXY_PORTS_MAX} are allowed.`);
+  }
+  if (mainPort >= start && mainPort <= end) {
+    throw new ConfigError(`PORT (${mainPort}) lies inside the proxy port range ${start}–${end}. Move one of them.`);
+  }
 }
 
 /** Looks like a bcrypt hash ($2a$, $2b$ or $2y$, cost, 53 chars of salt+hash). */
@@ -119,6 +140,7 @@ export function loadConfig(overrides: Partial<Config> = {}): Config {
     hostSys: env('HOST_SYS', '/host/sys') as string,
     hostRoot: env('HOST_ROOT', '/host/root') ?? null,
     dockerSocket: env('DOCKER_SOCKET', '/var/run/docker.sock') as string,
+    proxyPorts: { start: envInt('PROXY_PORT_START', PROXY_PORT_START_DEFAULT), end: envInt('PROXY_PORT_END', PROXY_PORT_END_DEFAULT) },
     trustProxy: envBool('TRUST_PROXY', false),
     logLevel: env('LOG_LEVEL', 'info') as string,
     clientDir: env('CLIENT_DIR', defaultClientDir) as string,
@@ -126,6 +148,7 @@ export function loadConfig(overrides: Partial<Config> = {}): Config {
     ...overrides,
   };
 
+  validateProxyPorts(config.proxyPorts, config.port);
   return config;
 }
 
@@ -142,6 +165,7 @@ export function redactConfig(config: Config): Record<string, unknown> {
     hostSys: config.hostSys,
     hostRoot: config.hostRoot,
     dockerSocket: config.dockerSocket,
+    proxyPorts: `${config.proxyPorts.start}-${config.proxyPorts.end}`,
     trustProxy: config.trustProxy,
     clientDir: config.clientDir,
     version: config.version,

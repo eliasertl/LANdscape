@@ -30,6 +30,7 @@ Server/src/             Fastify server
   Docker/               dockerode client, container routes, log streams
   Logs/                 /ws/logs (docker | journalctl | file)
   System/               integration status
+  Proxy/                embed proxy: port assignments, per-port listeners, pure header/cookie rewriting
 Client/src/             React + Vite app
   Design/               tokens (CSS custom properties), typography, springs, theme
   Components/           small reusable controls (Button, Menu, Dialog, ...)

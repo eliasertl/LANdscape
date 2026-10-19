@@ -8,6 +8,7 @@ import type { MetricsHub } from './Metrics/Hub';
 import type { DockerClient } from './Docker/Client';
 import type { SshPool } from './Ssh/Connection';
 import type { SftpService } from './Ssh/Sftp';
+import type { ProxyService } from './Proxy/ProxyService';
 
 /** Everything route modules need, passed explicitly instead of via decorators. */
 export interface ServerContext {
@@ -20,5 +21,6 @@ export interface ServerContext {
   docker: DockerClient;
   ssh: SshPool;
   sftp: SftpService;
+  proxy: ProxyService;
   log: FastifyBaseLogger;
 }

@@ -34,6 +34,7 @@ async function main(): Promise<void> {
 
   await built.app.listen({ port: config.port, host: config.host });
   built.app.log.info(`LANdscape ${config.version} listening on http://${config.host}:${config.port}`);
+  built.ctx.proxy.start();
 }
 
 main().catch((error: unknown) => {

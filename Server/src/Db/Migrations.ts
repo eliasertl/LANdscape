@@ -1,7 +1,7 @@
 import type { Database } from './Database';
 
 /** Ordered migrations. Each entry runs once; the index + 1 becomes the user_version. */
-const migrations: string[] = [
+export const MIGRATIONS: string[] = [
   `
   CREATE TABLE sessions (
     id TEXT PRIMARY KEY,
@@ -52,16 +52,24 @@ const migrations: string[] = [
     value TEXT NOT NULL
   );
   `,
+  // Embed proxy: the port a shortcut is served on and a random tag that namespaces its cookies.
+  // Ports for existing blocked "auto" shortcuts are assigned at startup by Proxy/ProxyService.ts,
+  // because the range comes from the configuration.
+  `
+  ALTER TABLE shortcuts ADD COLUMN proxy_port INTEGER;
+  ALTER TABLE shortcuts ADD COLUMN proxy_tag TEXT;
+  CREATE UNIQUE INDEX shortcuts_proxy_port ON shortcuts(proxy_port) WHERE proxy_port IS NOT NULL;
+  `,
 ];
 
 export function runMigrations(db: Database): void {
   const current = db.userVersion;
-  for (let i = current; i < migrations.length; i += 1) {
+  for (let i = current; i < MIGRATIONS.length; i += 1) {
     db.transaction(() => {
-      db.exec(migrations[i] as string);
+      db.exec(MIGRATIONS[i] as string);
       db.userVersion = i + 1;
     });
   }
 }
 
-export const SCHEMA_VERSION = migrations.length;
+export const SCHEMA_VERSION = MIGRATIONS.length;

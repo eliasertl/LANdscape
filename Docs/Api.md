@@ -15,11 +15,11 @@ All routes except the ones marked *public* require a valid session cookie. State
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/api/desktop` | bootstrap: shortcuts, widgets, settings, windowMemory, integrations, version |
-| GET/POST | `/api/shortcuts` | create runs the embed check and fetches the favicon |
-| PATCH/DELETE | `/api/shortcuts/:id` | URL changes re-run the embed check |
+| GET | `/api/desktop` | bootstrap: shortcuts, widgets, settings, windowMemory, integrations, proxy (`{ start, end }`), version |
+| GET/POST | `/api/shortcuts` | create runs the embed check and fetches the favicon. `openMode` is `auto \| embed \| proxy \| newtab`; the response carries `proxyPort` (number or null). `openMode: "proxy"` with no free port → 409 `All N proxy ports are in use — …` |
+| PATCH/DELETE | `/api/shortcuts/:id` | URL changes re-run the embed check; a new origin renews the proxy assignment. `openMode: "proxy"` with no free port → 409 |
 | POST | `/api/shortcuts/check-embed` | `{ url }` → `{ status: yes|no|unknown, reason, finalUrl, title }` |
-| POST | `/api/shortcuts/:id/recheck`, `/refresh-icon` | |
+| POST | `/api/shortcuts/:id/recheck`, `/refresh-icon` | recheck always reports the *direct* result, also for proxied shortcuts |
 | PUT | `/api/shortcuts/positions` | `{ positions: [{ id, x, y }] }` |
 | POST | `/api/uploads/icon`, `/api/uploads/wallpaper` | multipart `file`; PNG/JPEG/SVG/WebP ≤ 2 MB, PNG/JPEG/WebP ≤ 20 MB |
 | GET | `/icons/:file` | stored icons |
@@ -27,7 +27,8 @@ All routes except the ones marked *public* require a valid session cookie. State
 | GET | `/api/wallpapers`; DELETE `/api/wallpapers/:file` | |
 | POST/PATCH/DELETE | `/api/widgets[/:id]` | `{ type, x, y, settings }` |
 | PUT | `/api/window-memory/:appKey` | `{ x, y, width, height, maximized }`; appKey is `shortcut:<id>` or `app:<id>` |
-| GET/PATCH | `/api/settings` | `{ theme, wallpaper, enabledApps }` |
+| GET/PATCH | `/api/settings` | `{ theme, wallpaper, enabledApps, proxyIndicator: badge\|none }` |
+| GET | `/api/proxy` | `{ start, end, total, used, ports: [{ port, shortcutId, name, target, listening, error }], waiting: [{ shortcutId, name }] }` |
 | GET | `/api/system/status`, `/api/system/version` | integration checks (SSH probe included) |
 
 ## Docker and processes
@@ -51,6 +52,10 @@ All routes except the ones marked *public* require a valid session cookie. State
 | GET | `/api/files/raw?path=` | inline preview with the right content type (SVG gets a restrictive CSP) |
 | POST | `/api/files/upload?dir=` | multipart stream, up to 2 GB |
 | POST | `/api/files/mkdir`, `/rename`, `/delete` | `{ dir, name }`, `{ path, name }`, `{ paths }` |
+
+## Embed proxy ports
+
+Not part of the API: each port in `PROXY_PORT_START`–`PROXY_PORT_END` that is assigned to a shortcut forwards every request and WebSocket upgrade to that shortcut's origin, after checking the LANdscape session cookie (`401` HTML page otherwise). See [Security.md](Security.md#embed-proxy) for the header and cookie rewriting.
 
 ## WebSockets
 
