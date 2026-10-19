@@ -37,6 +37,8 @@ import { registerProxyRoutes } from './Proxy/ProxyRoutes';
 export interface BuiltApp {
   app: FastifyInstance;
   ctx: ServerContext;
+  /** Every registered route (method + URL pattern), for the security tests that sweep all of them. */
+  routes: { method: string; url: string }[];
   close(): Promise<void>;
 }
 
@@ -87,6 +89,11 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
 
   const secret = loadOrCreateSessionSecret(config.sessionSecret, config.dataDir);
 
+  const routes: { method: string; url: string }[] = [];
+  app.addHook('onRoute', (route) => {
+    for (const method of [route.method].flat()) routes.push({ method, url: route.url });
+  });
+
   app.setErrorHandler(errorHandler);
   await installSecurityHeaders(app);
   await app.register(cookie, { secret });
@@ -127,6 +134,7 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
   return {
     app,
     ctx,
+    routes,
     async close() {
       clearInterval(pruneTimer);
       metrics.stop();

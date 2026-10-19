@@ -55,6 +55,12 @@ export function installGuard(app: FastifyInstance, sessions: SessionService): vo
     request.sessionId = session?.id ?? null;
 
     if (PUBLIC_ROUTES.has(key) || !isProtectedPath(pathname)) {
+      // Login is public but still state-changing: pages on the embed proxy ports are the same
+      // *site* as LANdscape, and failed attempts from them would lock out the user's own IP.
+      if (request.method === 'POST' && isProtectedPath(pathname) && !hasSameOrigin(request)) {
+        done(forbidden('Cross-origin requests are not allowed'));
+        return;
+      }
       done();
       return;
     }
