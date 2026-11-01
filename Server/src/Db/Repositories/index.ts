@@ -1,6 +1,9 @@
 import { topLeftAnchor } from '@landscape/shared';
 import type { Database } from '../Database';
+import { AppsRepository } from './AppsRepository';
 import { FoldersRepository } from './FoldersRepository';
+import { NotificationsRepository } from './NotificationsRepository';
+import { MonitorTargetsRepository } from './MonitorTargetsRepository';
 import { SessionsRepository } from './SessionsRepository';
 import { SettingsRepository } from './SettingsRepository';
 import { ShortcutsRepository } from './ShortcutsRepository';
@@ -12,6 +15,9 @@ export interface Repositories {
   shortcuts: ShortcutsRepository;
   widgets: WidgetsRepository;
   folders: FoldersRepository;
+  notifications: NotificationsRepository;
+  monitorTargets: MonitorTargetsRepository;
+  apps: AppsRepository;
   windowMemory: WindowMemoryRepository;
   settings: SettingsRepository;
 }
@@ -22,6 +28,9 @@ export function createRepositories(db: Database): Repositories {
     shortcuts: new ShortcutsRepository(db),
     widgets: new WidgetsRepository(db),
     folders: new FoldersRepository(db),
+    notifications: new NotificationsRepository(db),
+    monitorTargets: new MonitorTargetsRepository(db),
+    apps: new AppsRepository(db),
     windowMemory: new WindowMemoryRepository(db),
     settings: new SettingsRepository(db),
   };
@@ -39,4 +48,4 @@ export function seedDefaults(repos: Repositories): void {
   repos.settings.setFlag('seeded', true);
 }
 
-export { FoldersRepository, SessionsRepository, SettingsRepository, ShortcutsRepository, WidgetsRepository, WindowMemoryRepository };
+export { AppsRepository, FoldersRepository, MonitorTargetsRepository, NotificationsRepository, SessionsRepository, SettingsRepository, ShortcutsRepository, WidgetsRepository, WindowMemoryRepository };

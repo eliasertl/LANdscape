@@ -16,6 +16,7 @@ interface ShortcutRow extends Row, PositionRow {
   open_mode: string;
   proxy_port: number | null;
   proxy_tag: string | null;
+  health_check: number;
   created_at: string;
   updated_at: string;
 }
@@ -34,6 +35,7 @@ function toShortcut(row: ShortcutRow): Shortcut {
     embedReason: row.embed_reason,
     openMode: row.open_mode as OpenMode,
     proxyPort: row.proxy_port === null ? null : Number(row.proxy_port),
+    healthCheck: Number(row.health_check) !== 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -49,6 +51,7 @@ export interface ShortcutInsert {
   embeddable: Embeddable;
   embedReason: string | null;
   openMode: OpenMode;
+  healthCheck?: boolean;
 }
 
 export type ShortcutPatch = Partial<ShortcutInsert & { embedCheckedAt: string | null }>;
@@ -78,8 +81,8 @@ export class ShortcutsRepository {
     const id = newId();
     const now = nowIso();
     this.db.run(
-      `INSERT INTO shortcuts (id, name, url, icon_mode, icon_file, anchor_x, anchor_y, offset_col, offset_row, folder_id, embeddable, embed_checked_at, embed_reason, open_mode, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO shortcuts (id, name, url, icon_mode, icon_file, anchor_x, anchor_y, offset_col, offset_row, folder_id, embeddable, embed_checked_at, embed_reason, open_mode, health_check, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       input.name,
       input.url,
@@ -94,6 +97,7 @@ export class ShortcutsRepository {
       input.embeddable === 'unknown' && !input.embedReason ? null : now,
       input.embedReason,
       input.openMode,
+      input.healthCheck === false ? 0 : 1,
       now,
       now,
     );
@@ -114,10 +118,11 @@ export class ShortcutsRepository {
       embedCheckedAt: patch.embedCheckedAt === undefined ? current.embedCheckedAt : patch.embedCheckedAt,
       embedReason: patch.embedReason === undefined ? current.embedReason : patch.embedReason,
       openMode: patch.openMode ?? current.openMode,
+      healthCheck: patch.healthCheck ?? current.healthCheck,
     };
     this.db.run(
       `UPDATE shortcuts SET name = ?, url = ?, icon_mode = ?, icon_file = ?, anchor_x = ?, anchor_y = ?, offset_col = ?, offset_row = ?,
-       folder_id = ?, embeddable = ?, embed_checked_at = ?, embed_reason = ?, open_mode = ?, updated_at = ? WHERE id = ?`,
+       folder_id = ?, embeddable = ?, embed_checked_at = ?, embed_reason = ?, open_mode = ?, health_check = ?, updated_at = ? WHERE id = ?`,
       next.name,
       next.url,
       next.iconMode,
@@ -131,6 +136,7 @@ export class ShortcutsRepository {
       next.embedCheckedAt,
       next.embedReason,
       next.openMode,
+      next.healthCheck ? 1 : 0,
       nowIso(),
       id,
     );

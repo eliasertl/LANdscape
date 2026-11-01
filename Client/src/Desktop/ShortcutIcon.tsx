@@ -10,6 +10,7 @@ import { useGridDrag } from './UseGridDrag';
 import { useCurrentGrid } from './DesktopGrid';
 import { toast } from '../Components/Toast';
 import { errorMessage } from '../Api/Http';
+import { useMonitorStore } from '../Store/MonitorStore';
 import styles from './ShortcutIcon.module.css';
 
 export const ShortcutIcon = memo(function ShortcutIcon({ shortcut }: { shortcut: Shortcut }) {
@@ -23,6 +24,7 @@ export const ShortcutIcon = memo(function ShortcutIcon({ shortcut }: { shortcut:
   const draggedRef = useRef(false);
   const iconUrl = shortcutIconUrl(shortcut);
   const grid = useCurrentGrid();
+  const health = useMonitorStore((s) => (shortcut.healthCheck ? (s.statuses[`shortcut:${shortcut.id}`]?.state ?? 'unknown') : null));
 
   const { onPointerDown, dragging, settling } = useGridDrag({
     itemKey: `shortcut:${shortcut.id}`,
@@ -73,6 +75,7 @@ export const ShortcutIcon = memo(function ShortcutIcon({ shortcut }: { shortcut:
       <span className={styles.image}>
         {iconUrl ? <img src={iconUrl} alt="" draggable={false} /> : <PlaceholderIcon name={shortcut.name} size={grid.iconPx} />}
         {opensOutsideWindow(shortcut) && <span className={styles.badge} title="Opens in a new tab" />}
+        {health && <span className={`${styles.health} ${styles[`health-${health}`]}`} title={health === 'up' ? 'Reachable' : health === 'down' ? 'Not reachable' : 'Not checked yet'} data-health={health} />}
       </span>
       <span className={styles.label}>{shortcut.name}</span>
     </button>

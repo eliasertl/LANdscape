@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowClockwise, ArrowsClockwise, Play, Scroll as ScrollText, Stop, X } from '@phosphor-icons/react';
+import { ArrowClockwise, ArrowsClockwise, Check, Play, Plus, Scroll as ScrollText, Stop, X } from '@phosphor-icons/react';
+import { useDesktopStore } from '../../Store/DesktopStore';
+import { useUiStore } from '../../Store/UiStore';
+import { existingShortcutFor, shortcutPrefillForContainer } from './ContainerShortcut';
 import type { ContainerInfo } from '@landscape/shared';
 import type { AppWindowProps } from '../Types';
 import { api, errorMessage } from '../../Api/Http';
@@ -28,6 +31,8 @@ export default function DockerApp({ params, phone }: AppWindowProps) {
   const [filter, setFilter] = useState('');
   const [logsFor, setLogsFor] = useState<ContainerInfo | null>(null);
   const [now, setNow] = useState(() => 0);
+  const shortcuts = useDesktopStore((s) => s.shortcuts);
+  const openShortcutDialog = useUiStore((s) => s.openShortcutDialog);
 
   const load = useCallback(async () => {
     try {
@@ -123,6 +128,8 @@ export default function DockerApp({ params, phone }: AppWindowProps) {
                     .filter((v, i, a) => a.indexOf(v) === i)
                     .join(', ');
                   const action = busy[c.id];
+                  const prefill = shortcutPrefillForContainer(c);
+                  const existing = prefill ? existingShortcutFor(c, shortcuts) : null;
                   return (
                     <tr key={c.id} className={logsFor?.id === c.id ? styles.active : ''}>
                       <td className={styles.nameCell}>
@@ -156,6 +163,16 @@ export default function DockerApp({ params, phone }: AppWindowProps) {
                           <Button size="small" icon={<ScrollText />} aria-pressed={logsFor?.id === c.id} onClick={() => setLogsFor(logsFor?.id === c.id ? null : c)} title="Live logs">
                             Logs
                           </Button>
+                          {prefill &&
+                            (existing ? (
+                              <span className={styles.exists} title={`Shortcut “${existing.name}” points at this container`} data-shortcut-exists={c.id}>
+                                <Check weight="bold" /> Shortcut exists
+                              </span>
+                            ) : (
+                              <Button size="small" icon={<Plus />} onClick={() => openShortcutDialog({ mode: 'create', prefill })} title={`Add a shortcut to ${prefill.url}`} data-add-shortcut={c.id}>
+                                Add as shortcut
+                              </Button>
+                            ))}
                         </div>
                       </td>
                     </tr>

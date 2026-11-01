@@ -85,3 +85,26 @@
   background: var(--color-accent);
   text-shadow: none;
 }
+
+/* Service health dot (monitor service) */
+.health {
+  position: absolute;
+  left: -3px;
+  bottom: -3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+.health-up {
+  background: var(--system-green);
+}
+
+.health-down {
+  background: var(--system-red);
+}
+
+.health-unknown {
+  background: var(--system-gray);
+}

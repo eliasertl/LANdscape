@@ -9,6 +9,9 @@ import { Toggle } from '../../Components/Toggle';
 import { WallpaperPicker } from '../../Desktop/WallpaperDialog';
 import { toast } from '../../Components/Toast';
 import { accentHex } from '../../Design/Accent';
+import { registries } from '../../Platform/Registries';
+import { useRegistry } from '../../Platform/Registry';
+import { openApp } from '../../Desktop/Launch';
 import { SettingRow } from './SettingRow';
 import styles from './SettingsApp.module.css';
 import wallpaperStyles from '../../Desktop/WallpaperDialog.module.css';
@@ -33,6 +36,8 @@ export default function AppearanceSection() {
   const updateDevice = useDeviceStore((s) => s.update);
   const [wallpapers, setWallpapers] = useState<WallpaperInfo[]>([]);
   const appearance = settings?.appearance;
+  const themePacks = useRegistry(registries.themes);
+  const appWallpapers = useRegistry(registries.wallpapers);
 
   useEffect(() => {
     api
@@ -99,6 +104,20 @@ export default function AppearanceSection() {
               </label>
             </div>
           </SettingRow>
+          <SettingRow label="Theme pack" detail={themePacks.length === 0 ? 'Packs come from the App Store (a theme pack recolors the desktop through the design tokens).' : 'A pack recolors the desktop through the design tokens; the accent still applies.'}>
+            {themePacks.length === 0 ? (
+              <button type="button" className="text-footnote" style={{ background: 'none', border: 0, color: 'var(--color-accent)' }} onClick={() => openApp('app-store')}>
+                Open the App Store
+              </button>
+            ) : (
+              <Select
+                aria-label="Theme pack"
+                value={appearance?.themePack ?? ''}
+                onChange={(value) => patch({ themePack: value || null })}
+                options={[{ value: '', label: 'LANdscape (built in)' }, ...themePacks.map((t) => ({ value: t.id, label: t.name }))]}
+              />
+            )}
+          </SettingRow>
           <SettingRow label="Blur" detail={`Blur of the frosted materials: ${appearance?.blur ?? 24} px. Reduced transparency in your OS turns it off.`}>
             <input
               type="range"
@@ -129,6 +148,33 @@ export default function AppearanceSection() {
       <section className={styles.section}>
         <h3 className={styles.sectionTitle}>Wallpaper</h3>
         <WallpaperPicker />
+        {appWallpapers.length > 0 && (
+          <>
+            <span className={wallpaperStyles.groupTitle}>From apps</span>
+            <div className={wallpaperStyles.grid} role="listbox" aria-label="Wallpapers from apps">
+              {appWallpapers.map((w) => {
+                const [appId, file] = w.url.replace('/apps/files/', '').split(/\/(.+)/);
+                const choice = { kind: 'app' as const, file: `${appId}:${file}` };
+                const active = settings?.wallpaper.kind === 'app' && settings.wallpaper.file === choice.file;
+                return (
+                  <div key={w.id} className={wallpaperStyles.cell}>
+                    <button type="button" role="option" aria-selected={active} className={`${wallpaperStyles.tile} ${active ? wallpaperStyles.active : ''}`} title={w.name} onClick={() => void updateSettings({ wallpaper: choice }).catch((error: unknown) => toast.error(errorMessage(error)))}>
+                      <img src={w.url} alt={w.name} loading="lazy" />
+                      {active && (
+                        <span className={wallpaperStyles.checkmark}>
+                          <Check weight="bold" />
+                        </span>
+                      )}
+                    </button>
+                    <span className={wallpaperStyles.name}>
+                      <span className="text-truncate">{w.name}</span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </section>
       <section className={styles.section}>
         <h3 className={styles.sectionTitle}>Slideshow</h3>

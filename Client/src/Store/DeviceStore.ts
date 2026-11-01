@@ -21,6 +21,8 @@ const deviceSettingsSchema = z.object({
   cursorScale: z.number().min(1).max(2).default(1),
   /** Whether the startup sound plays in this browser. */
   startupSound: z.boolean().default(true),
+  /** In-app toasts, or native browser notifications (needs a secure context and permission). */
+  notificationMode: z.enum(['html', 'native']).default('html'),
 });
 
 export type DeviceSettings = z.infer<typeof deviceSettingsSchema>;

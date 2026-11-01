@@ -98,7 +98,6 @@ export default function KeyboardSection() {
                   <div className={styles.rowText}>
                     <span className={styles.rowLabel}>{action.title}</span>
                     {clash && <span className={styles.rowHint}>Also used by {clash.map(title).join(', ')}</span>}
-                    {action.id === 'notifications.toggle' && <span className={styles.rowDetail}>Arrives with the notification center.</span>}
                   </div>
                   <div className={styles.shortcutControls}>
                     {customized && (

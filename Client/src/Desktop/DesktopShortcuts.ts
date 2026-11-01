@@ -3,6 +3,7 @@ import { registerShortcutHandler } from '../Platform/Keyboard';
 import { useWindowStore } from '../Store/WindowStore';
 import { useUiStore } from '../Store/UiStore';
 import { useSessionStore } from '../Store/SessionStore';
+import { useNotificationStore } from '../Store/NotificationStore';
 import { openApp } from './Launch';
 
 /**
@@ -50,6 +51,7 @@ export function useDesktopShortcuts(): void {
       registerShortcutHandler('desktop.show', () => windows().minimizeAll()),
       registerShortcutHandler('settings.open', () => openApp('settings')),
       registerShortcutHandler('session.lock', () => void useSessionStore.getState().lock()),
+      registerShortcutHandler('notifications.toggle', () => useNotificationStore.getState().toggle()),
     ];
     return () => unregister.forEach((fn) => fn());
   }, []);

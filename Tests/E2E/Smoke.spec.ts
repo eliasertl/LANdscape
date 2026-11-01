@@ -121,7 +121,8 @@ test.describe('desktop', () => {
     const search = page.getByRole('searchbox', { name: 'Search apps and shortcuts' });
     await expect(search).toBeFocused();
     await search.fill('sett');
-    await expect(page.getByRole('option')).toHaveCount(1);
+    // The Settings app ranks first; the "Open Settings" action also matches.
+    await expect(page.locator('[data-entry="app:settings"]')).toHaveCount(1);
     await page.keyboard.press('Enter');
     await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'About' })).toBeVisible();
@@ -136,7 +137,7 @@ test.describe('phone', () => {
     const search = page.getByRole('searchbox');
     await expect(search).toBeVisible();
     await search.fill('sett');
-    await expect(page.locator('[data-launcher-entry]')).toHaveCount(1);
+    await expect(page.locator('[data-launcher-entry="app:settings"]')).toHaveCount(1);
     await page.locator('[data-launcher-entry="app:settings"]').click();
     const win = page.getByRole('dialog', { name: 'Settings' });
     await expect(win).toBeVisible();

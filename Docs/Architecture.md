@@ -21,9 +21,11 @@ Client (Client/src)
    ├─ Desktop/     wallpaper, icons, context menus, dialogs, Overlays
    ├─ Windows/     window manager (frames, drag/resize, iframe content)
    ├─ Taskbar/ StartMenu/ Phone/
-   ├─ Apps/<Name>/ built-in apps behind Apps/Registry.ts
+   ├─ Apps/<Name>/ built-in apps behind Apps/Registry.ts; Apps/AppFrame.tsx + AppWindow.tsx host catalog apps
    └─ Widgets/<Name>/ widgets behind Widgets/Registry.ts
-Shared/src        types, zod schemas, constants, WebSocket message types
+Shared/src        types, zod schemas, constants, WebSocket message types, app manifest + permissions
+Sdk/src           the SDK for catalog apps (runtime injected into frames, types)
+Catalog/          catalog app sources, the template, built zips and index.json
 ```
 
 ## Request flow
@@ -81,6 +83,20 @@ Widgets subscribe over `/ws/metrics` with `{ metric, intervalMs }`. `Metrics/Hub
 ## SSH
 
 `Ssh/Connection.ts` pools ssh2 clients and spreads channels (shell, exec, sftp) over them so OpenSSH's `MaxSessions` limit is never hit. Host keys are trusted on first use and pinned in `DATA_DIR/ssh/known_host`. Follow commands (`journalctl -f`) run with a pty so closing the channel ends the remote process. SFTP operations run with the SSH user's permissions; path inputs are normalised to absolute POSIX paths before use.
+
+## App platform
+
+Catalog apps are frontend-only bundles that run in sandboxed frames and reach LANdscape only through the SDK broker. The full architecture and security model are in [AppPlatform.md](AppPlatform.md); how to write one in [AppSdk.md](AppSdk.md). In short: `Server/src/Apps/` installs bundles into `DATA_DIR/apps/<id>/<version>/` and builds each frame's document with everything inlined (`FrameInjector.ts`), `Client/src/Platform/AppBroker.ts` validates and permission-checks every `postMessage` call, and `Client/src/Platform/InstalledApps.ts` registers what an app contributes into the same registries the built-ins use. The App Store (`Client/src/Apps/AppStore/`) is a core app. The catalog (`Catalog/`) is built by `npm run catalog` and read live from GitHub with the image's copy as the fallback.
+
+## Notifications, monitor, actions
+
+- **Events** (`Server/src/Events/`): `EventBus` fans server events out to every `/ws/events` client (server → client only). The client's `Api/EventsSocket.ts` keeps one socket per desktop; `Store/NotificationStore.ts` and `Store/MonitorStore.ts` subscribe and re-fetch after a reconnect.
+- **Notifications** (`Server/src/Notify/`): `NotificationService` writes the `notifications` table (500 kept) and publishes. `Watchers` run server-side: the Docker event stream (`die` with a non-zero exit code, `oom`, `stop`), and disk usage and temperatures compared with the thresholds every minute (`ThresholdTracker` fires once per crossing with a 5-point hysteresis). Settings → Notifications holds the switches and thresholds; do-not-disturb only silences the pop-ups. Per device: in-app toasts or native browser notifications (`DeviceStore.notificationMode`; `nativeNotificationSupport()` explains why native is unavailable on plain `http://<LAN-IP>` and falls back).
+- **Monitor** (`Server/src/Monitor/MonitorService.ts`): targets are every shortcut with `healthCheck` on (`http`, the shortcut's URL through the SafeFetch rules: any HTTP answer below 500 is up) plus app-registered targets (`monitor_targets` table; `ping` = TCP connect, since ICMP needs raw sockets). Checks run every `settings.monitor.intervalSeconds`, keep the last 288 samples per target in memory, publish `monitor-status` on changes and notify on down/up (not on the first result). `ShortcutIcon` shows the dot, the tray's service-health item the summary, Settings → Notifications → Service health the list.
+- **Actions** (`Client/src/Platform/Actions.ts`): `{ id, title, icon, provider, params (zod), fields, run }` in `registries.actions`; `registerAction`, `runAction(id, params)`. Core actions live in `Platform/CoreActions.ts` (container start/stop/restart, add container as shortcut, open path in Files, open file in the Text Editor, toggle theme, lock, snap left/right, open Settings, notification center). The launcher is the **command palette**: it searches apps, shortcuts and actions ("`>`" lists only actions), and `StartMenu.tsx → ActionParams` asks for parameters inline (text or a pick list from `fields[].choices`). Keyboard shortcuts and apps call `runAction`; server-backed work stays in the REST API.
+- **Docker → shortcut** (`Apps/Docker/ContainerShortcut.ts`): pure helpers for the "Add as shortcut" button and the `docker.add-shortcut` action: prettified compose/container name, `http://<location.hostname>:<publicPort>/` (port picker when several), the icon from a CasaOS or common icon label (uploaded through `/api/uploads/icon`), and the "Shortcut exists" marker (a shortcut on this host with one of the container's ports).
+
+**Debugging:** `GET /api/notifications` and `GET /api/monitor` show the state; the server logs every notification ("Notification" with source and title). `landscapeDebug.registries.actions.list()` lists actions; `POST /api/monitor/check` runs the checks now.
 
 ## Lock, sessions, startup, cursor
 

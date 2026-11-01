@@ -1,6 +1,8 @@
 import type { WidgetType } from './AppIds';
 import type { Settings } from './Settings';
 import type { AnchoredPosition } from './Layout';
+import type { AppManifest } from './AppManifest';
+import type { Permission } from './Permissions';
 
 export type Theme = 'light' | 'dark' | 'system';
 
@@ -30,6 +32,8 @@ export interface Shortcut {
   openMode: OpenMode;
   /** Embed proxy port assigned to this shortcut, or null when it does not use the proxy. */
   proxyPort: number | null;
+  /** Whether the monitor service checks this shortcut's URL (health dot on the icon). */
+  healthCheck: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -70,7 +74,7 @@ export interface WindowGeometry {
 export type WindowMemory = Record<string, WindowGeometry>;
 
 export interface WallpaperChoice {
-  kind: 'bundled' | 'upload';
+  kind: 'bundled' | 'upload' | 'app';
   file: string;
 }
 
@@ -193,7 +197,80 @@ export interface ContainerInfo {
   createdAt: string;
   startedAt: string | null;
   ports: { ip: string | null; privatePort: number; publicPort: number | null; type: string }[];
+  /** Compose service name (com.docker.compose.service), if any. */
+  service: string | null;
+  /** Icon URL from a CasaOS or common icon label, if any. */
+  icon: string | null;
 }
+
+/** A catalog app on this server (Docs/AppPlatform.md). */
+export interface InstalledApp {
+  id: string;
+  version: string;
+  manifest: AppManifest;
+  /** Grants every permission (including unrestricted net:fetch); the sandbox stays. */
+  trusted: boolean;
+  granted: Permission[];
+  source: 'catalog' | 'url' | 'upload' | 'bundled';
+  installedAt: string;
+  updatedAt: string;
+}
+
+export type NotificationLevel = 'info' | 'warning' | 'error';
+
+export interface Notification {
+  id: string;
+  /** "docker", "disk", "temperature", "monitor", "test", or "app:<id>". */
+  source: string;
+  level: NotificationLevel;
+  title: string;
+  body: string;
+  createdAt: string;
+  readAt: string | null;
+  /** Source-specific payload (container id, mount point, monitor target, …). */
+  data: Record<string, unknown> | null;
+}
+
+export type MonitorKind = 'http' | 'ping';
+export type MonitorState = 'up' | 'down' | 'unknown';
+
+export interface MonitorTarget {
+  /** "shortcut:<id>" for shortcuts, "<appId>:<key>" for app-registered targets. */
+  id: string;
+  kind: MonitorKind;
+  label: string;
+  /** URL for http targets; "host:port" for ping targets. */
+  address: string;
+  /** Who owns the target: a shortcut, or an app id. */
+  owner: string;
+}
+
+export interface MonitorSample {
+  at: string;
+  up: boolean;
+  latencyMs: number | null;
+}
+
+export interface MonitorStatus {
+  target: MonitorTarget;
+  state: MonitorState;
+  checkedAt: string | null;
+  latencyMs: number | null;
+  reason: string | null;
+  /** Newest last; the service keeps the last few hours. */
+  history: MonitorSample[];
+}
+
+/** Pushed over /ws/events to every open client. */
+export type EventsServerMessage =
+  | { type: 'notification'; notification: Notification }
+  | { type: 'notifications-read'; ids: string[] | 'all' }
+  | { type: 'notifications-cleared' }
+  | { type: 'monitor-status'; status: MonitorStatus }
+  | { type: 'monitor-targets' }
+  | { type: 'settings-changed' }
+  | { type: 'apps-changed'; appId: string }
+  | { type: 'error'; message: string };
 
 export interface FileEntry {
   name: string;
