@@ -13,9 +13,10 @@ import { APP_ID_PATTERN } from './AppIds';
 
 export const themeSchema = z.enum(['light', 'dark', 'system']);
 
+/** bundled/upload files live in the client build or DATA_DIR; "app" is "<appId>:<bundle path>" of an installed app's wallpaper. */
 export const wallpaperChoiceSchema = z.object({
-  kind: z.enum(['bundled', 'upload']),
-  file: z.string().regex(/^[A-Za-z0-9._-]{1,128}$/),
+  kind: z.enum(['bundled', 'upload', 'app']),
+  file: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,200}$/).refine((v) => !v.includes('..'), 'Invalid file'),
 });
 
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Use a hex color like #ff8800');
@@ -37,6 +38,8 @@ export const appearanceSettingsSchema = z.object({
   accent: z.union([z.enum(Object.keys(ACCENT_PRESETS) as [keyof typeof ACCENT_PRESETS, ...(keyof typeof ACCENT_PRESETS)[]]), hexColor]),
   /** Blur radius of the translucent materials in px. */
   blur: z.number().int().min(0).max(40),
+  /** A theme contributed by an app ("<appId>/<themeId>"), or null for the built-in look. */
+  themePack: z.string().regex(/^[a-z0-9][a-z0-9-]{0,47}\/[a-z0-9][a-z0-9-]{0,47}$/).nullable(),
   slideshow: z.object({
     enabled: z.boolean(),
     intervalMinutes: z.number().int().min(1).max(1440),
@@ -203,6 +206,7 @@ export const DEFAULT_SETTINGS: Settings = {
   appearance: {
     accent: 'blue',
     blur: 24,
+    themePack: null,
     slideshow: { enabled: false, intervalMinutes: 30, order: 'sequence', wallpapers: [] },
     timeOfDay: { enabled: false, morning: null, day: null, evening: null, night: null },
   },

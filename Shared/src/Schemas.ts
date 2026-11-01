@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { APP_ID_PATTERN, WIDGET_MAX_INTERVAL_MS, WIDGET_MIN_INTERVAL_MS, WIDGET_TYPE_PATTERN } from './AppIds';
+import { PERMISSIONS } from './Permissions';
 import { SHORTCUT_NAME_MAX, SHORTCUT_URL_MAX } from './Constants';
 import { METRIC_NAMES } from './Metrics';
 
@@ -179,6 +180,27 @@ export const monitorTargetSchema = z.object({
   address: z.string().trim().min(1).max(2048),
   owner: z.string().regex(/^[a-z0-9][a-z0-9-]{0,47}$/),
 });
+
+export const permissionListSchema = z.array(z.enum(PERMISSIONS)).max(20);
+
+/** Install from the catalog or a URL; uploads go through multipart with the same `approve`/`trusted` fields. */
+export const appInstallSchema = z.discriminatedUnion('source', [
+  z.object({ source: z.literal('catalog'), id: z.string().regex(APP_ID_PATTERN), approve: z.union([z.literal('all'), permissionListSchema]).default([]), trusted: z.boolean().default(false) }),
+  z.object({ source: z.literal('url'), url: httpUrlSchema, approve: z.union([z.literal('all'), permissionListSchema]).default([]), trusted: z.boolean().default(false) }),
+]);
+
+export const appTrustSchema = z.object({ trusted: z.boolean().optional(), granted: permissionListSchema.optional() }).strict();
+
+export const appStorageKeySchema = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/, 'Invalid storage key');
+
+export const appFetchSchema = z.object({
+  url: httpUrlSchema,
+  method: z.enum(['GET', 'POST', 'PUT', 'DELETE']).default('GET'),
+  headers: z.record(z.string().regex(/^[A-Za-z0-9-]{1,64}$/), z.string().max(4096)).default({}),
+  body: z.string().max(1024 * 1024).optional(),
+});
+
+export const sshExecSchema = z.object({ command: z.string().min(1).max(4096), timeoutMs: z.number().int().min(1000).max(120_000).default(30_000) });
 
 export const killSignalSchema = z.object({ signal: z.enum(['TERM', 'KILL']).default('TERM') });
 
