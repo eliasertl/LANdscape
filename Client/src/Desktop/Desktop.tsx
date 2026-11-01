@@ -28,6 +28,9 @@ import { SafeModeBanner } from './SafeModeBanner';
 import { useIdleWatcher } from '../Lock/IdleWatcher';
 import { useCursor } from '../Cursor/UseCursor';
 import { AfterLoginAnimation } from '../Startup/AfterLoginAnimation';
+import { useNotificationStore } from '../Store/NotificationStore';
+import { useMonitorStore } from '../Store/MonitorStore';
+import { NotificationCenter } from '../Notifications/NotificationCenter';
 import styles from './Desktop.module.css';
 
 export function Desktop() {
@@ -41,6 +44,17 @@ export function Desktop() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Live events (notifications, monitor states) for the whole desktop.
+  useEffect(() => {
+    if (!loaded) return;
+    const disconnectNotifications = useNotificationStore.getState().connect();
+    const disconnectMonitor = useMonitorStore.getState().connect();
+    return () => {
+      disconnectNotifications();
+      disconnectMonitor();
+    };
+  }, [loaded]);
 
   if (error && !loaded) {
     return (
@@ -151,6 +165,7 @@ function DesktopShell() {
       <Taskbar />
       <StartMenu onLogout={() => void logout()} />
       <Overlays />
+      <NotificationCenter />
       <SafeModeBanner />
     </div>
   );

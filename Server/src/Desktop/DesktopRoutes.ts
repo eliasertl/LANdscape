@@ -92,8 +92,10 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
       embeddable: check.status,
       embedReason: check.reason,
       openMode: input.openMode,
+      healthCheck: input.healthCheck,
     });
     ctx.proxy.reconcile();
+    ctx.monitor.reconcile();
     if (created.iconMode === 'favicon') {
       const file = await icons.fetchFavicon(created.id, created.url, check.html, check.finalUrl).catch(() => null);
       ctx.repos.shortcuts.update(created.id, { iconFile: file });
@@ -154,9 +156,11 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
       openMode: input.openMode,
       position: input.position,
       folderId: input.folderId,
+      healthCheck: input.healthCheck,
       ...embed,
     });
     ctx.proxy.reconcile();
+    ctx.monitor.reconcile();
     return ctx.repos.shortcuts.find(id);
   });
 
@@ -236,6 +240,7 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
     ctx.repos.shortcuts.delete(id);
     ctx.repos.windowMemory.delete(`shortcut:${id}`);
     ctx.proxy.reconcile();
+    ctx.monitor.reconcile();
     return { ok: true };
   });
 
@@ -336,7 +341,10 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
     if (input.wallpaper && !wallpapers.exists(input.wallpaper.kind, input.wallpaper.file)) {
       throw badRequest('Wallpaper not found');
     }
-    return ctx.repos.settings.update(input);
+    const updated = ctx.repos.settings.update(input);
+    if (input.monitor) ctx.monitor.rescheduleIfChanged();
+    ctx.events.publish({ type: 'settings-changed' });
+    return updated;
   });
 }
 

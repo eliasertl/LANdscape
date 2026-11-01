@@ -9,6 +9,9 @@ import type { DockerClient } from './Docker/Client';
 import type { SshPool } from './Ssh/Connection';
 import type { SftpService } from './Ssh/Sftp';
 import type { ProxyService } from './Proxy/ProxyService';
+import type { EventBus } from './Events/EventBus';
+import type { NotificationService } from './Notify/NotificationService';
+import type { MonitorService } from './Monitor/MonitorService';
 
 /** Everything route modules need, passed explicitly instead of via decorators. */
 export interface ServerContext {
@@ -22,5 +25,8 @@ export interface ServerContext {
   ssh: SshPool;
   sftp: SftpService;
   proxy: ProxyService;
+  events: EventBus;
+  notifications: NotificationService;
+  monitor: MonitorService;
   log: FastifyBaseLogger;
 }

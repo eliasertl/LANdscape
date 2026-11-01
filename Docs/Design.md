@@ -49,6 +49,13 @@ Sizes S/M/L are 44/56/68 px; icons are 12 px smaller than the bar. Vertical bars
 
 Title bars have macOS traffic lights on the left by default, or Windows-style minimize / maximize / close buttons (46 px wide, close turns red on hover) on the right with the title left-aligned. Snapping shows a rounded, accent-tinted translucent rectangle with a 2 px accent border where the window will land.
 
+## Notifications and the command palette
+
+- **Toasts** stay as they are (top right, frosted, auto-dismiss). The **bell** in the tray fills when something is unread and carries a red count badge; **do not disturb** shows a crossed bell.
+- The **notification center** is a 400 px frosted panel above the tray (it follows the taskbar's edge like the launcher): header with "Mark all read" and "Clear", a list where unread rows have a faint accent tint and an accent dot, and a footer with the do-not-disturb switch. Levels use the accent (info), orange (warning) and red (error) icons.
+- **Health dots** sit at the bottom-left of a shortcut icon: green up, red down, grey unknown, with a dark ring so they read on any wallpaper. The tray's **service health** item is one dot (green/red/grey) plus the number of services down.
+- **Actions** in the launcher get an accent tile with the action's icon and an "Action" tag. Picking one with parameters swaps the panel for a small form (back arrow, title, one field per parameter, Cancel / Run).
+
 ## Lock screen, startup, cursor
 
 - **Lock screen:** the blurred wallpaper (blur from Settings), an optional clock at 10 vh (digital 56 px or large 112 px, with the date), an optional message beneath it, and the frosted card. When a locked session unlocks, the card shows the username, "Locked — enter your password to continue", the password field, **Unlock**, and a quiet "Log out instead".

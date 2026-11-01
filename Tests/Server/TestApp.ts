@@ -30,7 +30,7 @@ export async function createTestApp(overrides: Partial<Config> = {}): Promise<Te
     logLevel: 'silent',
     ...overrides,
   });
-  const built = await buildApp({ config, logger: false });
+  const built = await buildApp({ config, logger: false, watchers: false });
   await built.app.ready();
   return {
     ...built,

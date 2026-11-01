@@ -144,6 +144,24 @@ export const securitySettingsSchema = z.object({
   sessionDays: z.number().int().min(1).max(365),
 });
 
+export const notificationSettingsSchema = z.object({
+  /** Do not disturb: history still fills, nothing pops up. */
+  dnd: z.boolean(),
+  watchers: z.object({
+    /** Container stopped, died or was OOM-killed (Docker events). */
+    docker: z.boolean(),
+    disk: z.object({ enabled: z.boolean(), percent: z.number().int().min(50).max(99) }),
+    temperature: z.object({ enabled: z.boolean(), celsius: z.number().int().min(40).max(110) }),
+    /** A monitored service went down or came back. */
+    monitors: z.boolean(),
+  }),
+});
+
+export const monitorSettingsSchema = z.object({
+  /** Seconds between checks of every target. */
+  intervalSeconds: z.number().int().min(10).max(3600),
+});
+
 export const proxySettingsSchema = z.object({
   /** Seconds an embed proxy port stays open after its last window closed and its last connection ended. */
   idleGraceSeconds: z.number().int().min(10).max(3600),
@@ -166,6 +184,8 @@ export const SETTINGS_FIELDS = {
   cursor: cursorSettingsSchema,
   lock: lockSettingsSchema,
   security: securitySettingsSchema,
+  notifications: notificationSettingsSchema,
+  monitor: monitorSettingsSchema,
 } as const;
 
 export type SettingsKey = keyof typeof SETTINGS_FIELDS;
@@ -214,6 +234,8 @@ export const DEFAULT_SETTINGS: Settings = {
   cursor: { set: 'system', custom: {} },
   lock: { idleMinutes: 0, clock: 'digital', showDate: true, message: '', blur: 28 },
   security: { sessionDays: 30 },
+  notifications: { dnd: false, watchers: { docker: true, disk: { enabled: true, percent: 90 }, temperature: { enabled: true, celsius: 85 }, monitors: true } },
+  monitor: { intervalSeconds: 60 },
 };
 
 /** A partial update: top-level keys are optional, groups may name only the fields that change. */
@@ -235,6 +257,14 @@ export const settingsUpdateSchema = z
     cursor: cursorSettingsSchema.partial(),
     lock: lockSettingsSchema.partial(),
     security: securitySettingsSchema.partial(),
+    notifications: notificationSettingsSchema
+      .extend({
+        watchers: notificationSettingsSchema.shape.watchers
+          .extend({ disk: notificationSettingsSchema.shape.watchers.shape.disk.partial(), temperature: notificationSettingsSchema.shape.watchers.shape.temperature.partial() })
+          .partial(),
+      })
+      .partial(),
+    monitor: monitorSettingsSchema.partial(),
   })
   .partial()
   .strict();

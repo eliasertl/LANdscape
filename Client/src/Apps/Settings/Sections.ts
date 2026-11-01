@@ -1,5 +1,5 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
-import { AppWindow, Cursor, Desktop, Info, Keyboard, LockKey, PaintBrush, Rocket, SquareHalfBottom, SquaresFour, Swap, type Icon } from '@phosphor-icons/react';
+import { AppWindow, Bell, Cursor, Desktop, Info, Keyboard, LockKey, PaintBrush, Rocket, SquareHalfBottom, SquaresFour, Swap, type Icon } from '@phosphor-icons/react';
 
 export interface SettingsSectionDefinition {
   id: string;
@@ -19,6 +19,7 @@ export const SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
   { id: 'windows', label: 'Windows', icon: AppWindow, component: lazy(() => import('./WindowsSection')) },
   { id: 'startup', label: 'Startup', icon: Rocket, component: lazy(() => import('./StartupSection')) },
   { id: 'cursor', label: 'Cursor', icon: Cursor, component: lazy(() => import('./CursorSection')) },
+  { id: 'notifications', label: 'Notifications', icon: Bell, component: lazy(() => import('./NotificationsSection')) },
   { id: 'lock', label: 'Lock & Security', icon: LockKey, component: lazy(() => import('./LockSecuritySection')) },
   { id: 'keyboard', label: 'Keyboard Shortcuts', icon: Keyboard, component: lazy(() => import('./KeyboardSection')) },
   { id: 'apps', label: 'Apps', icon: SquaresFour, component: lazy(() => import('./AppsSection')) },

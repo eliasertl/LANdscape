@@ -45,6 +45,7 @@ const shortcutFields = {
   openMode: z.enum(['auto', 'embed', 'proxy', 'newtab']),
   position: anchoredPositionSchema.optional(),
   folderId: idSchema.nullable().optional(),
+  healthCheck: z.boolean().optional(),
 };
 
 export const shortcutCreateSchema = z.object({
@@ -158,6 +159,26 @@ export const logsClientMessageSchema = z.union([
   z.object({ type: z.literal('close') }),
   z.object({ type: z.literal('open') }).and(logSourceSchema),
 ]);
+
+export const notificationCreateSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  body: z.string().max(1000).default(''),
+  level: z.enum(['info', 'warning', 'error']).default('info'),
+  /** Apps pass "app:<id>"; the UI's test button passes "test". */
+  source: z.string().regex(/^(test|app:[a-z0-9][a-z0-9-]{0,47})$/).default('test'),
+  data: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const notificationsReadSchema = z.object({ ids: z.union([z.literal('all'), z.array(z.string().regex(/^[a-z0-9]{1,64}$/)).max(500)]) });
+
+export const monitorTargetSchema = z.object({
+  /** "<appId>:<key>"; shortcut targets are managed by the server itself. */
+  id: z.string().regex(/^[a-z0-9][a-z0-9-]{0,47}:[A-Za-z0-9_-]{1,64}$/),
+  kind: z.enum(['http', 'ping']),
+  label: z.string().trim().min(1).max(80),
+  address: z.string().trim().min(1).max(2048),
+  owner: z.string().regex(/^[a-z0-9][a-z0-9-]{0,47}$/),
+});
 
 export const killSignalSchema = z.object({ signal: z.enum(['TERM', 'KILL']).default('TERM') });
 

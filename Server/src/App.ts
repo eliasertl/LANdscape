@@ -34,6 +34,13 @@ import { registerLogsWs } from './Logs/LogsWs';
 import { ProxyService } from './Proxy/ProxyService';
 import { registerProxyRoutes } from './Proxy/ProxyRoutes';
 import { registerMediaRoutes } from './Desktop/MediaRoutes';
+import { EventBus } from './Events/EventBus';
+import { registerEventsWs } from './Events/EventsWs';
+import { NotificationService } from './Notify/NotificationService';
+import { registerNotificationRoutes } from './Notify/NotificationRoutes';
+import { Watchers } from './Notify/Watchers';
+import { MonitorService } from './Monitor/MonitorService';
+import { registerMonitorRoutes } from './Monitor/MonitorRoutes';
 
 export interface BuiltApp {
   app: FastifyInstance;
@@ -48,6 +55,8 @@ export interface BuildOptions {
   /** Use ':memory:' in tests. Defaults to DATA_DIR/landscape.db. */
   databaseFile?: string;
   logger?: boolean;
+  /** Tests switch the background monitor and watchers off (false) to keep runs deterministic. */
+  watchers?: boolean;
 }
 
 export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
@@ -88,7 +97,18 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
     log: app.log,
     idleGraceMs: () => repos.settings.get().proxy.idleGraceSeconds * 1000,
   });
-  const ctx: ServerContext = { config, db, repos, sessions, lockout, metrics, docker, ssh, sftp, proxy, log: app.log };
+  const events = new EventBus();
+  const notifications = new NotificationService(repos.notifications, events, app.log);
+  const monitor = new MonitorService({
+    repos,
+    events,
+    notifications,
+    log: app.log,
+    intervalSeconds: () => repos.settings.get().monitor.intervalSeconds,
+    notifyOnChange: () => repos.settings.get().notifications.watchers.monitors,
+  });
+  const watchers = new Watchers({ docker, metrics, notifications, settings: () => repos.settings.get().notifications, log: app.log });
+  const ctx: ServerContext = { config, db, repos, sessions, lockout, metrics, docker, ssh, sftp, proxy, events, notifications, monitor, log: app.log };
   registerSamplers(metrics, {
     config,
     docker,
@@ -121,6 +141,9 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
   registerContainerRoutes(app, ctx);
   registerLogsWs(app, ctx);
   registerProxyRoutes(app, ctx);
+  registerEventsWs(app, ctx);
+  registerNotificationRoutes(app, ctx);
+  registerMonitorRoutes(app, ctx);
   await installStatic(app, config.clientDir);
 
   const pruneTimer = setInterval(
@@ -139,6 +162,10 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
   // Assign ports to shortcuts that need one (e.g. blocked "auto" shortcuts after an upgrade
   // or a changed range). Listeners open later, in start(), once LANdscape itself listens.
   proxy.reconcile();
+  if (options.watchers !== false) {
+    monitor.start();
+    watchers.start();
+  }
 
   return {
     app,
@@ -146,6 +173,8 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
     routes,
     async close() {
       clearInterval(pruneTimer);
+      monitor.stop();
+      watchers.stop();
       metrics.stop();
       ssh.close();
       await proxy.stop();

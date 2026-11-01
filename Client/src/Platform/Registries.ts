@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 import type { Icon } from '@phosphor-icons/react';
-import type { ZodType } from 'zod';
 import type { AppDefinition } from '../Apps/Types';
+import type { AnyAction } from './Actions';
 import type { WidgetDefinition } from '../Widgets/Types';
 import { Registry, type RegistryEntry } from './Registry';
 
@@ -55,15 +55,6 @@ export interface WallpaperDefinition extends RegistryEntry {
   url: string;
 }
 
-export interface ActionDefinition<P = Record<string, unknown>> extends RegistryEntry {
-  title: string;
-  icon?: Icon;
-  /** Who provides the action (app id or "core"); shown in the command palette. */
-  provider: string;
-  params?: ZodType<P>;
-  run: (params: P) => void | Promise<void>;
-}
-
 export const registries = {
   apps: new Registry<AppDefinition>('apps'),
   widgets: new Registry<WidgetDefinition>('widgets'),
@@ -73,7 +64,8 @@ export const registries = {
   cursorSets: new Registry<CursorSetDefinition>('cursorSets'),
   themes: new Registry<ThemeDefinition>('themes'),
   wallpapers: new Registry<WallpaperDefinition>('wallpapers'),
-  actions: new Registry<ActionDefinition>('actions'),
+  /** See Platform/Actions.ts for the action shape and helpers. */
+  actions: new Registry<AnyAction>('actions'),
 };
 
 export type Registries = typeof registries;

@@ -99,6 +99,31 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE sessions ADD COLUMN locked_at TEXT;
   ALTER TABLE sessions ADD COLUMN device TEXT NOT NULL DEFAULT '';
   `,
+  // Notification center history, monitor targets registered by apps, and the per-shortcut
+  // health-check switch (the monitor service checks every shortcut with it on).
+  `
+  CREATE TABLE notifications (
+    id TEXT PRIMARY KEY,
+    source TEXT NOT NULL,
+    level TEXT NOT NULL,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    read_at TEXT,
+    data TEXT
+  );
+  CREATE INDEX notifications_created_at ON notifications(created_at);
+
+  CREATE TABLE monitor_targets (
+    id TEXT PRIMARY KEY,
+    kind TEXT NOT NULL,
+    label TEXT NOT NULL,
+    address TEXT NOT NULL,
+    owner TEXT NOT NULL
+  );
+
+  ALTER TABLE shortcuts ADD COLUMN health_check INTEGER NOT NULL DEFAULT 1;
+  `,
 ];
 
 export function runMigrations(db: Database): void {
