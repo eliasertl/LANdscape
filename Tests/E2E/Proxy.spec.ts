@@ -71,7 +71,9 @@ test.describe('embed proxy on the desktop', () => {
     const settings = page.getByRole('dialog', { name: 'Settings' });
     await settings.getByRole('button', { name: 'Proxy' }).click();
     await expect(settings.locator(`[data-proxy-port="${src.port}"]`)).toContainText('Blocked fixture');
-    await expect(settings.locator(`[data-proxy-port="${src.port}"]`)).toContainText('Listening');
+    // The window holds a lease, so the on-demand port is open and says why.
+    await expect(settings.locator(`[data-proxy-port="${src.port}"] [data-port-state="open"]`)).toBeVisible();
+    await expect(settings.locator(`[data-proxy-port="${src.port}"]`)).toContainText('In use by 1 window');
     const toggle = settings.locator('label').filter({ has: page.getByRole('switch') }).first();
     await toggle.click();
     await expect(badge).toHaveCount(0);

@@ -36,8 +36,15 @@ export function Dialog({ title, children, footer, onClose, width = 440, locked =
     const previous = document.activeElement as HTMLElement | null;
     const element = ref.current;
     const target = (initialFocus && element?.querySelector<HTMLElement>(initialFocus)) || element?.querySelector<HTMLElement>(FOCUSABLE);
-    window.setTimeout(() => (target ?? element)?.focus({ preventScroll: true }), 20);
-    return () => previous?.focus?.({ preventScroll: true });
+    // Skip when focus already moved into the dialog (a fast click or typing) so it is never stolen mid-input.
+    const timer = window.setTimeout(() => {
+      if (element && element.contains(document.activeElement)) return;
+      (target ?? element)?.focus({ preventScroll: true });
+    }, 20);
+    return () => {
+      window.clearTimeout(timer);
+      previous?.focus?.({ preventScroll: true });
+    };
   }, [scale, opacity, initialFocus]);
 
   useEffect(() => {
