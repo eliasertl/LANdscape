@@ -69,11 +69,11 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   async lock() {
     try {
       await api.post('/api/auth/lock');
-      set({ status: 'locked', hasSession: true });
     } catch {
-      // Already locked or logged out: the server state wins.
-      await get().refresh();
+      // Already locked or logged out: the probe below reports the server state.
     }
+    // Re-read the probe so the lock screen shows the current look (clock, message, blur).
+    await get().refresh();
   },
   lockedByServer(hasSession) {
     if (get().status !== 'locked') set({ status: 'locked', hasSession });
