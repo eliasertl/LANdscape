@@ -9,6 +9,7 @@ import { Overlays } from './Overlays';
 import { SnapPreview } from './SnapPreview';
 import { refreshDisplayLayout, resolveOverlaps } from './DesktopGrid';
 import { useViewportSize } from '../Hooks/UseViewportSize';
+import { toLayout } from '../Design/Scale';
 import { WindowManager } from '../Windows/WindowManager';
 import { Taskbar } from '../Taskbar/Taskbar';
 import { StartMenu } from '../StartMenu/StartMenu';
@@ -18,6 +19,7 @@ import { Button } from '../Components/Button';
 import { useKeyboardShortcut } from '../Hooks/UseKeyboardShortcut';
 import { useIsPhone } from '../Hooks/UseMediaQuery';
 import { PhoneShell } from '../Phone/PhoneShell';
+import { SafeModeBanner } from './SafeModeBanner';
 import styles from './Desktop.module.css';
 
 export function Desktop() {
@@ -82,7 +84,8 @@ function DesktopShell() {
     (event: React.MouseEvent) => {
       event.preventDefault();
       selectShortcut(null);
-      openContextMenu(desktopMenuItems({ x: event.clientX, y: event.clientY }), { x: event.clientX, y: event.clientY });
+      // Menus take screen coordinates; grid placement needs layout pixels (UI scale).
+      openContextMenu(desktopMenuItems({ x: toLayout(event.clientX), y: toLayout(event.clientY) }), { x: event.clientX, y: event.clientY });
     },
     [openContextMenu, selectShortcut],
   );
@@ -111,6 +114,7 @@ function DesktopShell() {
       <Taskbar />
       <StartMenu onLogout={() => void logout()} />
       <Overlays />
+      <SafeModeBanner />
     </div>
   );
 }

@@ -7,8 +7,12 @@ import './Design/Base.css';
 import './Design/Typography.css';
 import { App } from './App';
 import { registerBuiltins } from './Platform/BuiltIns';
+import { applyDeviceSettings } from './Store/DeviceStore';
+import { installDebugHandle } from './Platform/DebugHandle';
 
 registerBuiltins();
+applyDeviceSettings();
+installDebugHandle();
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <StrictMode>

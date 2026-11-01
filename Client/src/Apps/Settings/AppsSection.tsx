@@ -8,7 +8,7 @@ import { toast } from '../../Components/Toast';
 import { errorMessage } from '../../Api/Http';
 import styles from './SettingsApp.module.css';
 
-export function AppsSection() {
+export default function AppsSection() {
   const settings = useDesktopStore((s) => s.settings);
   const updateSettings = useDesktopStore((s) => s.updateSettings);
   const apps = useRegistry(registries.apps);

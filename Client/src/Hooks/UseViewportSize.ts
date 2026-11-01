@@ -1,11 +1,11 @@
 import { useSyncExternalStore } from 'react';
+import { layoutViewport } from '../Design/Scale';
 
 let cached = { width: 0, height: 0 };
 
 function snapshot() {
-  if (cached.width !== window.innerWidth || cached.height !== window.innerHeight) {
-    cached = { width: window.innerWidth, height: window.innerHeight };
-  }
+  const { width, height } = layoutViewport();
+  if (cached.width !== width || cached.height !== height) cached = { width, height };
   return cached;
 }
 
@@ -14,7 +14,7 @@ function subscribe(callback: () => void) {
   return () => window.removeEventListener('resize', callback);
 }
 
-/** Viewport size that re-renders the component on resize. */
+/** Viewport size in layout pixels (see Design/Scale.ts) that re-renders the component on resize. */
 export function useViewportSize(): { width: number; height: number } {
   return useSyncExternalStore(subscribe, snapshot, snapshot);
 }

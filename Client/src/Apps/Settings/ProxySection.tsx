@@ -9,7 +9,7 @@ import { Toggle } from '../../Components/Toggle';
 import { toast } from '../../Components/Toast';
 import styles from './SettingsApp.module.css';
 
-export function ProxySection() {
+export default function ProxySection() {
   const settings = useDesktopStore((s) => s.settings);
   const updateSettings = useDesktopStore((s) => s.updateSettings);
   // Reload when assignments change (a shortcut was added, edited or deleted while Settings is open).

@@ -13,10 +13,12 @@ import { useDesktopStore } from '../Store/DesktopStore';
 import { useUiStore } from '../Store/UiStore';
 import { getWidget } from '../Widgets/Registry';
 import { TASKBAR_RESERVED } from '../Windows/WindowGeometry';
+import { layoutViewport } from '../Design/Scale';
 
 /** The grid that fits the current viewport (above the floating taskbar). */
 export function viewportBounds(): GridBounds {
-  return gridBounds(window.innerWidth, window.innerHeight - TASKBAR_RESERVED);
+  const viewport = layoutViewport();
+  return gridBounds(viewport.width, viewport.height - TASKBAR_RESERVED);
 }
 
 /** Cells a widget currently spans: read from its rendered frame, else from the registry hint. */

@@ -10,6 +10,7 @@ import { ResizeHandles } from './ResizeHandles';
 import { WindowContent } from './WindowContent';
 import { clampRect, resizeRect, workArea, type Rect } from './WindowGeometry';
 import { getApp } from '../Apps/Registry';
+import { layoutViewport, toLayout } from '../Design/Scale';
 import styles from './Window.module.css';
 
 interface WindowProps {
@@ -21,7 +22,7 @@ function taskbarTarget(appKey: string): { x: number; y: number } | null {
   const element = document.querySelector<HTMLElement>(`[data-taskbar-app="${CSS.escape(appKey)}"]`) ?? document.querySelector<HTMLElement>('[data-taskbar-search]');
   if (!element) return null;
   const rect = element.getBoundingClientRect();
-  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  return { x: toLayout(rect.left + rect.width / 2), y: toLayout(rect.top + rect.height / 2) };
 }
 
 export const Window = memo(function Window({ win, focused }: WindowProps) {
@@ -72,7 +73,7 @@ export const Window = memo(function Window({ win, focused }: WindowProps) {
     const target = taskbarTarget(win.appKey);
     const center = { x: win.rect.x + win.rect.width / 2, y: win.rect.y + win.rect.height / 2 };
     const dx = target ? target.x - center.x : 0;
-    const dy = target ? target.y - center.y : window.innerHeight;
+    const dy = target ? target.y - center.y : layoutViewport().height;
     if (win.minimized) {
       if (reducedMotion()) {
         setHidden(true);

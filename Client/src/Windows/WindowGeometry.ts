@@ -1,3 +1,5 @@
+import { layoutViewport } from '../Design/Scale';
+
 export interface Rect {
   x: number;
   y: number;
@@ -10,7 +12,8 @@ export const TITLEBAR_VISIBLE_MIN = 40;
 
 /** The area windows may occupy: the viewport minus the floating taskbar. */
 export function workArea(): Rect {
-  return { x: 0, y: 0, width: window.innerWidth, height: Math.max(200, window.innerHeight - TASKBAR_RESERVED) };
+  const viewport = layoutViewport();
+  return { x: 0, y: 0, width: viewport.width, height: Math.max(200, viewport.height - TASKBAR_RESERVED) };
 }
 
 /**
