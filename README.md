@@ -7,7 +7,7 @@ A self-hosted, macOS-style web desktop for your homeserver. Your services become
 ## Features
 
 - **Lock screen** with the blurred wallpaper and a login card. 5 failed attempts lock the IP for 15 minutes.
-- **Desktop** with wallpaper, draggable shortcut icons and widgets. Layout is saved on the server, so every device sees the same desktop.
+- **Desktop** with wallpaper, draggable shortcut icons, folders and resizable widgets. Items are anchored to the edge or center of the screen, so the layout keeps its shape on a laptop and on an ultra-wide monitor alike. Layout is saved on the server, so every device sees the same desktop.
 - **Shortcuts** to any URL. The server checks whether the site allows embedding (X-Frame-Options / CSP `frame-ancestors`) before you save, fetches and stores the favicon, or uses an uploaded icon.
 - **Embed proxy** for sites that refuse to be framed (typical for self-hosted apps like Docmost): each such shortcut gets its own LANdscape port (8081–8100) that passes the site through 1:1 with the framing headers removed, so it still opens in a window — logins included. Only reachable while you are logged in to LANdscape, and only open while a window uses it. See [Embed proxy](#embed-proxy).
 - **Window manager** in macOS style: traffic lights, drag, resize from every edge, minimize to the taskbar with a spring animation, maximize, several windows per shortcut, remembered sizes and positions.
@@ -16,7 +16,7 @@ A self-hosted, macOS-style web desktop for your homeserver. Your services become
 - **Admin apps:** Settings (theme, wallpaper, enabled apps, integration status), Terminal (SSH + xterm.js), Files (SFTP with upload/download/rename/delete/preview), Text Editor (CodeMirror), Docker (containers, start/stop/restart, live logs), Task Manager (host processes, kill via SSH), Log Viewer (Docker logs, `journalctl`, any file, follow mode).
 - **Phone layout** below 768 px: launcher grid, full-screen windows.
 - **Robust by design:** a crashing window, widget or taskbar item only breaks itself; **safe mode** (`?safe=1` or the lock-screen link) starts without customizations. Per-device settings such as the UI scale are kept separately for each browser.
-- **Light and dark themes** (dark is pure black), animated switching, reduced-motion and reduced-transparency support.
+- **Light and dark themes** (dark is pure black), accent colors, adjustable blur, wallpaper slideshow and time-of-day wallpapers, animated switching, reduced-motion and reduced-transparency support.
 
 ## Install on CasaOS
 
@@ -177,6 +177,7 @@ Ports are released when a shortcut stops using the proxy or is deleted; changing
 - **A proxied window says "The service is not reachable"** — LANdscape could not connect to the shortcut's address from inside the container. Check that the URL works from the server itself.
 - **The desktop is broken after changing a setting, or one part shows "… stopped working"** — a failing window, widget or taskbar item only breaks itself and shows *Reload* and *Copy details* (paste those into a bug report). If the whole desktop misbehaves, open LANdscape with `?safe=1` (or click **Start in safe mode** on the lock screen): it starts without catalog apps and customizations, and **Leave safe mode** in the banner returns to normal. For a closer look, the browser console has `landscapeDebug` (registries and stores).
 - **Everything is too large or too small on one screen** — Settings → Appearance → UI scale. It is saved per browser ("This device"), so every screen can have its own.
+- **Icons sit in the wrong place on one screen** — items are anchored to the edge or center of the screen they were dropped on. Settings → Desktop → **Re-anchor layout for this screen** pins everything again from where it is shown right now. Icon size and grid density (same section) change the cell size; the anchors keep the layout coherent.
 - **Logged out after a restart** — set `SESSION_SECRET` explicitly or make sure the data directory is persisted (the generated secret lives there).
 - **Lock screen says too many attempts** — wait 15 minutes, or restart the container (lockouts are kept in memory).
 - **"Cannot write the host key store"** — the data directory's `ssh/` folder is not writable by the server user. The entrypoint normally fixes this on start; if you run with `user:` in compose, make the folder writable or set `PUID`/`PGID` to its owner.

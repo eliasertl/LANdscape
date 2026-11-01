@@ -20,7 +20,7 @@ const BUILTIN_WIDGETS: WidgetDefinition[] = [
     icon: Clock,
     component: ClockWidget,
     metric: null,
-    size: { cols: 2, rows: 1 },
+    sizes: { s: { cols: 1, rows: 1 }, m: { cols: 2, rows: 1 }, l: { cols: 3, rows: 2 } },
     settingsFields: [{ key: 'showSeconds', label: 'Show seconds', type: 'toggle', defaultValue: false }],
   },
   {
@@ -31,7 +31,7 @@ const BUILTIN_WIDGETS: WidgetDefinition[] = [
     icon: Cpu,
     component: CpuWidget,
     metric: 'cpu',
-    size: { cols: 3, rows: 2 },
+    sizes: { s: { cols: 2, rows: 1 }, m: { cols: 3, rows: 2 }, l: { cols: 4, rows: 3 } },
     settingsFields: [{ key: 'showCores', label: 'Show per-core bars', type: 'toggle', defaultValue: true }],
   },
   {
@@ -42,7 +42,7 @@ const BUILTIN_WIDGETS: WidgetDefinition[] = [
     icon: Memory,
     component: RamWidget,
     metric: 'memory',
-    size: { cols: 2, rows: 1 },
+    sizes: { s: { cols: 1, rows: 1 }, m: { cols: 2, rows: 1 }, l: { cols: 3, rows: 2 } },
     settingsFields: [{ key: 'showSwap', label: 'Show swap', type: 'toggle', defaultValue: true }],
   },
   {
@@ -53,7 +53,7 @@ const BUILTIN_WIDGETS: WidgetDefinition[] = [
     icon: HardDrives,
     component: DiskWidget,
     metric: 'disks',
-    size: { cols: 3, rows: 2 },
+    sizes: { s: { cols: 2, rows: 1 }, m: { cols: 3, rows: 2 }, l: { cols: 4, rows: 3 } },
   },
   {
     id: 'network',
@@ -63,7 +63,7 @@ const BUILTIN_WIDGETS: WidgetDefinition[] = [
     icon: Network,
     component: NetworkWidget,
     metric: 'network',
-    size: { cols: 3, rows: 2 },
+    sizes: { s: { cols: 2, rows: 1 }, m: { cols: 3, rows: 2 }, l: { cols: 4, rows: 3 } },
     settingsFields: [
       { key: 'interface', label: 'Interface', type: 'select', options: networkInterfaceOptions, defaultValue: 'all' },
       { key: 'showAddresses', label: 'Show IP addresses', type: 'toggle', defaultValue: true },
@@ -77,7 +77,7 @@ const BUILTIN_WIDGETS: WidgetDefinition[] = [
     icon: Thermometer,
     component: TemperatureWidget,
     metric: 'temperatures',
-    size: { cols: 2, rows: 2 },
+    sizes: { s: { cols: 1, rows: 1 }, m: { cols: 2, rows: 2 }, l: { cols: 3, rows: 3 } },
   },
   {
     id: 'uptime',
@@ -87,7 +87,7 @@ const BUILTIN_WIDGETS: WidgetDefinition[] = [
     icon: Timer,
     component: UptimeWidget,
     metric: 'uptime',
-    size: { cols: 2, rows: 1 },
+    sizes: { s: { cols: 1, rows: 1 }, m: { cols: 2, rows: 1 }, l: { cols: 3, rows: 1 } },
   },
   {
     id: 'docker-count',
@@ -97,7 +97,7 @@ const BUILTIN_WIDGETS: WidgetDefinition[] = [
     icon: Cube,
     component: DockerCountWidget,
     metric: 'dockerCount',
-    size: { cols: 2, rows: 1 },
+    sizes: { s: { cols: 1, rows: 1 }, m: { cols: 2, rows: 1 }, l: { cols: 2, rows: 2 } },
   },
 ];
 

@@ -1,13 +1,15 @@
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { useDesktopStore } from '../Store/DesktopStore';
 import { useUiStore } from '../Store/UiStore';
 import { useSessionStore } from '../Store/SessionStore';
 import { Wallpaper } from './Wallpaper';
 import { ShortcutIcon } from './ShortcutIcon';
+import { FolderIcon } from './FolderIcon';
+import { FolderPopover } from './FolderPopover';
 import { desktopMenuItems } from './DesktopContextMenu';
 import { Overlays } from './Overlays';
 import { SnapPreview } from './SnapPreview';
-import { refreshDisplayLayout, resolveOverlaps } from './DesktopGrid';
+import { refreshDisplayLayout, resolveOverlaps, useCurrentGrid } from './DesktopGrid';
 import { useViewportSize } from '../Hooks/UseViewportSize';
 import { toLayout } from '../Design/Scale';
 import { WindowManager } from '../Windows/WindowManager';
@@ -54,17 +56,22 @@ export function Desktop() {
 
 function DesktopShell() {
   const shortcuts = useDesktopStore((s) => s.shortcuts);
+  const folders = useDesktopStore((s) => s.folders);
+  const desktopSettings = useDesktopStore((s) => s.settings?.desktop);
   const openContextMenu = useUiStore((s) => s.openContextMenu);
   const selectShortcut = useUiStore((s) => s.selectShortcut);
   const toggleStartMenu = useUiStore((s) => s.toggleStartMenu);
   const setStartMenuOpen = useUiStore((s) => s.setStartMenuOpen);
+  const openFolderId = useUiStore((s) => s.openFolderId);
+  const openFolder = useUiStore((s) => s.openFolder);
   const logout = useSessionStore((s) => s.logout);
   const surfaceRef = useRef<HTMLDivElement>(null);
 
   const widgets = useDesktopStore((s) => s.widgets);
   const viewport = useViewportSize();
+  const grid = useCurrentGrid();
 
-  // Once widgets have rendered (their grid size is read from the DOM), untangle stored collisions.
+  // Once widgets have rendered, untangle stored collisions.
   useEffect(() => {
     let frame = requestAnimationFrame(() => {
       frame = requestAnimationFrame(() => resolveOverlaps());
@@ -72,10 +79,10 @@ function DesktopShell() {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  // Keep the shown layout collision-free whenever items or the viewport change.
+  // Keep the shown layout collision-free whenever items, the grid or the viewport change.
   useLayoutEffect(() => {
     refreshDisplayLayout();
-  }, [shortcuts, widgets, viewport]);
+  }, [shortcuts, widgets, folders, viewport, grid.unitX, grid.unitY]);
 
   useKeyboardShortcut({ key: ' ', ctrl: true }, toggleStartMenu);
   useKeyboardShortcut({ key: 'Escape' }, () => setStartMenuOpen(false));
@@ -90,25 +97,32 @@ function DesktopShell() {
     [openContextMenu, selectShortcut],
   );
 
+  const labels = desktopSettings?.labels ?? 'show';
+  const showIcons = desktopSettings?.showIcons ?? true;
+  const surfaceStyle = { '--icon-size': `${grid.iconPx}px`, '--grid-unit-x': `${grid.unitX}px`, '--grid-unit-y': `${grid.unitY}px` } as CSSProperties;
+
   return (
     <div className={styles.desktop}>
       <Wallpaper />
       <div
         ref={surfaceRef}
-        className={styles.surface}
+        className={[styles.surface, labels === 'hide' ? styles.labelsHidden : labels === 'shadow' ? styles.labelsShadow : ''].join(' ')}
+        style={surfaceStyle}
+        data-desktop-surface
         onContextMenu={onSurfaceContextMenu}
         onPointerDown={(e) => {
           if (e.target === e.currentTarget) {
             selectShortcut(null);
             setStartMenuOpen(false);
+            openFolder(null);
           }
         }}
       >
         <SnapPreview />
-        {shortcuts.map((shortcut) => (
-          <ShortcutIcon key={shortcut.id} shortcut={shortcut} />
-        ))}
+        {showIcons && shortcuts.filter((s) => s.folderId === null).map((shortcut) => <ShortcutIcon key={shortcut.id} shortcut={shortcut} />)}
+        {showIcons && folders.map((folder) => <FolderIcon key={folder.id} folder={folder} />)}
         <WidgetLayer />
+        {openFolderId && <FolderPopover key={openFolderId} folderId={openFolderId} />}
       </div>
       <WindowManager />
       <Taskbar />

@@ -60,6 +60,39 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE shortcuts ADD COLUMN proxy_tag TEXT;
   CREATE UNIQUE INDEX shortcuts_proxy_port ON shortcuts(proxy_port) WHERE proxy_port IS NOT NULL;
   `,
+  // Anchored layout (Shared/src/Layout.ts): positions become "cells from an edge or the center"
+  // instead of pixels, so a layout keeps its shape on other screen sizes. Existing items become
+  // top-left anchors computed from the old 96 × 112 px grid, so nothing moves. Also: widget size
+  // steps, desktop folders, and the folder a shortcut lives in. The old x/y columns stay unused.
+  `
+  CREATE TABLE folders (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    anchor_x TEXT NOT NULL DEFAULT 'left',
+    anchor_y TEXT NOT NULL DEFAULT 'top',
+    offset_col INTEGER NOT NULL DEFAULT 0,
+    offset_row INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+  );
+
+  ALTER TABLE shortcuts ADD COLUMN anchor_x TEXT NOT NULL DEFAULT 'left';
+  ALTER TABLE shortcuts ADD COLUMN anchor_y TEXT NOT NULL DEFAULT 'top';
+  ALTER TABLE shortcuts ADD COLUMN offset_col INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE shortcuts ADD COLUMN offset_row INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE shortcuts ADD COLUMN folder_id TEXT REFERENCES folders(id) ON DELETE SET NULL;
+  UPDATE shortcuts SET
+    offset_col = MAX(0, CAST(ROUND((x - 16) / 96.0) AS INTEGER)),
+    offset_row = MAX(0, CAST(ROUND((y - 16) / 112.0) AS INTEGER));
+
+  ALTER TABLE widgets ADD COLUMN anchor_x TEXT NOT NULL DEFAULT 'left';
+  ALTER TABLE widgets ADD COLUMN anchor_y TEXT NOT NULL DEFAULT 'top';
+  ALTER TABLE widgets ADD COLUMN offset_col INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE widgets ADD COLUMN offset_row INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE widgets ADD COLUMN size TEXT NOT NULL DEFAULT 'm';
+  UPDATE widgets SET
+    offset_col = MAX(0, CAST(ROUND((x - 16) / 96.0) AS INTEGER)),
+    offset_row = MAX(0, CAST(ROUND((y - 16) / 112.0) AS INTEGER));
+  `,
 ];
 
 export function runMigrations(db: Database): void {

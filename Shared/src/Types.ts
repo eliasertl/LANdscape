@@ -1,5 +1,6 @@
 import type { WidgetType } from './AppIds';
 import type { Settings } from './Settings';
+import type { AnchoredPosition } from './Layout';
 
 export type Theme = 'light' | 'dark' | 'system';
 
@@ -20,8 +21,9 @@ export interface Shortcut {
   iconMode: IconMode;
   /** File name inside the data directory's icons folder, or null for the generated placeholder. */
   iconFile: string | null;
-  x: number;
-  y: number;
+  position: AnchoredPosition;
+  /** Desktop folder holding this shortcut, or null when it sits on the desktop itself. */
+  folderId: string | null;
   embeddable: Embeddable;
   embedCheckedAt: string | null;
   embedReason: string | null;
@@ -38,12 +40,22 @@ export interface WidgetSettings {
   [key: string]: unknown;
 }
 
+/** Widget size step; each widget type declares the cell span per step it supports. */
+export type WidgetSize = 's' | 'm' | 'l';
+
 export interface Widget {
   id: string;
   type: WidgetType;
-  x: number;
-  y: number;
+  position: AnchoredPosition;
+  size: WidgetSize;
   settings: WidgetSettings;
+  createdAt: string;
+}
+
+export interface Folder {
+  id: string;
+  name: string;
+  position: AnchoredPosition;
   createdAt: string;
 }
 
@@ -135,6 +147,7 @@ export interface ProxyOverview extends ProxyRange {
 export interface DesktopBootstrap {
   shortcuts: Shortcut[];
   widgets: Widget[];
+  folders: Folder[];
   settings: Settings;
   windowMemory: WindowMemory;
   integrations: { ssh: boolean; docker: boolean; hostProc: boolean; hostSys: boolean };

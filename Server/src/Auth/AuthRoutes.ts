@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { SESSION_COOKIE_NAME, SESSION_DURATION_MS, loginSchema, type SessionInfo } from '@landscape/shared';
+import { SESSION_COOKIE_NAME, SESSION_DURATION_MS, loginSchema, resolveWallpaper, type SessionInfo } from '@landscape/shared';
 import type { ServerContext } from '../Context';
 import { HttpError, parseOrThrow } from '../Http/Errors';
 import { clientIp } from '../Http/RequestUtils';
@@ -55,7 +55,8 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: ServerContext): vo
 
   /** Only bundled wallpapers are shown before login; an uploaded one may be personal. */
   function lockScreenWallpaper(): string {
-    const { wallpaper } = ctx.repos.settings.get();
+    const settings = ctx.repos.settings.get();
+    const wallpaper = resolveWallpaper({ wallpaper: settings.wallpaper, ...settings.appearance }, new Date());
     if (wallpaper.kind === 'bundled') return `/wallpapers/bundled/${wallpaper.file}`;
     return `/wallpapers/bundled/${DEFAULT_WALLPAPER.file}`;
   }

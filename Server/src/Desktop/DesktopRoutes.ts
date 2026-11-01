@@ -4,24 +4,30 @@ import { z } from 'zod';
 import {
   ICON_CELLS,
   ICON_UPLOAD_MAX_BYTES,
-  cellToPx,
+  anchorFromCell,
+  cellFromAnchor,
+  clampCell,
   findFirstFree,
-  pxToCell,
   proxyPortsFullMessage,
   WALLPAPER_UPLOAD_MAX_BYTES,
   appKeySchema,
+  desktopPositionsSchema,
   embedCheckSchema,
+  folderCreateSchema,
+  folderUpdateSchema,
   settingsUpdateSchema,
   shortcutCreateSchema,
-  shortcutPositionsSchema,
   shortcutUpdateSchema,
   widgetCreateSchema,
   widgetUpdateSchema,
   windowGeometrySchema,
+  type AnchoredPosition,
   type DesktopBootstrap,
+  type Folder,
   type Shortcut,
   type Widget,
 } from '@landscape/shared';
+import { updatePositions } from '../Db/Repositories/Positions';
 import type { ServerContext } from '../Context';
 import { badRequest, conflict, notFound, parseOrThrow, tooLarge } from '../Http/Errors';
 import { expectedOrigin } from '../Http/RequestUtils';
@@ -44,6 +50,7 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
     const bootstrap: DesktopBootstrap = {
       shortcuts: ctx.repos.shortcuts.list(),
       widgets: ctx.repos.widgets.list(),
+      folders: ctx.repos.folders.list(),
       settings,
       windowMemory: ctx.repos.windowMemory.all(),
       integrations: {
@@ -69,8 +76,8 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
 
   app.post('/api/shortcuts', async (request, reply) => {
     const input = parseOrThrow(shortcutCreateSchema, request.body);
-    const position =
-      input.x !== undefined && input.y !== undefined ? { x: input.x, y: input.y } : freeSlot(ctx.repos.shortcuts.list(), ctx.repos.widgets.list());
+    if (input.folderId && !ctx.repos.folders.find(input.folderId)) throw notFound('Folder not found');
+    const position = input.position ?? freeSlot(ctx.repos.shortcuts.list(), ctx.repos.widgets.list(), ctx.repos.folders.list());
     const check = await checkEmbeddable(input.url, expectedOrigin(request));
     if (!ctx.proxy.hasRoomFor({ id: '', openMode: input.openMode, embeddable: check.status, proxyPort: null, createdAt: new Date().toISOString() })) {
       throw conflict(proxyPortsFullMessage(ctx.proxy.total));
@@ -80,8 +87,8 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
       url: input.url,
       iconMode: input.iconMode,
       iconFile: input.iconMode === 'upload' ? (input.iconFile ?? null) : null,
-      x: position.x,
-      y: position.y,
+      position,
+      folderId: input.folderId ?? null,
       embeddable: check.status,
       embedReason: check.reason,
       openMode: input.openMode,
@@ -100,6 +107,7 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
     const existing = ctx.repos.shortcuts.find(id);
     if (!existing) throw notFound('Shortcut not found');
     const input = parseOrThrow(shortcutUpdateSchema, request.body);
+    if (input.folderId && !ctx.repos.folders.find(input.folderId)) throw notFound('Folder not found');
 
     const urlChanged = input.url !== undefined && input.url !== existing.url;
     const iconModeChanged = input.iconMode !== undefined && input.iconMode !== existing.iconMode;
@@ -144,8 +152,8 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
       iconMode: input.iconMode,
       iconFile,
       openMode: input.openMode,
-      x: input.x,
-      y: input.y,
+      position: input.position,
+      folderId: input.folderId,
       ...embed,
     });
     ctx.proxy.reconcile();
@@ -176,10 +184,47 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
     return ctx.repos.shortcuts.update(id, { iconFile: file });
   });
 
-  app.put('/api/shortcuts/positions', async (request) => {
-    const { positions } = parseOrThrow(shortcutPositionsSchema, request.body);
-    ctx.repos.shortcuts.updatePositions(positions);
+  // ---- layout -------------------------------------------------------------
+  /** Moves any mix of shortcuts, widgets and folders (after a drop, an untangle or "Re-anchor"). */
+  app.put('/api/desktop/positions', async (request) => {
+    const { items } = parseOrThrow(desktopPositionsSchema, request.body);
+    updatePositions(ctx.db, items);
     return { ok: true };
+  });
+
+  // ---- folders --------------------------------------------------------------
+  app.post('/api/folders', async (request, reply) => {
+    const input = parseOrThrow(folderCreateSchema, request.body);
+    const position = input.position ?? freeSlot(ctx.repos.shortcuts.list(), ctx.repos.widgets.list(), ctx.repos.folders.list());
+    void reply.status(201);
+    return ctx.repos.folders.create(input.name, position);
+  });
+
+  app.patch('/api/folders/:id', async (request) => {
+    const { id } = parseOrThrow(idParams, request.params);
+    const input = parseOrThrow(folderUpdateSchema, request.body);
+    const updated = ctx.repos.folders.update(id, input);
+    if (!updated) throw notFound('Folder not found');
+    return updated;
+  });
+
+  /** Deleting a folder puts its shortcuts back on the desktop, on free cells around the folder's own. */
+  app.delete('/api/folders/:id', async (request) => {
+    const { id } = parseOrThrow(idParams, request.params);
+    const folder = ctx.repos.folders.find(id);
+    if (!folder) throw notFound('Folder not found');
+    const contents = ctx.repos.shortcuts.inFolder(id);
+    ctx.db.transaction(() => {
+      let occupied = occupiedCells(ctx.repos.shortcuts.list(), ctx.repos.widgets.list(), ctx.repos.folders.list().filter((f) => f.id !== id));
+      for (const shortcut of contents) {
+        const spot = findFirstFree(ICON_CELLS.cols, ICON_CELLS.rows, occupied, NOMINAL_BOUNDS);
+        const cell = { ...spot, ...ICON_CELLS };
+        occupied = [...occupied, cell];
+        ctx.repos.shortcuts.update(shortcut.id, { folderId: null, position: anchorFromCell(cell, NOMINAL_BOUNDS) });
+      }
+      ctx.repos.folders.delete(id);
+    });
+    return { ok: true, shortcuts: ctx.repos.shortcuts.list() };
   });
 
   app.delete('/api/shortcuts/:id', async (request) => {
@@ -258,7 +303,7 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
   app.post('/api/widgets', async (request, reply) => {
     const input = parseOrThrow(widgetCreateSchema, request.body);
     void reply.status(201);
-    return ctx.repos.widgets.create(input.type, input.x, input.y, input.settings ?? {});
+    return ctx.repos.widgets.create(input.type, input.position, input.size, input.settings ?? {});
   });
 
   app.patch('/api/widgets/:id', async (request) => {
@@ -316,17 +361,24 @@ function sendImage(reply: FastifyReply, fullPath: string, fileName: string, cach
   return reply.send(createReadStream(fullPath));
 }
 
+/** A 1080p-ish desktop, used when the server has to place something without knowing the real screen. */
+const NOMINAL_BOUNDS = { cols: 19, rows: 8 };
+
+/** Cells taken on the nominal desktop; widgets reserve 3×2 because the server does not know their real span. */
+function occupiedCells(shortcuts: Shortcut[], widgets: Widget[], folders: Folder[]) {
+  const cellOf = (position: AnchoredPosition, size: { cols: number; rows: number }) => clampCell({ ...cellFromAnchor(position, size, NOMINAL_BOUNDS), ...size }, NOMINAL_BOUNDS);
+  return [
+    ...shortcuts.filter((s) => s.folderId === null).map((s) => cellOf(s.position, ICON_CELLS)),
+    ...folders.map((f) => cellOf(f.position, ICON_CELLS)),
+    ...widgets.map((w) => cellOf(w.position, { cols: 3, rows: 2 })),
+  ];
+}
+
 /**
  * Fallback placement when the client sends no position (the client normally
  * picks the cell, since only it knows the viewport and widget sizes).
- * Assumes a 1080p-ish desktop and reserves 3×2 icon cells per widget.
  */
-function freeSlot(shortcuts: Shortcut[], widgets: Widget[]): { x: number; y: number } {
-  const bounds = { cols: 19, rows: 8 };
-  const occupied = [
-    ...shortcuts.map((s) => ({ ...pxToCell(s.x, s.y), ...ICON_CELLS })),
-    ...widgets.map((w) => ({ ...pxToCell(w.x, w.y), cols: 3, rows: 2 })),
-  ];
-  const spot = findFirstFree(ICON_CELLS.cols, ICON_CELLS.rows, occupied, bounds);
-  return cellToPx(spot.col, spot.row);
+function freeSlot(shortcuts: Shortcut[], widgets: Widget[], folders: Folder[]): AnchoredPosition {
+  const spot = findFirstFree(ICON_CELLS.cols, ICON_CELLS.rows, occupiedCells(shortcuts, widgets, folders), NOMINAL_BOUNDS);
+  return anchorFromCell({ ...spot, ...ICON_CELLS }, NOMINAL_BOUNDS);
 }

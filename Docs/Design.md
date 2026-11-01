@@ -30,9 +30,22 @@ Public Sans (variable) for UI, JetBrains Mono for terminal and editor; the macOS
 
 ## Desktop grid
 
-Shortcut icons and widgets share one grid (`Shared/src/Grid.ts`) whose cell is exactly one app icon: 96 × 112 px, starting 16 px from the top left. An icon takes one cell. Every widget spans a whole number of icon cells, declared in `Widgets/Registry.ts` (`size: { cols, rows }`), and renders at `cols·96 − 8` by `rows·112 − 8` so neighbours keep an 8 px gap. Current sizes: Clock, Memory, Uptime and Docker 2×1; CPU, Disks and Network 3×2; Temperatures 2×2.
+Shortcut icons, folders and widgets share one grid (`Shared/src/Grid.ts`) whose cell is exactly one app icon. With medium icons and normal density the cell is 96 × 112 px (small 88 × 104, large 112 × 128; compact density takes 8 px off each side, roomy adds 16), starting 16 px from the top left. An icon or folder takes one cell. Every widget spans a whole number of cells per size step (`Widgets/Registry.ts`, `sizes: { s, m, l }`) and renders at `cols·unit − 8` so neighbours keep an 8 px gap. Medium sizes: Clock, Memory, Uptime and Docker 2×1; CPU, Disks and Network 3×2; Temperatures 2×2. Small is one cell for most (CPU, Disks and Network 2×1), large one or two cells more in each direction. One-cell widgets drop their header and show the title as a tooltip.
+
+Positions are anchors (edge or center plus a cell offset), so the layout keeps its shape across screen sizes; see Architecture → Desktop layout.
 
 Dragging is free; a faint outline shows the target cell (the nearest free one), and on release the item glides into it and the snapped position is saved. New shortcuts take the first free cell column by column from the top left; new widgets the free cell nearest to where the menu was opened. When the window is smaller than the saved layout, items are clamped into view and step aside on screen if that makes them collide, without changing their saved positions. Layouts saved with genuinely colliding positions are untangled once after load.
+
+## Folders
+
+A folder icon is a translucent rounded square showing up to four of its shortcuts' icons in a 2 × 2 mini grid (an outline folder glyph when empty). A shortcut dragged over it scales the tile up with an accent ring. Opening a folder shows a frosted popover next to it with a four-column grid of its shortcuts, a rename pencil and a close button; it springs in (`quick`) and closes on Escape or an outside click.
+
+## Appearance settings
+
+- **Accent:** nine preset dots plus a rainbow "custom" dot that opens the native color picker. The selected dot gets a two-ring outline. Text on the accent is black or white, whichever has the higher WCAG contrast.
+- **Blur:** a range slider (0–40 px) for the frosted materials; reduced transparency wins.
+- **Slideshow / time of day:** wallpaper tiles reuse the picker's tile style with a checkmark badge for selected pictures; time-of-day parts are four pop-up buttons.
+- **Desktop:** icon size and density are segmented controls; the grid cell follows them live.
 
 ## Scale, errors and safe mode
 

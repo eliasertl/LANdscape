@@ -1,6 +1,6 @@
 import { createElement, useEffect, useState } from 'react';
 import { DotsThree, GearSix, MagnifyingGlass, Plus, SignOut, X } from '@phosphor-icons/react';
-import { useDesktopStore, wallpaperUrl } from '../Store/DesktopStore';
+import { useCurrentWallpaperUrl } from '../Desktop/Wallpaper';
 import { useSessionStore } from '../Store/SessionStore';
 import { useUiStore } from '../Store/UiStore';
 import { useWindowStore } from '../Store/WindowStore';
@@ -19,7 +19,6 @@ import styles from './PhoneShell.module.css';
 export function PhoneShell() {
   const [query, setQuery] = useState('');
   const entries = useLauncherEntries(query);
-  const settings = useDesktopStore((s) => s.settings);
   const windows = useWindowStore((s) => s.windows);
   const focusedId = useWindowStore((s) => s.focusedId);
   const openContextMenu = useUiStore((s) => s.openContextMenu);
@@ -27,7 +26,7 @@ export function PhoneShell() {
   const logout = useSessionStore((s) => s.logout);
   const open = windows.filter((w) => !w.closing);
   const active = open.find((w) => w.id === focusedId && !w.minimized) ?? null;
-  const background = wallpaperUrl(settings);
+  const background = useCurrentWallpaperUrl();
 
   // Keep the document from scrolling behind full-screen windows.
   useEffect(() => {

@@ -6,4 +6,6 @@ export * from './WsMessages';
 export * from './Schemas';
 export * from './Settings';
 export * from './Grid';
+export * from './Layout';
+export * from './WallpaperSchedule';
 export * from './Proxy';

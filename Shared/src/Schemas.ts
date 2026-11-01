@@ -3,7 +3,16 @@ import { APP_ID_PATTERN, WIDGET_MAX_INTERVAL_MS, WIDGET_MIN_INTERVAL_MS, WIDGET_
 import { SHORTCUT_NAME_MAX, SHORTCUT_URL_MAX } from './Constants';
 import { METRIC_NAMES } from './Metrics';
 
-const coordinate = z.number().finite().min(-100000).max(100000);
+const cellOffset = z.number().int().min(-1000).max(1000);
+
+export const anchoredPositionSchema = z.object({
+  anchorX: z.enum(['left', 'center', 'right']),
+  anchorY: z.enum(['top', 'center', 'bottom']),
+  offsetCol: cellOffset,
+  offsetRow: cellOffset,
+});
+
+export const idSchema = z.string().regex(/^[a-z0-9]{1,64}$/, 'Invalid id');
 
 export const httpUrlSchema = z
   .string()
@@ -30,8 +39,8 @@ const shortcutFields = {
   iconMode: z.enum(['favicon', 'upload']),
   iconFile: z.string().max(128).nullable().optional(),
   openMode: z.enum(['auto', 'embed', 'proxy', 'newtab']),
-  x: coordinate.optional(),
-  y: coordinate.optional(),
+  position: anchoredPositionSchema.optional(),
+  folderId: idSchema.nullable().optional(),
 };
 
 export const shortcutCreateSchema = z.object({
@@ -43,9 +52,17 @@ export const shortcutCreateSchema = z.object({
 /** No defaults here: a partial update must never reset fields it does not mention. */
 export const shortcutUpdateSchema = z.object(shortcutFields).partial();
 
-export const shortcutPositionsSchema = z.object({
-  positions: z.array(z.object({ id: z.string().min(1).max(64), x: coordinate, y: coordinate })).max(500),
+/** One call moves any mix of desktop items (after a drop, an untangle or a re-anchor). */
+export const desktopPositionsSchema = z.object({
+  items: z.array(z.object({ kind: z.enum(['shortcut', 'widget', 'folder']), id: idSchema, position: anchoredPositionSchema })).max(1000),
 });
+
+export const folderCreateSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(SHORTCUT_NAME_MAX),
+  position: anchoredPositionSchema.optional(),
+});
+
+export const folderUpdateSchema = folderCreateSchema.partial();
 
 export const embedCheckSchema = z.object({ url: httpUrlSchema });
 
@@ -55,18 +72,22 @@ export const widgetSettingsSchema = z
   })
   .catchall(z.unknown());
 
+export const widgetSizeSchema = z.enum(['s', 'm', 'l']);
+
 export const widgetCreateSchema = z.object({
   type: z.string().regex(WIDGET_TYPE_PATTERN, 'Invalid widget type'),
-  x: coordinate,
-  y: coordinate,
+  position: anchoredPositionSchema,
+  size: widgetSizeSchema.default('m'),
   settings: widgetSettingsSchema.partial().optional(),
 });
 
 export const widgetUpdateSchema = z.object({
-  x: coordinate.optional(),
-  y: coordinate.optional(),
+  position: anchoredPositionSchema.optional(),
+  size: widgetSizeSchema.optional(),
   settings: widgetSettingsSchema.optional(),
 });
+
+const coordinate = z.number().finite().min(-100000).max(100000);
 
 export const windowGeometrySchema = z.object({
   x: coordinate,

@@ -81,3 +81,14 @@
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
+
+/* One-cell widgets: no header, tighter padding; the title becomes the tooltip. */
+.small {
+  padding: 8px 10px;
+  border-radius: 14px;
+}
+
+.small .unavailable {
+  align-items: center;
+  justify-content: center;
+}

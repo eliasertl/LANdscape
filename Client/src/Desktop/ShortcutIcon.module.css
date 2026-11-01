@@ -2,8 +2,8 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 96px;
-  height: 112px;
+  width: var(--grid-unit-x, 96px);
+  height: var(--grid-unit-y, 112px);
   padding: 8px 4px;
   display: flex;
   flex-direction: column;

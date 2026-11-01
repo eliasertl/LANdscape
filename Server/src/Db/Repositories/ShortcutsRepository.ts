@@ -1,15 +1,15 @@
-import type { Embeddable, IconMode, OpenMode, Shortcut } from '@landscape/shared';
+import type { AnchoredPosition, Embeddable, IconMode, OpenMode, Shortcut } from '@landscape/shared';
 import type { Database, Row } from '../Database';
 import { newId, nowIso } from '../Ids';
+import { positionFromRow, type PositionRow } from './Positions';
 
-interface ShortcutRow extends Row {
+interface ShortcutRow extends Row, PositionRow {
   id: string;
   name: string;
   url: string;
   icon_mode: string;
   icon_file: string | null;
-  x: number;
-  y: number;
+  folder_id: string | null;
   embeddable: string;
   embed_checked_at: string | null;
   embed_reason: string | null;
@@ -27,8 +27,8 @@ function toShortcut(row: ShortcutRow): Shortcut {
     url: row.url,
     iconMode: row.icon_mode as IconMode,
     iconFile: row.icon_file,
-    x: Number(row.x),
-    y: Number(row.y),
+    position: positionFromRow(row),
+    folderId: row.folder_id,
     embeddable: row.embeddable as Embeddable,
     embedCheckedAt: row.embed_checked_at,
     embedReason: row.embed_reason,
@@ -44,8 +44,8 @@ export interface ShortcutInsert {
   url: string;
   iconMode: IconMode;
   iconFile: string | null;
-  x: number;
-  y: number;
+  position: AnchoredPosition;
+  folderId: string | null;
   embeddable: Embeddable;
   embedReason: string | null;
   openMode: OpenMode;
@@ -78,15 +78,18 @@ export class ShortcutsRepository {
     const id = newId();
     const now = nowIso();
     this.db.run(
-      `INSERT INTO shortcuts (id, name, url, icon_mode, icon_file, x, y, embeddable, embed_checked_at, embed_reason, open_mode, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO shortcuts (id, name, url, icon_mode, icon_file, anchor_x, anchor_y, offset_col, offset_row, folder_id, embeddable, embed_checked_at, embed_reason, open_mode, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       input.name,
       input.url,
       input.iconMode,
       input.iconFile,
-      input.x,
-      input.y,
+      input.position.anchorX,
+      input.position.anchorY,
+      input.position.offsetCol,
+      input.position.offsetRow,
+      input.folderId,
       input.embeddable,
       input.embeddable === 'unknown' && !input.embedReason ? null : now,
       input.embedReason,
@@ -105,22 +108,25 @@ export class ShortcutsRepository {
       url: patch.url ?? current.url,
       iconMode: patch.iconMode ?? current.iconMode,
       iconFile: patch.iconFile === undefined ? current.iconFile : patch.iconFile,
-      x: patch.x ?? current.x,
-      y: patch.y ?? current.y,
+      position: patch.position ?? current.position,
+      folderId: patch.folderId === undefined ? current.folderId : patch.folderId,
       embeddable: patch.embeddable ?? current.embeddable,
       embedCheckedAt: patch.embedCheckedAt === undefined ? current.embedCheckedAt : patch.embedCheckedAt,
       embedReason: patch.embedReason === undefined ? current.embedReason : patch.embedReason,
       openMode: patch.openMode ?? current.openMode,
     };
     this.db.run(
-      `UPDATE shortcuts SET name = ?, url = ?, icon_mode = ?, icon_file = ?, x = ?, y = ?, embeddable = ?,
-       embed_checked_at = ?, embed_reason = ?, open_mode = ?, updated_at = ? WHERE id = ?`,
+      `UPDATE shortcuts SET name = ?, url = ?, icon_mode = ?, icon_file = ?, anchor_x = ?, anchor_y = ?, offset_col = ?, offset_row = ?,
+       folder_id = ?, embeddable = ?, embed_checked_at = ?, embed_reason = ?, open_mode = ?, updated_at = ? WHERE id = ?`,
       next.name,
       next.url,
       next.iconMode,
       next.iconFile,
-      next.x,
-      next.y,
+      next.position.anchorX,
+      next.position.anchorY,
+      next.position.offsetCol,
+      next.position.offsetRow,
+      next.folderId,
       next.embeddable,
       next.embedCheckedAt,
       next.embedReason,
@@ -142,12 +148,9 @@ export class ShortcutsRepository {
       .map((row) => ({ id: row.id, name: row.name, url: row.url, port: Number(row.proxy_port), tag: row.proxy_tag ?? '' }));
   }
 
-  updatePositions(positions: { id: string; x: number; y: number }[]): void {
-    this.db.transaction(() => {
-      for (const p of positions) {
-        this.db.run('UPDATE shortcuts SET x = ?, y = ? WHERE id = ?', p.x, p.y, p.id);
-      }
-    });
+  /** Shortcuts inside a folder, oldest first. */
+  inFolder(folderId: string): Shortcut[] {
+    return this.db.all<ShortcutRow>('SELECT * FROM shortcuts WHERE folder_id = ? ORDER BY created_at', folderId).map(toShortcut);
   }
 
   delete(id: string): boolean {

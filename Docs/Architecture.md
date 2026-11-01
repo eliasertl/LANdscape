@@ -52,6 +52,20 @@ On the client, `Windows/ShortcutFrame.ts` decides per shortcut between a direct 
 
 **Debugging a proxy port:** Settings → Proxy shows each port's state and reason (refreshing every 5 s). `GET /api/proxy` returns the same with lease and connection counts. The server logs "Embed proxy port opened / closed (idle) / could not be opened" with the port number.
 
+## Desktop layout
+
+Desktop items (shortcuts, folders, widgets) are stored as **anchored positions** (`Shared/src/Layout.ts`): `{ anchorX: left|center|right, anchorY: top|center|bottom, offsetCol, offsetRow }` in grid cells, never in pixels. `cellFromAnchor` resolves a position for the bounds of the screen in use (an item one cell from the right edge is one cell from the right edge on every monitor; a centered item stays centered); `anchorFromCell` stores the anchor for the cell an item was dropped on, choosing the anchor from the third of the screen that holds the item's center. Migration 3 turned the old pixel positions into top-left anchors (`offset = round((px − 16) / unit)`), so an upgrade moves nothing; **Settings → Desktop → Re-anchor layout for this screen** rewrites every anchor from the cells currently shown (`DesktopGrid.reanchorForThisScreen`).
+
+The grid cell follows **Settings → Desktop** (`gridMetrics(iconSize, density)` in `Shared/src/Grid.ts`; medium/normal is the original 96 × 112). `Client/src/Desktop/DesktopGrid.ts` is the one place that resolves anchors on the client: `computeDisplayLayout` (resolve, clamp into the viewport, step aside on collisions), `occupiedCells`, `resolveOverlaps` (one-time untangle of stored collisions) and `folderAtCell` (drop target). `UseGridDrag.ts` drives free dragging with a snap outline; on drop it commits `positionForCell(cell)`; shortcuts dropped on a folder icon move inside instead. Moves go through `useDesktopStore.moveItem(s)` and are batched into `PUT /api/desktop/positions`.
+
+**Widgets** declare cell spans per size step (`WidgetDefinition.sizes: { s?, m, l? }`); the frame's context menu offers the steps a type declares, `widget.size` is stored, and each component adapts to `widget.size`. **Folders** (`folders` table, `shortcuts.folder_id`) are one-cell items; `FolderIcon` shows up to four contained icons, `FolderPopover` lists the contents next to the icon, and dragging a tile out of the popover drops it on the nearest free cell. Deleting a folder moves its shortcuts back onto free cells.
+
+**Debugging the layout:** `landscapeDebug.stores.ui.getState().displayLayout` holds the cell every item is shown at; `landscapeDebug.stores.desktop.getState().shortcuts[0].position` the stored anchor. `Tests/Server/Layout.test.ts` covers the anchor math and the migration formula, `Tests/E2E/DesktopLayout.spec.ts` the 1440 → 3440 behaviour.
+
+## Appearance
+
+`Design/Theme.ts → applyAppearance` maps the appearance settings onto design tokens on `<html>`: the accent (`--color-accent`, hover/pressed shades, a WCAG-contrast-checked `--color-on-accent`, selection and focus ring tints; `Design/Accent.ts` holds the pure color math) and the material blur (`--blur`, skipped under `prefers-reduced-transparency`). The wallpaper shown comes from `Shared/src/WallpaperSchedule.ts → resolveWallpaper` (time of day → slideshow → fixed choice), computed from the clock alone so every device and the lock screen agree; `Desktop/Wallpaper.tsx` re-evaluates when the slideshow slot or the part of the day changes.
+
 ## Metrics
 
 Widgets subscribe over `/ws/metrics` with `{ metric, intervalMs }`. `Metrics/Hub.ts` keeps one timer per metric at the fastest requested interval, samples once, and forwards to each subscriber only when that subscriber's own interval has elapsed. Samplers read the host's `/proc` and `/sys` (mounted read-only); network counters come from `/proc/1/net/dev` (the host's network namespace), addresses from `fib_trie`/`route`/`if_inet6`, disks from `/proc/1/mounts` with usage via `statfs` on the optional host-root mount or `df` over SSH. Every sampler returns `{ available: false, reason }` instead of throwing when something is missing.

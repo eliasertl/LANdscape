@@ -18,6 +18,49 @@ export const wallpaperChoiceSchema = z.object({
   file: z.string().regex(/^[A-Za-z0-9._-]{1,128}$/),
 });
 
+const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Use a hex color like #ff8800');
+
+export const ACCENT_PRESETS = {
+  blue: '#007aff',
+  purple: '#af52de',
+  pink: '#ff2d55',
+  red: '#ff3b30',
+  orange: '#ff9500',
+  yellow: '#ffcc00',
+  green: '#34c759',
+  teal: '#30b0c7',
+  graphite: '#8e8e93',
+} as const;
+
+export const appearanceSettingsSchema = z.object({
+  /** A preset name or a hex color. */
+  accent: z.union([z.enum(Object.keys(ACCENT_PRESETS) as [keyof typeof ACCENT_PRESETS, ...(keyof typeof ACCENT_PRESETS)[]]), hexColor]),
+  /** Blur radius of the translucent materials in px. */
+  blur: z.number().int().min(0).max(40),
+  slideshow: z.object({
+    enabled: z.boolean(),
+    intervalMinutes: z.number().int().min(1).max(1440),
+    order: z.enum(['sequence', 'shuffle']),
+    wallpapers: z.array(wallpaperChoiceSchema).max(100),
+  }),
+  timeOfDay: z.object({
+    enabled: z.boolean(),
+    morning: wallpaperChoiceSchema.nullable(),
+    day: wallpaperChoiceSchema.nullable(),
+    evening: wallpaperChoiceSchema.nullable(),
+    night: wallpaperChoiceSchema.nullable(),
+  }),
+});
+
+export const desktopSettingsSchema = z.object({
+  iconSize: z.enum(['s', 'm', 'l']),
+  labels: z.enum(['show', 'hide', 'shadow']),
+  /** Clicks needed to open a desktop icon. */
+  openWith: z.enum(['single', 'double']),
+  showIcons: z.boolean(),
+  density: z.enum(['compact', 'normal', 'roomy']),
+});
+
 export const proxySettingsSchema = z.object({
   /** Seconds an embed proxy port stays open after its last window closed and its last connection ended. */
   idleGraceSeconds: z.number().int().min(10).max(3600),
@@ -31,6 +74,8 @@ export const SETTINGS_FIELDS = {
   enabledApps: z.record(z.string().regex(APP_ID_PATTERN), z.boolean()),
   proxyIndicator: z.enum(['badge', 'none']),
   proxy: proxySettingsSchema,
+  appearance: appearanceSettingsSchema,
+  desktop: desktopSettingsSchema,
 } as const;
 
 export type SettingsKey = keyof typeof SETTINGS_FIELDS;
@@ -45,6 +90,13 @@ export const DEFAULT_SETTINGS: Settings = {
   enabledApps: {},
   proxyIndicator: 'badge',
   proxy: { idleGraceSeconds: 60 },
+  appearance: {
+    accent: 'blue',
+    blur: 24,
+    slideshow: { enabled: false, intervalMinutes: 30, order: 'sequence', wallpapers: [] },
+    timeOfDay: { enabled: false, morning: null, day: null, evening: null, night: null },
+  },
+  desktop: { iconSize: 'm', labels: 'show', openWith: 'double', showIcons: true, density: 'normal' },
 };
 
 /** A partial update: top-level keys are optional, groups may name only the fields that change. */
@@ -55,6 +107,10 @@ export const settingsUpdateSchema = z
     enabledApps: SETTINGS_FIELDS.enabledApps,
     proxyIndicator: SETTINGS_FIELDS.proxyIndicator,
     proxy: proxySettingsSchema.partial(),
+    appearance: appearanceSettingsSchema
+      .extend({ slideshow: appearanceSettingsSchema.shape.slideshow.partial(), timeOfDay: appearanceSettingsSchema.shape.timeOfDay.partial() })
+      .partial(),
+    desktop: desktopSettingsSchema.partial(),
   })
   .partial()
   .strict();
