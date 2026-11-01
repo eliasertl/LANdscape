@@ -1,43 +1,39 @@
-import { useState } from 'react';
-import { Info, PaintBrush, SquaresFour, Swap, type Icon } from '@phosphor-icons/react';
+import { Suspense, useState } from 'react';
 import type { AppWindowProps } from '../Types';
-import { AppearanceSection } from './AppearanceSection';
-import { AppsSection } from './AppsSection';
-import { AboutSection } from './AboutSection';
-import { ProxySection } from './ProxySection';
+import { ErrorBoundary } from '../../Components/ErrorBoundary';
+import { Spinner } from '../../Components/Spinner';
+import { SETTINGS_SECTIONS } from './Sections';
 import styles from './SettingsApp.module.css';
 
-type Section = 'appearance' | 'apps' | 'proxy' | 'about';
-
-const SECTIONS: { id: Section; label: string; icon: Icon }[] = [
-  { id: 'appearance', label: 'Appearance', icon: PaintBrush },
-  { id: 'apps', label: 'Apps', icon: SquaresFour },
-  { id: 'proxy', label: 'Proxy', icon: Swap },
-  { id: 'about', label: 'About', icon: Info },
-];
-
 export default function SettingsApp({ params, phone }: AppWindowProps) {
-  const initial = (typeof params.section === 'string' ? params.section : 'appearance') as Section;
-  const [section, setSection] = useState<Section>(SECTIONS.some((s) => s.id === initial) ? initial : 'appearance');
+  const first = SETTINGS_SECTIONS[0]?.id ?? '';
+  const initial = typeof params.section === 'string' && SETTINGS_SECTIONS.some((s) => s.id === params.section) ? params.section : first;
+  const [section, setSection] = useState<string>(initial);
+  const current = SETTINGS_SECTIONS.find((s) => s.id === section) ?? SETTINGS_SECTIONS[0];
+  const Section = current?.component;
 
   return (
     <div className={`${styles.app} ${phone ? styles.phone : ''}`}>
       <nav className={styles.sidebar} aria-label="Settings sections">
-        {SECTIONS.map((s) => {
+        {SETTINGS_SECTIONS.map((s) => {
           const Icon = s.icon;
+          const active = s.id === current?.id;
           return (
-            <button key={s.id} type="button" className={`${styles.navItem} ${section === s.id ? styles.navActive : ''}`} onClick={() => setSection(s.id)} aria-current={section === s.id ? 'page' : undefined}>
-              <Icon weight={section === s.id ? 'fill' : 'regular'} />
+            <button key={s.id} type="button" className={`${styles.navItem} ${active ? styles.navActive : ''}`} onClick={() => setSection(s.id)} aria-current={active ? 'page' : undefined} data-settings-section={s.id}>
+              <Icon weight={active ? 'fill' : 'regular'} />
               <span>{s.label}</span>
             </button>
           );
         })}
       </nav>
       <div className={`${styles.content} scroll`}>
-        {section === 'appearance' && <AppearanceSection />}
-        {section === 'apps' && <AppsSection />}
-        {section === 'proxy' && <ProxySection />}
-        {section === 'about' && <AboutSection />}
+        {Section && (
+          <ErrorBoundary key={current.id} label={`${current.label} settings`}>
+            <Suspense fallback={<Spinner size={18} />}>
+              <Section />
+            </Suspense>
+          </ErrorBoundary>
+        )}
       </div>
     </div>
   );

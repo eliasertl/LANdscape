@@ -35,6 +35,13 @@ function wsStatus(url: string, headers: Record<string, string>): Promise<{ statu
   });
 }
 
+/** What an open proxied window does: lease the port (which opens the listener). */
+async function lease(app: TestApp, cookie: string, shortcutId: string) {
+  const response = await app.app.inject({ method: 'POST', url: '/api/proxy/leases', headers: { ...sameOrigin, cookie }, payload: { shortcutId } });
+  expect(response.statusCode).toBe(201);
+  return response.json<{ leaseId: string; port: number; ttlMs: number }>();
+}
+
 async function createShortcut(app: TestApp, cookie: string, body: Record<string, unknown>) {
   return app.app.inject({ method: 'POST', url: '/api/shortcuts', headers: { ...sameOrigin, cookie }, payload: body });
 }
@@ -70,7 +77,8 @@ describe('embed proxy through the app', () => {
     expect(shortcut).toMatchObject({ embeddable: 'no', openMode: 'auto', proxyPort: RANGE.start });
     const base = `http://127.0.0.1:${RANGE.start}`;
 
-    await expect.poll(() => app.ctx.proxy.overview().ports[0]?.listening).toBe(true);
+    await lease(app, cookie, shortcut.id);
+    expect(app.ctx.proxy.overview().ports[0]?.state).toBe('open');
     const anonymous = await fetch(`${base}/`);
     expect(anonymous.status).toBe(401);
     expect(await anonymous.text()).toContain('Log in to LANdscape to use this service.');
@@ -100,7 +108,8 @@ describe('embed proxy through the app', () => {
     const a = (await createShortcut(app, cookie, { name: 'Alpha', url: alpha.origin, iconMode: 'upload' })).json<Shortcut>();
     const b = (await createShortcut(app, cookie, { name: 'Beta', url: beta.origin, iconMode: 'upload' })).json<Shortcut>();
     expect([a.proxyPort, b.proxyPort]).toEqual([RANGE.start, RANGE.start + 1]);
-    await expect.poll(() => app.ctx.proxy.overview().ports.every((p) => p.listening)).toBe(true);
+    await lease(app, cookie, a.id);
+    await lease(app, cookie, b.id);
 
     // A tiny cookie jar keyed by host, like a browser (cookies ignore ports).
     const jar = new Map<string, string>();
@@ -139,6 +148,7 @@ describe('embed proxy through the app', () => {
 
     expect((await patch({ openMode: 'newtab' })).json<Shortcut>().proxyPort).toBeNull();
     expect((await patch({ openMode: 'proxy' })).json<Shortcut>().proxyPort).toBe(RANGE.start);
+    await lease(app, cookie, created.id);
     expect((await patch({ openMode: 'embed' })).json<Shortcut>().proxyPort).toBeNull();
     await expect.poll(() => fetch(`http://127.0.0.1:${RANGE.start}/`).then(() => 'open', () => 'closed')).toBe('closed');
 
@@ -176,19 +186,21 @@ describe('embed proxy through the app', () => {
   });
 
   it('exposes the overview and the range to the client', async () => {
-    await createShortcut(app, cookie, { name: 'Alpha', url: `${alpha.origin}/`, iconMode: 'upload' });
+    const created = (await createShortcut(app, cookie, { name: 'Alpha', url: `${alpha.origin}/`, iconMode: 'upload' })).json<Shortcut>();
     const desktop = await app.app.inject({ method: 'GET', url: '/api/desktop', headers: { cookie } });
     expect(desktop.json()).toMatchObject({ proxy: RANGE, settings: { proxyIndicator: 'badge' } });
-    await expect.poll(() => app.ctx.proxy.overview().ports[0]?.listening).toBe(true);
-    const overview = await app.app.inject({ method: 'GET', url: '/api/proxy', headers: { cookie } });
-    expect(overview.json()).toEqual({
+    const port = { port: RANGE.start, shortcutId: created.id, name: 'Alpha', target: alpha.origin, error: null, connections: 0, closesInMs: null };
+    const overview = async () => (await app.app.inject({ method: 'GET', url: '/api/proxy', headers: { cookie } })).json<Record<string, unknown>>();
+    expect(await overview()).toEqual({
       start: RANGE.start,
       end: RANGE.end,
       total: 3,
       used: 1,
-      ports: [{ port: RANGE.start, shortcutId: expect.any(String) as string, name: 'Alpha', target: alpha.origin, listening: true, error: null }],
+      ports: [{ ...port, state: 'closed', listening: false, reason: 'Closed until a window uses it', leases: 0 }],
       waiting: [],
     });
+    await lease(app, cookie, created.id);
+    expect((await overview()).ports).toEqual([{ ...port, state: 'open', listening: true, reason: 'In use by 1 window', leases: 1 }]);
     expect((await app.app.inject({ method: 'GET', url: '/api/proxy' })).statusCode).toBe(401);
 
     const settings = await app.app.inject({ method: 'PATCH', url: '/api/settings', headers: { ...sameOrigin, cookie }, payload: { proxyIndicator: 'none' } });

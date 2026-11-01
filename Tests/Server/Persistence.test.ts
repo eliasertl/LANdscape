@@ -67,7 +67,8 @@ describe('database', () => {
     const settings = repos.settings.get();
     expect(settings.theme).toBe('dark');
     expect(settings.enabledApps.terminal).toBe(false);
-    expect(settings.enabledApps.files).toBe(true);
+    // Apps that were never switched off are simply absent (enabled).
+    expect(settings.enabledApps.files).toBeUndefined();
     db.close();
   });
 });

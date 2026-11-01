@@ -34,6 +34,13 @@ Shortcut icons and widgets share one grid (`Shared/src/Grid.ts`) whose cell is e
 
 Dragging is free; a faint outline shows the target cell (the nearest free one), and on release the item glides into it and the snapped position is saved. New shortcuts take the first free cell column by column from the top left; new widgets the free cell nearest to where the menu was opened. When the window is smaller than the saved layout, items are clamped into view and step aside on screen if that makes them collide, without changing their saved positions. Layouts saved with genuinely colliding positions are untangled once after load.
 
+## Scale, errors and safe mode
+
+- **UI scale** (per device, 80–150 %) zooms the whole page; the layout keeps working in CSS pixels (see Architecture → Settings).
+- Settings that apply only to this browser carry a small accent-tinted **This device** tag after their label.
+- A crashed part shows a centered card: a red octagon icon, "<name> stopped working", the error message (two lines at most) and small **Reload** and **Copy details** buttons. In the taskbar it collapses to the red icon alone.
+- **Safe mode** shows a frosted pill at the top center with an orange lifebuoy icon, one sentence and a primary **Leave safe mode** button. The lock screen has a quiet "Start in safe mode" text link at the bottom.
+
 ## Themes
 
 `data-theme="light|dark"` on `<html>`; `system` follows `prefers-color-scheme`. `Client/public/ThemeInit.js` applies the stored choice before first paint to avoid a flash (an external file, because the CSP forbids inline scripts).

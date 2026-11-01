@@ -7,6 +7,7 @@ import { useWindowStore } from '../Store/WindowStore';
 import { EntryIcon, entryKey, launchEntry, useLauncherEntries } from '../StartMenu/StartMenu';
 import { shortcutMenuItems } from '../Desktop/DesktopContextMenu';
 import { Overlays } from '../Desktop/Overlays';
+import { SafeModeBanner } from '../Desktop/SafeModeBanner';
 import { openApp } from '../Desktop/Launch';
 import { PhoneWindow } from './PhoneWindow';
 import styles from './PhoneShell.module.css';
@@ -115,6 +116,7 @@ export function PhoneShell() {
         <PhoneWindow key={w.id} win={w} active={w.id === active?.id} />
       ))}
       <Overlays />
+      <SafeModeBanner />
     </div>
   );
 }

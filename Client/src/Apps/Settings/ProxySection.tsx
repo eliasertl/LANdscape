@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
-import { ArrowsClockwise, CheckCircle, WarningCircle } from '@phosphor-icons/react';
-import type { ProxyOverview } from '@landscape/shared';
+import { ArrowsClockwise, CheckCircle, Circle, CircleNotch, WarningCircle } from '@phosphor-icons/react';
+import type { ProxyOverview, ProxyPortStatus } from '@landscape/shared';
 import { api, errorMessage } from '../../Api/Http';
 import { useDesktopStore } from '../../Store/DesktopStore';
 import { Button } from '../../Components/Button';
 import { Spinner } from '../../Components/Spinner';
 import { Toggle } from '../../Components/Toggle';
+import { Select } from '../../Components/Select';
+import { SettingRow } from './SettingRow';
 import { toast } from '../../Components/Toast';
 import styles from './SettingsApp.module.css';
 
-export function ProxySection() {
+export default function ProxySection() {
   const settings = useDesktopStore((s) => s.settings);
   const updateSettings = useDesktopStore((s) => s.updateSettings);
   // Reload when assignments change (a shortcut was added, edited or deleted while Settings is open).
@@ -18,8 +20,8 @@ export function ProxySection() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (quiet = false) => {
+    if (!quiet) setLoading(true);
     setError(null);
     try {
       setOverview(await api.get<ProxyOverview>('/api/proxy'));
@@ -32,7 +34,15 @@ export function ProxySection() {
 
   useEffect(() => {
     void load();
+    // Ports open and close on their own; keep the states (and countdowns) current while Settings is open.
+    const timer = window.setInterval(() => void load(true), 5000);
+    return () => window.clearInterval(timer);
   }, [assignmentKey]);
+
+  const setGrace = (seconds: number) => {
+    void updateSettings({ proxy: { idleGraceSeconds: seconds } }).catch((err: unknown) => toast.error(errorMessage(err)));
+  };
+  const grace = settings?.proxy.idleGraceSeconds ?? 60;
 
   const setBadge = (on: boolean) => {
     void updateSettings({ proxyIndicator: on ? 'badge' : 'none' }).catch((err: unknown) => toast.error(errorMessage(err)));
@@ -53,6 +63,16 @@ export function ProxySection() {
             </div>
             <Toggle checked={settings?.proxyIndicator !== 'none'} onChange={setBadge} />
           </div>
+          <SettingRow label="Close idle ports after" detail="A port opens when a window shows its site and closes once nothing has used it for this long. Default: 1 min.">
+            <Select
+              aria-label="Close idle ports after"
+              value={String(grace)}
+              onChange={(value) => setGrace(Number(value))}
+              options={[...new Set([10, 30, 60, 120, 300, 900, 3600, grace])]
+                .sort((a, b) => a - b)
+                .map((s) => ({ value: String(s), label: formatSeconds(s) }))}
+            />
+          </SettingRow>
         </div>
       </section>
       <section className={styles.section}>
@@ -85,18 +105,11 @@ export function ProxySection() {
                     <span className={styles.rowLabel}>
                       <span className={styles.mono}>:{entry.port}</span> {entry.name}
                     </span>
-                    <span className={styles.rowDetail}>{entry.target}</span>
-                    {entry.error && <span className={styles.rowHint}>{entry.error}</span>}
+                    <span className={styles.rowDetail}>
+                      {entry.target} · {entry.reason}
+                    </span>
                   </div>
-                  {entry.listening ? (
-                    <span className={`${styles.status} ${styles.statusOk}`}>
-                      <CheckCircle weight="fill" /> Listening
-                    </span>
-                  ) : (
-                    <span className={`${styles.status} ${styles.statusBad}`}>
-                      <WarningCircle weight="fill" /> Not listening
-                    </span>
-                  )}
+                  <PortState entry={entry} />
                 </div>
               ))}
             </div>
@@ -113,4 +126,39 @@ export function ProxySection() {
       </section>
     </>
   );
+}
+
+function formatSeconds(seconds: number): string {
+  if (seconds < 60) return `${seconds} s`;
+  if (seconds < 3600) return `${seconds / 60} min`;
+  return `${seconds / 3600} h`;
+}
+
+function PortState({ entry }: { entry: ProxyPortStatus }) {
+  switch (entry.state) {
+    case 'open':
+      return (
+        <span className={`${styles.status} ${styles.statusOk}`} data-port-state="open">
+          <CheckCircle weight="fill" /> Open
+        </span>
+      );
+    case 'opening':
+      return (
+        <span className={`${styles.status} text-secondary`} data-port-state="opening">
+          <CircleNotch /> Opening
+        </span>
+      );
+    case 'error':
+      return (
+        <span className={`${styles.status} ${styles.statusBad}`} data-port-state="error" title={entry.error ?? undefined}>
+          <WarningCircle weight="fill" /> Failed
+        </span>
+      );
+    default:
+      return (
+        <span className={`${styles.status} text-secondary`} data-port-state="closed">
+          <Circle /> Closed
+        </span>
+      );
+  }
 }

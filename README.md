@@ -9,12 +9,13 @@ A self-hosted, macOS-style web desktop for your homeserver. Your services become
 - **Lock screen** with the blurred wallpaper and a login card. 5 failed attempts lock the IP for 15 minutes.
 - **Desktop** with wallpaper, draggable shortcut icons and widgets. Layout is saved on the server, so every device sees the same desktop.
 - **Shortcuts** to any URL. The server checks whether the site allows embedding (X-Frame-Options / CSP `frame-ancestors`) before you save, fetches and stores the favicon, or uses an uploaded icon.
-- **Embed proxy** for sites that refuse to be framed (typical for self-hosted apps like Docmost): each such shortcut gets its own LANdscape port (8081–8100) that passes the site through 1:1 with the framing headers removed, so it still opens in a window — logins included. Only reachable while you are logged in to LANdscape. See [Embed proxy](#embed-proxy).
+- **Embed proxy** for sites that refuse to be framed (typical for self-hosted apps like Docmost): each such shortcut gets its own LANdscape port (8081–8100) that passes the site through 1:1 with the framing headers removed, so it still opens in a window — logins included. Only reachable while you are logged in to LANdscape, and only open while a window uses it. See [Embed proxy](#embed-proxy).
 - **Window manager** in macOS style: traffic lights, drag, resize from every edge, minimize to the taskbar with a spring animation, maximize, several windows per shortcut, remembered sizes and positions.
 - **Taskbar** (frosted glass) with a start menu/launcher (search, keyboard navigation, `Ctrl+Space`), grouped open windows and a clock.
 - **Widgets** for CPU, RAM, disk usage, network throughput and IPs, temperatures, uptime, Docker container count and a clock. Each has its own update interval. Values come from the host, not the container.
 - **Admin apps:** Settings (theme, wallpaper, enabled apps, integration status), Terminal (SSH + xterm.js), Files (SFTP with upload/download/rename/delete/preview), Text Editor (CodeMirror), Docker (containers, start/stop/restart, live logs), Task Manager (host processes, kill via SSH), Log Viewer (Docker logs, `journalctl`, any file, follow mode).
 - **Phone layout** below 768 px: launcher grid, full-screen windows.
+- **Robust by design:** a crashing window, widget or taskbar item only breaks itself; **safe mode** (`?safe=1` or the lock-screen link) starts without customizations. Per-device settings such as the UI scale are kept separately for each browser.
 - **Light and dark themes** (dark is pure black), animated switching, reduced-motion and reduced-transparency support.
 
 ## Install on CasaOS
@@ -114,7 +115,7 @@ The container starts as root only to fix ownership of the data directory and to 
 | Port | Purpose |
 |---|---|
 | `8080` (`PORT`) | Web UI and API. |
-| `8081`–`8100` (`PROXY_PORT_START`–`PROXY_PORT_END`) | Embed proxy, one port per shortcut shown through the proxy. A port only accepts connections while a shortcut is assigned to it; the others stay closed. |
+| `8081`–`8100` (`PROXY_PORT_START`–`PROXY_PORT_END`) | Embed proxy, one port per shortcut shown through the proxy. A port only accepts connections while a window shows its shortcut (plus a short grace period); otherwise it stays closed. |
 
 The browser is sent to `http://<the host you opened LANdscape with>:<proxy port>`, so the published host port **must equal** the container port. To move the range (say 9001–9020), change both the variables and the published ports. You can make the range smaller if you need fewer proxied shortcuts.
 
@@ -136,7 +137,11 @@ Many self-hosted apps send `X-Frame-Options` or `Content-Security-Policy: frame-
 | Via proxy | Always through the proxy, even if direct embedding would work. Refused with a clear message when all ports are in use. |
 | New tab | Never embeds. |
 
-Proxied windows show a small ⇄ badge next to the title (with the port on phones); **Settings → Proxy** turns it off and lists which port serves which shortcut and whether it is listening. Ports are released when a shortcut stops using the proxy or is deleted; changing a shortcut to a different server gives it a fresh assignment (old cookies are not carried over).
+Proxied windows show a small ⇄ badge next to the title (with the port on phones); **Settings → Proxy** turns it off and lists which port serves which shortcut, whether it is open and why.
+
+Ports open **on demand**: a shortcut keeps its port number (and the cookies of your login in that app) for good, but the port only accepts connections while a window shows the shortcut. Once the last window is closed and no request or WebSocket is active any more, the port closes after a grace period (**Settings → Proxy → Close idle ports after**, default 1 minute). Opening the window again reopens it within a moment; your login in the app is still there.
+
+Ports are released when a shortcut stops using the proxy or is deleted; changing a shortcut to a different server gives it a fresh assignment (old cookies are not carried over).
 
 **Limitations**
 
@@ -144,6 +149,7 @@ Proxied windows show a small ⇄ badge next to the title (with the port on phone
 - Apps that build links to their *own original address* in JavaScript (for example a configured "public URL" like `http://192.168.2.116:35957`) can leave the proxy; links or API calls to that address then go to the app directly.
 - Cookies that an app sets *from JavaScript* (`document.cookie`) are not namespaced and are not forwarded, and apps whose JavaScript reads a server-set cookie by name (some CSRF schemes, e.g. `XSRF-TOKEN`) will not find it under its original name. Most apps use server-set, httpOnly session cookies and are unaffected.
 - Redirects to another site (single sign-on, OAuth) leave the proxy and open that site directly, which usually cannot be framed either.
+- Proxied windows are sandboxed against navigating the LANdscape tab (`top.location = …`). Pages that only consist of such a redirect stay blank; point the shortcut at the redirect's destination.
 
 ## Security
 
@@ -165,9 +171,12 @@ Proxied windows show a small ⇄ badge next to the title (with the port on phone
 - **Docker app shows a setup screen** — the socket is not mounted or not group-accessible. `stat -c %g /var/run/docker.sock` shows the group id; the entrypoint adds the server user to it automatically.
 - **A shortcut shows "This site can't be embedded"** — the site blocks framing and every proxy port is taken (the hint in the window says so). Free a port by switching another shortcut to *Direct* or *New tab*, delete one, or widen `PROXY_PORT_START`/`PROXY_PORT_END` (and publish the new ports).
 - **"All 20 proxy ports are in use"** when saving a shortcut with *Via proxy* — same cause as above. Settings → Proxy shows which shortcuts hold the ports.
-- **Proxy port not reachable** (the window stays blank or "can't connect" on `:8081`…) — the port is not published or is published under a different host port. Check the app's ports in CasaOS: 8081–8100 must be mapped to the same numbers. Settings → Proxy shows "Not listening" with a reason if LANdscape itself could not open the port (e.g. another program uses it). A firewall on the server must allow the range too.
+- **Proxy port not reachable** (the window stays blank or "can't connect" on `:8081`…) — the port is not published or is published under a different host port. Check the app's ports in CasaOS: 8081–8100 must be mapped to the same numbers. Settings → Proxy shows "Failed" with a reason if LANdscape itself could not open the port (e.g. another program uses it). "Closed" is normal while no window shows the shortcut. A firewall on the server must allow the range too.
+- **A proxied window stays blank, or used to send the whole tab to the service** — the service's start page is a JavaScript "frame-buster" (`top.location = …`, common on routers, switches and NAS UIs). Proxied windows are not allowed to navigate the LANdscape tab, so such a page has nowhere to go. Point the shortcut at the page it redirects to instead (for example `http://<switch>/login.cgi` instead of `http://<switch>/`).
 - **A proxied window says "Log in to LANdscape to use this service."** — your LANdscape session expired or you logged out; log in again and reopen the window.
 - **A proxied window says "The service is not reachable"** — LANdscape could not connect to the shortcut's address from inside the container. Check that the URL works from the server itself.
+- **The desktop is broken after changing a setting, or one part shows "… stopped working"** — a failing window, widget or taskbar item only breaks itself and shows *Reload* and *Copy details* (paste those into a bug report). If the whole desktop misbehaves, open LANdscape with `?safe=1` (or click **Start in safe mode** on the lock screen): it starts without catalog apps and customizations, and **Leave safe mode** in the banner returns to normal. For a closer look, the browser console has `landscapeDebug` (registries and stores).
+- **Everything is too large or too small on one screen** — Settings → Appearance → UI scale. It is saved per browser ("This device"), so every screen can have its own.
 - **Logged out after a restart** — set `SESSION_SECRET` explicitly or make sure the data directory is persisted (the generated secret lives there).
 - **Lock screen says too many attempts** — wait 15 minutes, or restart the container (lockouts are kept in memory).
 - **"Cannot write the host key store"** — the data directory's `ssh/` folder is not writable by the server user. The entrypoint normally fixes this on start; if you run with `user:` in compose, make the folder writable or set `PUID`/`PGID` to its owner.

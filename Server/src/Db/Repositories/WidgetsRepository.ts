@@ -1,4 +1,4 @@
-import { WIDGET_DEFAULT_INTERVAL_MS, type Widget, type WidgetSettings, type WidgetType } from '@landscape/shared';
+import { WIDGET_FALLBACK_INTERVAL_MS, type Widget, type WidgetSettings, type WidgetType } from '@landscape/shared';
 import type { Database, Row } from '../Database';
 import { newId, nowIso } from '../Ids';
 
@@ -11,7 +11,7 @@ interface WidgetRow extends Row {
   created_at: string;
 }
 
-function parseSettings(type: WidgetType, raw: string): WidgetSettings {
+function parseSettings(raw: string): WidgetSettings {
   let parsed: Record<string, unknown> = {};
   try {
     const value: unknown = JSON.parse(raw);
@@ -22,18 +22,17 @@ function parseSettings(type: WidgetType, raw: string): WidgetSettings {
   const intervalMs =
     typeof parsed.intervalMs === 'number' && Number.isFinite(parsed.intervalMs)
       ? parsed.intervalMs
-      : WIDGET_DEFAULT_INTERVAL_MS[type];
+      : WIDGET_FALLBACK_INTERVAL_MS;
   return { ...parsed, intervalMs };
 }
 
 function toWidget(row: WidgetRow): Widget {
-  const type = row.type as WidgetType;
   return {
     id: row.id,
-    type,
+    type: row.type,
     x: Number(row.x),
     y: Number(row.y),
-    settings: parseSettings(type, row.settings),
+    settings: parseSettings(row.settings),
     createdAt: row.created_at,
   };
 }
@@ -50,9 +49,10 @@ export class WidgetsRepository {
     return row ? toWidget(row) : undefined;
   }
 
+  /** The client sends the widget's default interval; the fallback covers older clients and the first-run seed. */
   create(type: WidgetType, x: number, y: number, settings: Partial<WidgetSettings> = {}): Widget {
     const id = newId();
-    const merged: WidgetSettings = { intervalMs: WIDGET_DEFAULT_INTERVAL_MS[type], ...settings };
+    const merged: WidgetSettings = { intervalMs: WIDGET_FALLBACK_INTERVAL_MS, ...settings };
     this.db.run(
       'INSERT INTO widgets (id, type, x, y, settings, created_at) VALUES (?, ?, ?, ?, ?, ?)',
       id,

@@ -27,8 +27,11 @@ All routes except the ones marked *public* require a valid session cookie. State
 | GET | `/api/wallpapers`; DELETE `/api/wallpapers/:file` | |
 | POST/PATCH/DELETE | `/api/widgets[/:id]` | `{ type, x, y, settings }` |
 | PUT | `/api/window-memory/:appKey` | `{ x, y, width, height, maximized }`; appKey is `shortcut:<id>` or `app:<id>` |
-| GET/PATCH | `/api/settings` | `{ theme, wallpaper, enabledApps, proxyIndicator: badge\|none }` |
-| GET | `/api/proxy` | `{ start, end, total, used, ports: [{ port, shortcutId, name, target, listening, error }], waiting: [{ shortcutId, name }] }` |
+| GET/PATCH | `/api/settings` | Complete settings on GET (`Shared/src/Settings.ts` holds the schema and defaults). PATCH takes a partial object: top-level keys are optional and groups may name only the fields that change, e.g. `{ proxy: { idleGraceSeconds: 120 } }`. Unknown keys → 400. Currently: `theme`, `wallpaper`, `enabledApps` (only apps switched off; missing ids are enabled), `proxyIndicator: badge\|none`, `proxy: { idleGraceSeconds: 10–3600 }` |
+| GET | `/api/proxy` | `{ start, end, total, used, ports: [{ port, shortcutId, name, target, state: closed\|opening\|open\|error, listening, error, reason, leases, connections, closesInMs }], waiting: [{ shortcutId, name }] }` |
+| POST | `/api/proxy/leases` | `{ shortcutId }` → 201 `{ leaseId, port, ttlMs }` once the port accepts connections. 404 unknown shortcut, 409 the shortcut has no proxy port, 503 `proxy_port_unavailable` when the port cannot be bound |
+| POST | `/api/proxy/leases/:id/renew` | heartbeat (the client sends one every 20 s); `{ ok, port }`, 404 when the lease expired (lease again) |
+| DELETE | `/api/proxy/leases/:id` | the window closed; the port closes after the idle grace period |
 | GET | `/api/system/status`, `/api/system/version` | integration checks (SSH probe included) |
 
 ## Docker and processes
@@ -55,7 +58,7 @@ All routes except the ones marked *public* require a valid session cookie. State
 
 ## Embed proxy ports
 
-Not part of the API: each port in `PROXY_PORT_START`–`PROXY_PORT_END` that is assigned to a shortcut forwards every request and WebSocket upgrade to that shortcut's origin, after checking the LANdscape session cookie (`401` HTML page otherwise). See [Security.md](Security.md#embed-proxy) for the header and cookie rewriting.
+Not part of the API: each port in `PROXY_PORT_START`–`PROXY_PORT_END` that is assigned to a shortcut, and currently open (see the lease routes above), forwards every request and WebSocket upgrade to that shortcut's origin, after checking the LANdscape session cookie (`401` HTML page otherwise). See [Security.md](Security.md#embed-proxy) for the header and cookie rewriting.
 
 ## WebSockets
 

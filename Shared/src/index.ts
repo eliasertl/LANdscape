@@ -4,5 +4,6 @@ export * from './Types';
 export * from './Metrics';
 export * from './WsMessages';
 export * from './Schemas';
+export * from './Settings';
 export * from './Grid';
 export * from './Proxy';

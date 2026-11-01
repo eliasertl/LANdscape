@@ -1,13 +1,14 @@
 import { lazy } from 'react';
 import { Cube, FileText, FolderOpen, GearSix, ListMagnifyingGlass, Pulse, TerminalWindow } from '@phosphor-icons/react';
-import type { AppId } from '@landscape/shared';
 import type { AppDefinition } from './Types';
+import { registries } from '../Platform/Registries';
 
 /**
  * Built-in apps. Each entry points at a self-contained folder; adding or
- * removing an app is a change to this list and that folder only.
+ * removing a built-in app is a change to this list and that folder only.
+ * Everything else reads apps from `registries.apps`.
  */
-export const APPS: AppDefinition[] = [
+const BUILTIN_APPS: AppDefinition[] = [
   {
     id: 'settings',
     name: 'Settings',
@@ -94,8 +95,10 @@ export const APPS: AppDefinition[] = [
   },
 ];
 
-const byId = new Map(APPS.map((app) => [app.id, app]));
+export function registerBuiltinApps(): void {
+  for (const app of BUILTIN_APPS) registries.apps.register({ ...app, source: { kind: 'builtin' } });
+}
 
 export function getApp(id: string): AppDefinition | undefined {
-  return byId.get(id as AppId);
+  return registries.apps.get(id);
 }

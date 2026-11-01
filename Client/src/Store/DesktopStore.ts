@@ -13,6 +13,7 @@ import type {
   WindowGeometry,
   WindowMemory,
 } from '@landscape/shared';
+import { applySettingsPatch } from '@landscape/shared';
 import { api } from '../Api/Http';
 import { applyTheme } from '../Design/Theme';
 
@@ -33,7 +34,7 @@ interface DesktopState {
   deleteShortcut: (id: string) => Promise<void>;
   /** Optimistic move; positions are flushed to the server shortly after. */
   moveShortcut: (id: string, x: number, y: number) => void;
-  addWidget: (type: WidgetType, x: number, y: number) => Promise<Widget>;
+  addWidget: (type: WidgetType, x: number, y: number, settings?: Partial<WidgetSettings>) => Promise<Widget>;
   moveWidget: (id: string, x: number, y: number) => void;
   updateWidgetSettings: (id: string, settings: WidgetSettings) => Promise<Widget>;
   removeWidget: (id: string) => Promise<void>;
@@ -128,8 +129,8 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
     flushPositionsSoon();
   },
 
-  async addWidget(type, x, y) {
-    const widget = await api.post<Widget>('/api/widgets', { type, x, y });
+  async addWidget(type, x, y, settings) {
+    const widget = await api.post<Widget>('/api/widgets', { type, x, y, settings });
     set((s) => ({ widgets: [...s.widgets, widget] }));
     return widget;
   },
@@ -153,7 +154,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
   async updateSettings(patch) {
     const previous = get().settings;
     if (patch.theme) applyTheme(patch.theme);
-    if (previous) set({ settings: { ...previous, ...patch, enabledApps: { ...previous.enabledApps, ...(patch.enabledApps ?? {}) } } as Settings });
+    if (previous) set({ settings: applySettingsPatch(previous, patch) });
     try {
       const settings = await api.patch<Settings>('/api/settings', patch);
       set({ settings });

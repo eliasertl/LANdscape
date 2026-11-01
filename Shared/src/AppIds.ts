@@ -1,49 +1,29 @@
-/** Built-in app identifiers. Each has a self-contained folder under Client/src/Apps. */
-export const APP_IDS = [
-  'settings',
-  'terminal',
-  'files',
-  'text-editor',
-  'docker',
-  'task-manager',
-  'log-viewer',
-] as const;
+/**
+ * App and widget identifiers. There is no fixed list: built-in apps and
+ * widgets register themselves in the client registries (Client/src/Platform),
+ * catalog apps register from their manifest. These patterns are the only
+ * contract the server needs.
+ */
 
-export type AppId = (typeof APP_IDS)[number];
+/** An app id: lowercase letters, digits and dashes, e.g. "settings" or "weather". */
+export const APP_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,47}$/;
 
-export function isAppId(value: string): value is AppId {
-  return (APP_IDS as readonly string[]).includes(value);
+/** A widget type: a built-in name ("cpu") or "<appId>/<name>" for widgets contributed by an app. */
+export const WIDGET_TYPE_PATTERN = /^[a-z0-9][a-z0-9-]{0,47}(\/[a-z0-9][a-z0-9-]{0,47})?$/;
+
+export type AppId = string;
+export type WidgetType = string;
+
+export function isAppId(value: string): boolean {
+  return APP_ID_PATTERN.test(value);
 }
 
-/** Widget type identifiers. Each has a self-contained folder under Client/src/Widgets. */
-export const WIDGET_TYPES = [
-  'clock',
-  'cpu',
-  'ram',
-  'disk',
-  'network',
-  'temperature',
-  'uptime',
-  'docker-count',
-] as const;
-
-export type WidgetType = (typeof WIDGET_TYPES)[number];
-
-export function isWidgetType(value: string): value is WidgetType {
-  return (WIDGET_TYPES as readonly string[]).includes(value);
+export function isWidgetType(value: string): boolean {
+  return WIDGET_TYPE_PATTERN.test(value);
 }
 
-/** Default update interval per widget type, in milliseconds. */
-export const WIDGET_DEFAULT_INTERVAL_MS: Record<WidgetType, number> = {
-  clock: 1000,
-  cpu: 2000,
-  network: 2000,
-  ram: 5000,
-  temperature: 5000,
-  'docker-count': 10000,
-  disk: 30000,
-  uptime: 60000,
-};
+/** Update interval for widgets that do not declare one. */
+export const WIDGET_FALLBACK_INTERVAL_MS = 5000;
 
 export const WIDGET_MIN_INTERVAL_MS = 500;
 export const WIDGET_MAX_INTERVAL_MS = 10 * 60 * 1000;

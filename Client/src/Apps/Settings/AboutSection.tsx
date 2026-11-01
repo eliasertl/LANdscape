@@ -14,7 +14,7 @@ const ROWS: { key: keyof Omit<SystemStatus, 'version'>; label: string }[] = [
   { key: 'hostRoot', label: 'Host root (disk usage)' },
 ];
 
-export function AboutSection() {
+export default function AboutSection() {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

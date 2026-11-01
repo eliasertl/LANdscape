@@ -1,6 +1,6 @@
 import { Clock, Cpu, Cube, HardDrives, Memory, Network, Thermometer, Timer } from '@phosphor-icons/react';
-import type { WidgetType } from '@landscape/shared';
 import type { WidgetDefinition } from './Types';
+import { registries } from '../Platform/Registries';
 import { ClockWidget } from './Clock/ClockWidget';
 import { CpuWidget } from './Cpu/CpuWidget';
 import { RamWidget } from './Ram/RamWidget';
@@ -10,10 +10,11 @@ import { TemperatureWidget } from './Temperature/TemperatureWidget';
 import { UptimeWidget } from './Uptime/UptimeWidget';
 import { DockerCountWidget } from './DockerCount/DockerCountWidget';
 
-/** Widget catalogue. Each widget is a self-contained folder; add or remove entries here. */
-export const WIDGETS: WidgetDefinition[] = [
+/** Built-in widgets. Each is a self-contained folder; add or remove entries here. Everything else reads `registries.widgets`. */
+const BUILTIN_WIDGETS: WidgetDefinition[] = [
   {
-    type: 'clock',
+    id: 'clock',
+    defaultIntervalMs: 1000,
     name: 'Clock',
     description: 'Time and date',
     icon: Clock,
@@ -23,7 +24,8 @@ export const WIDGETS: WidgetDefinition[] = [
     settingsFields: [{ key: 'showSeconds', label: 'Show seconds', type: 'toggle', defaultValue: false }],
   },
   {
-    type: 'cpu',
+    id: 'cpu',
+    defaultIntervalMs: 2000,
     name: 'CPU',
     description: 'Total usage with history and per-core bars',
     icon: Cpu,
@@ -33,7 +35,8 @@ export const WIDGETS: WidgetDefinition[] = [
     settingsFields: [{ key: 'showCores', label: 'Show per-core bars', type: 'toggle', defaultValue: true }],
   },
   {
-    type: 'ram',
+    id: 'ram',
+    defaultIntervalMs: 5000,
     name: 'Memory',
     description: 'RAM and swap usage',
     icon: Memory,
@@ -43,7 +46,8 @@ export const WIDGETS: WidgetDefinition[] = [
     settingsFields: [{ key: 'showSwap', label: 'Show swap', type: 'toggle', defaultValue: true }],
   },
   {
-    type: 'disk',
+    id: 'disk',
+    defaultIntervalMs: 30000,
     name: 'Disks',
     description: 'Usage per mounted drive',
     icon: HardDrives,
@@ -52,7 +56,8 @@ export const WIDGETS: WidgetDefinition[] = [
     size: { cols: 3, rows: 2 },
   },
   {
-    type: 'network',
+    id: 'network',
+    defaultIntervalMs: 2000,
     name: 'Network',
     description: 'Throughput and IP addresses',
     icon: Network,
@@ -65,7 +70,8 @@ export const WIDGETS: WidgetDefinition[] = [
     ],
   },
   {
-    type: 'temperature',
+    id: 'temperature',
+    defaultIntervalMs: 5000,
     name: 'Temperatures',
     description: 'Sensors from hwmon and thermal zones',
     icon: Thermometer,
@@ -74,7 +80,8 @@ export const WIDGETS: WidgetDefinition[] = [
     size: { cols: 2, rows: 2 },
   },
   {
-    type: 'uptime',
+    id: 'uptime',
+    defaultIntervalMs: 60000,
     name: 'Uptime',
     description: 'Time since boot',
     icon: Timer,
@@ -83,7 +90,8 @@ export const WIDGETS: WidgetDefinition[] = [
     size: { cols: 2, rows: 1 },
   },
   {
-    type: 'docker-count',
+    id: 'docker-count',
+    defaultIntervalMs: 10000,
     name: 'Docker containers',
     description: 'Running and total containers',
     icon: Cube,
@@ -93,8 +101,10 @@ export const WIDGETS: WidgetDefinition[] = [
   },
 ];
 
-const byType = new Map(WIDGETS.map((w) => [w.type, w]));
+export function registerBuiltinWidgets(): void {
+  for (const widget of BUILTIN_WIDGETS) registries.widgets.register({ ...widget, source: { kind: 'builtin' } });
+}
 
-export function getWidget(type: WidgetType): WidgetDefinition | undefined {
-  return byType.get(type);
+export function getWidget(type: string): WidgetDefinition | undefined {
+  return registries.widgets.get(type);
 }

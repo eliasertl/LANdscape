@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import WebSocket from 'ws';
 import type { FastifyBaseLogger } from 'fastify';
@@ -97,6 +98,32 @@ describe('proxy listener', () => {
     expect(cookies).toEqual([`${PREFIX}session=Alpha-token; Path=/; HttpOnly; SameSite=Lax`, `${PREFIX}__Host-csrf=1; Path=/`]);
     const who = await fetch(`${base}/whoami`, { headers: { cookie: `${SESSION}; ${PREFIX}session=Alpha-token` } });
     expect(await who.text()).toBe('logged in as Alpha-token');
+  });
+
+  it('forwards header names with their original spelling (embedded servers match Content-Length literally)', async () => {
+    const body = 'password=0000';
+    const echo = await new Promise<{ rawNames: string[]; body: string }>((resolve, reject) => {
+      const req = http.request(
+        {
+          port,
+          host: '127.0.0.1',
+          path: '/echo',
+          method: 'POST',
+          agent: false,
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': String(body.length), Cookie: SESSION, Origin: base },
+        },
+        (res) => {
+          let data = '';
+          res.on('data', (chunk: Buffer) => (data += chunk.toString('utf8')));
+          res.on('end', () => resolve(JSON.parse(data) as { rawNames: string[]; body: string }));
+        },
+      );
+      req.on('error', reject);
+      req.end(body);
+    });
+    expect(echo.body).toBe(body);
+    expect(echo.rawNames).toEqual(expect.arrayContaining(['Content-Type', 'Content-Length', 'Host', 'Origin']));
+    expect(echo.rawNames).not.toContain('content-length');
   });
 
   it('passes redirects to other origins through unchanged', async () => {

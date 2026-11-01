@@ -3,7 +3,7 @@ import https from 'node:https';
 import type { Duplex } from 'node:stream';
 import type { Socket } from 'node:net';
 import type { FastifyBaseLogger } from 'fastify';
-import { forwardRequestHeaders, proxyOriginFromHost, rewriteResponseHeaders } from './Rewrite';
+import { forwardRequestHeaders, proxyOriginFromHost, restoreHeaderCase, rewriteResponseHeaders } from './Rewrite';
 import { LOGIN_REQUIRED, sendProxyPage } from './Pages';
 
 /** What one proxy port forwards to. */
@@ -58,10 +58,20 @@ function isOriginForm(url: string | undefined): url is string {
   return typeof url === 'string' && url.startsWith('/');
 }
 
+export interface ListenerActivity {
+  /** In-flight requests plus upgraded (WebSocket) connections; idle keep-alive sockets are not counted. */
+  active: number;
+  /** When a request or connection last started or ended (ms since epoch). */
+  lastActivityAt: number;
+}
+
 /** One http server bound to one proxy port. */
 export class ProxyListener {
   readonly server: http.Server;
   private readonly sockets = new Set<Socket | Duplex>();
+  private inflight = 0;
+  private upgraded = 0;
+  private lastActivityAt = Date.now();
 
   constructor(private readonly options: ListenerOptions) {
     this.server = http.createServer((req, res) => this.handleRequest(req, res));
@@ -96,6 +106,10 @@ export class ProxyListener {
     });
   }
 
+  activity(): ListenerActivity {
+    return { active: this.inflight + this.upgraded, lastActivityAt: this.lastActivityAt };
+  }
+
   close(): Promise<void> {
     return new Promise((resolve) => {
       if (!this.server.listening) {
@@ -109,6 +123,12 @@ export class ProxyListener {
   }
 
   private handleRequest(req: IncomingMessage, res: ServerResponse): void {
+    this.inflight += 1;
+    this.lastActivityAt = Date.now();
+    res.once('close', () => {
+      this.inflight -= 1;
+      this.lastActivityAt = Date.now();
+    });
     const route = this.options.route();
     if (!route) {
       sendProxyPage(res, 404, 'No service on this port', 'This LANdscape proxy port is not assigned to a shortcut.');
@@ -129,7 +149,7 @@ export class ProxyListener {
       return;
     }
     const targetOrigin = route.target.origin;
-    const headers = forwardRequestHeaders(req.headers, { targetOrigin, proxyOrigin, cookiePrefix: route.cookiePrefix });
+    const headers = restoreHeaderCase(forwardRequestHeaders(req.headers, { targetOrigin, proxyOrigin, cookiePrefix: route.cookiePrefix }), req.rawHeaders);
     const upstream = transport(route.target).request(requestOptions(route.target, req.method ?? 'GET', req.url, headers, false));
 
     upstream.setTimeout(RESPONSE_TIMEOUT_MS, () => upstream.destroy(new Error('timeout')));
@@ -183,11 +203,17 @@ export class ProxyListener {
     }
     const targetOrigin = route.target.origin;
     const context = { targetOrigin, proxyOrigin, cookiePrefix: route.cookiePrefix };
-    const headers = forwardRequestHeaders(req.headers, context, { upgrade: true });
+    const headers = restoreHeaderCase(forwardRequestHeaders(req.headers, context, { upgrade: true }), req.rawHeaders);
     const upstream = transport(route.target).request(requestOptions(route.target, req.method ?? 'GET', req.url, headers, true));
     upstream.setTimeout(RESPONSE_TIMEOUT_MS, () => upstream.destroy(new Error('timeout')));
 
     upstream.on('upgrade', (upstreamRes, upstreamSocket, upstreamHead) => {
+      this.upgraded += 1;
+      this.lastActivityAt = Date.now();
+      socket.once('close', () => {
+        this.upgraded -= 1;
+        this.lastActivityAt = Date.now();
+      });
       upstream.setTimeout(0);
       upstreamSocket.setTimeout(0);
       const { headers: outHeaders } = rewriteResponseHeaders(upstreamRes.headers, context, { upgrade: true });

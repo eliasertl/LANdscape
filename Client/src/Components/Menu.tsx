@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { CaretRight, Check } from '@phosphor-icons/react';
 import { SPRING } from '../Design/Spring';
 import { useSpringStyle, useSpringValue } from '../Design/UseSpring';
+import { toLayout } from '../Design/Scale';
 import styles from './Menu.module.css';
 
 export type MenuItem =
@@ -75,7 +76,8 @@ export function Menu({ items, position, onClose, anchor, level = 0, minWidth = 2
     }
     if (x + rect.width > window.innerWidth - MARGIN) x = Math.max(MARGIN, window.innerWidth - rect.width - MARGIN);
     if (y + rect.height > window.innerHeight - MARGIN) y = Math.max(MARGIN, window.innerHeight - rect.height - MARGIN);
-    setPlaced({ x, y });
+    // Measured in screen pixels; CSS positions are layout pixels (UI scale).
+    setPlaced({ x: toLayout(x), y: toLayout(y) });
     element.style.transformOrigin = `${x < position.x ? 'right' : 'left'} ${y < position.y ? 'bottom' : 'top'}`;
   }, [position, anchor]);
 

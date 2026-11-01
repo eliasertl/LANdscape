@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { GearSix, MagnifyingGlass, SignOut } from '@phosphor-icons/react';
 import type { Shortcut } from '@landscape/shared';
-import { APPS } from '../Apps/Registry';
+import { registries } from '../Platform/Registries';
+import { useRegistry } from '../Platform/Registry';
 import type { AppDefinition } from '../Apps/Types';
 import { shortcutIconUrl, useDesktopStore } from '../Store/DesktopStore';
 import { useUiStore } from '../Store/UiStore';
@@ -17,9 +18,10 @@ export type LauncherEntry = { kind: 'app'; app: AppDefinition } | { kind: 'short
 export function useLauncherEntries(query: string): LauncherEntry[] {
   const shortcuts = useDesktopStore((s) => s.shortcuts);
   const settings = useDesktopStore((s) => s.settings);
+  const allApps = useRegistry(registries.apps);
   return useMemo(() => {
     const q = query.trim().toLowerCase();
-    const apps: LauncherEntry[] = APPS.filter((app) => settings?.enabledApps[app.id] !== false).map((app) => ({ kind: 'app', app }));
+    const apps: LauncherEntry[] = allApps.filter((app) => settings?.enabledApps[app.id] !== false).map((app) => ({ kind: 'app', app }));
     const links: LauncherEntry[] = shortcuts.map((shortcut) => ({ kind: 'shortcut', shortcut }));
     const all = [...links, ...apps];
     if (!q) return all;
@@ -36,7 +38,7 @@ export function useLauncherEntries(query: string): LauncherEntry[] {
       .filter((x) => x.score > 0)
       .sort((a, b) => b.score - a.score)
       .map((x) => x.entry);
-  }, [query, shortcuts, settings]);
+  }, [query, shortcuts, settings, allApps]);
 }
 
 export function entryKey(entry: LauncherEntry): string {

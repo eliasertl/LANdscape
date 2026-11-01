@@ -1,6 +1,7 @@
 import type { ComponentType, LazyExoticComponent } from 'react';
 import type { Icon } from '@phosphor-icons/react';
 import type { AppId } from '@landscape/shared';
+import type { EntrySource } from '../Platform/Registry';
 
 export interface AppWindowProps {
   windowId: string;
@@ -11,6 +12,7 @@ export interface AppWindowProps {
 
 export interface AppDefinition {
   id: AppId;
+  source?: EntrySource;
   name: string;
   description: string;
   icon: Icon;

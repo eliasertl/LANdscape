@@ -4,6 +4,7 @@ import {
   filterRequestCookies,
   forwardRequestHeaders,
   proxyOriginFromHost,
+  restoreHeaderCase,
   rewriteLocation,
   rewriteResponseHeaders,
   rewriteSetCookie,
@@ -98,6 +99,17 @@ describe('cookie isolation', () => {
   it('rewrites every Set-Cookie of a response', () => {
     const { headers } = rewriteResponseHeaders({ 'set-cookie': ['a=1; Secure', 'bad', 'b=2'] }, { targetOrigin: target, proxyOrigin: proxy, cookiePrefix: prefix });
     expect(headers['set-cookie']).toEqual(['lp8081_ab12_a=1', 'lp8081_ab12_b=2']);
+  });
+});
+
+describe('header name spelling', () => {
+  it('keeps the browser’s spelling and title-cases names the proxy sets', () => {
+    const out = restoreHeaderCase(
+      { 'content-length': '13', 'content-type': 'text/plain', host: '10.0.0.5:3000', cookie: 'a=1', 'x-requested-with': 'XMLHttpRequest', 'sec-ch-ua': '"x"' },
+      ['Content-Length', '13', 'content-type', 'text/plain', 'Host', 'landscape.lan:8081', 'X-Requested-With', 'XMLHttpRequest', 'sec-ch-ua', '"x"'],
+    );
+    expect(Object.keys(out)).toEqual(['Content-Length', 'content-type', 'Host', 'Cookie', 'X-Requested-With', 'sec-ch-ua']);
+    expect(out.Host).toBe('10.0.0.5:3000');
   });
 });
 

@@ -88,6 +88,31 @@ export function forwardRequestHeaders(incoming: IncomingHttpHeaders, ctx: Forwar
   return out;
 }
 
+/**
+ * Gives header names back their original spelling before they go to the target.
+ * Node lowercases incoming names, and HTTP says case does not matter, but small
+ * embedded servers (switches, routers, printers) often match `Content-Length`
+ * literally and reset the connection otherwise. Names the browser sent keep its
+ * spelling (from rawHeaders); names the proxy set itself get the usual Title-Case.
+ */
+export function restoreHeaderCase(headers: OutgoingHttpHeaders, rawHeaders: string[]): OutgoingHttpHeaders {
+  const spelling = new Map<string, string>();
+  for (let i = 0; i < rawHeaders.length; i += 2) {
+    const name = rawHeaders[i];
+    if (name && !spelling.has(name.toLowerCase())) spelling.set(name.toLowerCase(), name);
+  }
+  const out: OutgoingHttpHeaders = {};
+  for (const [name, value] of Object.entries(headers)) {
+    if (value === undefined) continue;
+    out[spelling.get(name) ?? titleCase(name)] = value;
+  }
+  return out;
+}
+
+function titleCase(name: string): string {
+  return name.replace(/(^|-)([a-z])/g, (_match: string, dash: string, letter: string) => dash + letter.toUpperCase());
+}
+
 export interface ResponseContext {
   targetOrigin: string;
   proxyOrigin: string;

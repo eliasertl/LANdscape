@@ -79,6 +79,7 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
     // Evaluated per request, after the cookie plugin below has decorated the instance.
     isAuthenticated: (cookieHeader) => sessions.validate(readSessionIdFromHeader(app, cookieHeader)) !== null,
     log: app.log,
+    idleGraceMs: () => repos.settings.get().proxy.idleGraceSeconds * 1000,
   });
   const ctx: ServerContext = { config, db, repos, sessions, lockout, metrics, docker, ssh, sftp, proxy, log: app.log };
   registerSamplers(metrics, {

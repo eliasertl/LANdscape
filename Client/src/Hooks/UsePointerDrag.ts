@@ -1,5 +1,7 @@
 import { useCallback, useLayoutEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
+import { toLayout } from '../Design/Scale';
 
+/** All values are in layout pixels (the UI scale is already divided out). */
 export interface DragInfo {
   /** Total movement since pointer down. */
   dx: number;
@@ -41,7 +43,7 @@ export function usePointerDrag(options: PointerDragOptions) {
     const startY = event.clientY;
     const pointerId = event.pointerId;
     let dragging = false;
-    let last: DragInfo = { dx: 0, dy: 0, clientX: startX, clientY: startY, shiftKey: event.shiftKey };
+    let last: DragInfo = { dx: 0, dy: 0, clientX: toLayout(startX), clientY: toLayout(startY), shiftKey: event.shiftKey };
 
     try {
       target.setPointerCapture(pointerId);
@@ -51,9 +53,9 @@ export function usePointerDrag(options: PointerDragOptions) {
 
     const onMove = (e: PointerEvent) => {
       if (e.pointerId !== pointerId) return;
-      last = { dx: e.clientX - startX, dy: e.clientY - startY, clientX: e.clientX, clientY: e.clientY, shiftKey: e.shiftKey };
+      last = { dx: toLayout(e.clientX - startX), dy: toLayout(e.clientY - startY), clientX: toLayout(e.clientX), clientY: toLayout(e.clientY), shiftKey: e.shiftKey };
       if (!dragging) {
-        if (Math.hypot(last.dx, last.dy) < (optionsRef.current.threshold ?? 4)) return;
+        if (Math.hypot(e.clientX - startX, e.clientY - startY) < (optionsRef.current.threshold ?? 4)) return;
         dragging = true;
         optionsRef.current.onStart?.(last);
       }

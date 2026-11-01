@@ -1,10 +1,11 @@
 import { randomBytes } from 'node:crypto';
 import type { FastifyBaseLogger } from 'fastify';
-import { shortcutWantsProxy, type ProxyOverview, type ProxyRange, type Shortcut } from '@landscape/shared';
+import { shortcutWantsProxy, type ProxyLease, type ProxyOverview, type ProxyRange, type Shortcut } from '@landscape/shared';
 import type { Database } from '../Db/Database';
 import type { Repositories } from '../Db/Repositories';
 import type { ProxyRoute } from './Listener';
 import { ProxyManager } from './ProxyManager';
+import { LEASE_TTL_MS } from './Leases';
 import { planProxyPorts, type PlanShortcut } from './Assignments';
 import { cookiePrefix } from './Rewrite';
 
@@ -31,9 +32,11 @@ export class ProxyService {
       host: string;
       isAuthenticated: (cookieHeader: string | undefined) => boolean;
       log: FastifyBaseLogger;
+      /** Settings → Proxy → idle grace period, read on every sweep. */
+      idleGraceMs: () => number;
     },
   ) {
-    this.manager = new ProxyManager({ host: deps.host, isAuthenticated: deps.isAuthenticated, log: deps.log });
+    this.manager = new ProxyManager({ host: deps.host, isAuthenticated: deps.isAuthenticated, log: deps.log, idleGraceMs: deps.idleGraceMs });
   }
 
   get range(): ProxyRange {
@@ -74,6 +77,31 @@ export class ProxyService {
     if (candidate.openMode !== 'proxy') return true;
     const others = this.deps.repos.shortcuts.list().filter((s) => s.id !== candidate.id);
     return !planProxyPorts([...others, candidate], this.deps.range).waiting.includes(candidate.id);
+  }
+
+  /**
+   * Leases the shortcut's port for an open window and opens the listener.
+   * Returns null when the shortcut has no port; throws ProxyPortError when
+   * the port cannot be opened.
+   */
+  async lease(shortcutId: string): Promise<ProxyLease | null> {
+    const shortcut = this.deps.repos.shortcuts.find(shortcutId);
+    if (!shortcut || shortcut.proxyPort === null) return null;
+    const leaseId = await this.manager.acquire(shortcut.proxyPort);
+    return { leaseId, port: shortcut.proxyPort, ttlMs: LEASE_TTL_MS };
+  }
+
+  renewLease(leaseId: string): Promise<number | null> {
+    return this.manager.renew(leaseId);
+  }
+
+  releaseLease(leaseId: string): void {
+    this.manager.release(leaseId);
+  }
+
+  /** Expires leases and closes idle ports; runs every few seconds on its own, exposed for tests. */
+  sweep(now?: number): void {
+    this.manager.sweep(now);
   }
 
   overview(): ProxyOverview {

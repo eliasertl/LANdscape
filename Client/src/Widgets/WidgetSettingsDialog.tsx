@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { WIDGET_DEFAULT_INTERVAL_MS, WIDGET_MAX_INTERVAL_MS, WIDGET_MIN_INTERVAL_MS, type WidgetSettings } from '@landscape/shared';
+import { WIDGET_MAX_INTERVAL_MS, WIDGET_MIN_INTERVAL_MS, type WidgetSettings } from '@landscape/shared';
 import { useDesktopStore } from '../Store/DesktopStore';
 import { useUiStore } from '../Store/UiStore';
 import { Dialog } from '../Components/Dialog';
@@ -27,10 +27,11 @@ export function WidgetSettingsDialog({ widgetId }: { widgetId: string }) {
   const definition = widget ? getWidget(widget.type) : undefined;
   if (!widget || !definition) return null;
 
-  const options = [...new Set([...INTERVALS, widget.settings.intervalMs, WIDGET_DEFAULT_INTERVAL_MS[widget.type]])]
+  const defaultMs = definition.defaultIntervalMs;
+  const options = [...new Set([...INTERVALS, widget.settings.intervalMs, defaultMs])]
     .filter((ms) => ms >= WIDGET_MIN_INTERVAL_MS && ms <= WIDGET_MAX_INTERVAL_MS)
     .sort((a, b) => a - b)
-    .map((ms) => ({ value: String(ms), label: formatInterval(ms) + (ms === WIDGET_DEFAULT_INTERVAL_MS[widget.type] ? ' (default)' : '') }));
+    .map((ms) => ({ value: String(ms), label: formatInterval(ms) + (ms === defaultMs ? ' (default)' : '') }));
 
   const save = async () => {
     setSaving(true);

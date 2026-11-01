@@ -2,11 +2,13 @@ import { Suspense } from 'react';
 import { useDesktopStore } from '../Store/DesktopStore';
 import type { DesktopWindow } from '../Store/WindowStore';
 import { useUiStore } from '../Store/UiStore';
-import { getApp } from '../Apps/Registry';
+import { registries } from '../Platform/Registries';
+import { useRegistryEntry } from '../Platform/Registry';
 import { IframeContent } from './IframeContent';
 import { SetupState } from '../Components/SetupState';
 import { Spinner } from '../Components/Spinner';
 import { useIsPhone } from '../Hooks/UseMediaQuery';
+import { ErrorBoundary } from '../Components/ErrorBoundary';
 import styles from './WindowContent.module.css';
 
 /** Routes a window to its content: a shortcut iframe or a built-in app. */
@@ -15,12 +17,12 @@ export function WindowContent({ win }: { win: DesktopWindow }) {
   const shortcut = useDesktopStore((s) => (win.shortcutId ? s.shortcuts.find((x) => x.id === win.shortcutId) : undefined));
   const integrations = useDesktopStore((s) => s.integrations);
   const phone = useIsPhone();
+  const app = useRegistryEntry(registries.apps, win.kind === 'app' ? win.appId : null);
 
   let body;
   if (win.kind === 'shortcut') {
     body = shortcut ? <IframeContent shortcut={shortcut} /> : <div className={styles.center}>This shortcut no longer exists.</div>;
   } else {
-    const app = win.appId ? getApp(win.appId) : undefined;
     if (!app) {
       body = <div className={styles.center}>Unknown app.</div>;
     } else if (app.requires && !integrations[app.requires]) {
@@ -43,7 +45,7 @@ export function WindowContent({ win }: { win: DesktopWindow }) {
 
   return (
     <>
-      {body}
+      <ErrorBoundary label={`${app?.name ?? win.title} window`}>{body}</ErrorBoundary>
       {interacting && <div className={styles.overlay} aria-hidden="true" />}
     </>
   );

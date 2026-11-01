@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import type { Icon } from '@phosphor-icons/react';
 import type { MetricName, Widget, WidgetType } from '@landscape/shared';
+import type { EntrySource } from '../Platform/Registry';
 
 export interface WidgetProps {
   widget: Widget;
@@ -16,7 +17,9 @@ export interface WidgetSettingsField {
 }
 
 export interface WidgetDefinition {
-  type: WidgetType;
+  /** The widget type stored on placed widgets. */
+  id: WidgetType;
+  source?: EntrySource;
   name: string;
   description: string;
   icon: Icon;
@@ -25,6 +28,8 @@ export interface WidgetDefinition {
   metric: MetricName | null;
   /** Size in app-icon cells (always whole numbers). */
   size: { cols: number; rows: number };
+  /** Update interval for new widgets of this type. */
+  defaultIntervalMs: number;
   /** Extra per-widget settings besides the update interval. */
   settingsFields?: WidgetSettingsField[];
 }

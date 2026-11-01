@@ -42,7 +42,8 @@ export async function startFixtureService(name = 'Fixture'): Promise<FixtureServ
           return;
         case '/echo':
           res.writeHead(200, { 'content-type': 'application/json' });
-          res.end(JSON.stringify({ method: req.method, url: req.url, headers: req.headers, body }));
+          // rawNames: header names exactly as they arrived on the wire.
+          res.end(JSON.stringify({ method: req.method, url: req.url, headers: req.headers, rawNames: req.rawHeaders.filter((_, i) => i % 2 === 0), body }));
           return;
         case '/login':
           res.writeHead(302, {
@@ -58,6 +59,11 @@ export async function startFixtureService(name = 'Fixture'): Promise<FixtureServ
           res.end(match ? `logged in as ${match[1]}` : 'anonymous');
           return;
         }
+        case '/bust':
+          // A frame-buster, like old router/switch UIs: blocks framing and tries to take over the tab.
+          res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'x-frame-options': 'SAMEORIGIN' });
+          res.end('<!doctype html><title>Bust</title><script>top.location.href = "/";</script>');
+          return;
         case '/away':
           res.writeHead(302, { location: 'https://elsewhere.example/sso' });
           res.end();
