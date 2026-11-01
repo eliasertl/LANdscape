@@ -92,3 +92,26 @@
     padding: 28px 20px 24px;
   }
 }
+
+.safeLink {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-text-on-wallpaper, #fff);
+  text-shadow: var(--color-text-on-wallpaper-shadow);
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.safeLink:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.2);
+}

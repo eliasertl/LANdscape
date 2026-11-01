@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ArrowRight, LockKey, UserCircle } from '@phosphor-icons/react';
+import { ArrowRight, Lifebuoy, LockKey, UserCircle } from '@phosphor-icons/react';
+import { enterSafeMode, isSafeMode, leaveSafeMode } from '../Platform/SafeMode';
 import { ApiRequestError } from '../Api/Http';
 import { useSessionStore } from '../Store/SessionStore';
 import { Button } from '../Components/Button';
@@ -123,6 +124,10 @@ export function LockScreen() {
           </Button>
         </form>
       </div>
+      <button type="button" className={styles.safeLink} onClick={isSafeMode() ? leaveSafeMode : enterSafeMode} data-safe-mode-link>
+        <Lifebuoy weight="bold" aria-hidden="true" />
+        {isSafeMode() ? 'Safe mode is on — start normally' : 'Start in safe mode'}
+      </button>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { MagnifyingGlass } from '@phosphor-icons/react';
 import { useUiStore } from '../Store/UiStore';
 import { TaskbarApps } from './TaskbarApps';
 import { TaskbarClock } from './TaskbarClock';
+import { ErrorBoundary } from '../Components/ErrorBoundary';
 import styles from './Taskbar.module.css';
 
 /** Floating frosted-glass bar along the bottom edge. */
@@ -23,9 +24,13 @@ export function Taskbar() {
           <MagnifyingGlass weight="bold" />
         </button>
         <div className={styles.divider} />
-        <TaskbarApps />
+        <ErrorBoundary label="Taskbar apps" compact>
+          <TaskbarApps />
+        </ErrorBoundary>
         <div className={styles.divider} />
-        <TaskbarClock />
+        <ErrorBoundary label="Taskbar clock" compact>
+          <TaskbarClock />
+        </ErrorBoundary>
       </div>
     </div>
   );

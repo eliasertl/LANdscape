@@ -8,6 +8,7 @@ import { IframeContent } from './IframeContent';
 import { SetupState } from '../Components/SetupState';
 import { Spinner } from '../Components/Spinner';
 import { useIsPhone } from '../Hooks/UseMediaQuery';
+import { ErrorBoundary } from '../Components/ErrorBoundary';
 import styles from './WindowContent.module.css';
 
 /** Routes a window to its content: a shortcut iframe or a built-in app. */
@@ -44,7 +45,7 @@ export function WindowContent({ win }: { win: DesktopWindow }) {
 
   return (
     <>
-      {body}
+      <ErrorBoundary label={`${app?.name ?? win.title} window`}>{body}</ErrorBoundary>
       {interacting && <div className={styles.overlay} aria-hidden="true" />}
     </>
   );
