@@ -15,8 +15,9 @@ Browser ──http──▶ Fastify (Server/src)
                    └─ Proxy/       embed proxy: assignments, per-port listeners, header/cookie rewriting
 Browser ──http──▶ :8081…:8100 (Proxy/Listener.ts, plain node:http) ──▶ one shortcut's origin each
 Client (Client/src)
-   ├─ Design/      tokens, typography, springs, theme
-   ├─ Store/       zustand: session, desktop data, windows, UI state
+   ├─ Design/      tokens, typography, springs, theme, UI scale
+   ├─ Platform/    registries (extension points), built-in registration, safe mode, debug handle
+   ├─ Store/       zustand: session, desktop data, windows, UI state, per-device settings
    ├─ Desktop/     wallpaper, icons, context menus, dialogs, Overlays
    ├─ Windows/     window manager (frames, drag/resize, iframe content)
    ├─ Taskbar/ StartMenu/ Phone/
@@ -42,11 +43,14 @@ Shortcuts that cannot be framed directly are shown through a transparent pass-th
 
 - `Proxy/Assignments.ts` — pure planning: which shortcut holds which port. A shortcut wants a port in mode `proxy`, or in `auto` when the embed check says `no`. Valid assignments are kept; free ports go out lowest first, explicit `proxy` before `auto`, oldest first; the rest wait.
 - `Proxy/ProxyService.ts` — applies the plan to the `shortcuts.proxy_port`/`proxy_tag` columns (migration 2) and hands the routes to the manager. `reconcile()` runs at startup (which assigns ports to existing blocked shortcuts after an upgrade or a range change) and after every shortcut create/update/recheck/delete. A new target origin releases the assignment first, so it gets a new cookie tag.
-- `Proxy/ProxyManager.ts` — one `ProxyListener` per assigned port; opens new ones, closes released ones, re-targets in place, retries ports that fail to bind. Listeners start after the main server listens.
+- `Proxy/ProxyManager.ts` — one entry per assigned port, **listener on demand**. A port opens on the first lease (`POST /api/proxy/leases`, sent by a proxied window before its iframe loads) and is re-targeted in place when its shortcut changes. A sweep every 5 s expires leases that were not renewed (TTL 150 s, renewed every 20 s) and closes a port once no lease is alive, no request or WebSocket is active, and the idle grace period (`settings.proxy.idleGraceSeconds`, default 60) has passed since the last use. Idle keep-alive sockets do not count and are destroyed on close. A port that cannot be bound reports `error` and is retried by the next lease or renewal.
+- `Proxy/Leases.ts` — pure bookkeeping: the lease table (time passed in) and `idleDecision`, which also produces the reason shown in Settings → Proxy ("In use by 1 window", "Idle, closes in 42 s"). Unit-tested in `Tests/Server/ProxyLeases.test.ts`; open and close against real sockets in `ProxyOnDemand.test.ts` (it calls `ctx.proxy.sweep(time)` to skip ahead).
 - `Proxy/Listener.ts` — `node:http` server; streams requests to the target with `node:http`/`node:https` (keep-alive agents, self-signed certificates accepted), 60 s until response headers, 15 min idle while streaming; WebSocket upgrades are piped as raw sockets after the handshake. No third-party proxy library: the rewriting needs full control over headers, and Node's primitives cover streaming and upgrades.
 - `Proxy/Rewrite.ts` — pure functions for request headers (Host/Origin/Referer, cookie filtering), response headers (framing headers, `Set-Cookie`, `Location`) and CSP stripping.
 
-On the client, `Windows/ShortcutFrame.ts` decides per shortcut between a direct iframe, `http://<location.hostname>:<port><path>` and a "can't embed" panel; `Windows/ProxyBadge.tsx` marks proxied windows in the title bar and phone header.
+On the client, `Windows/ShortcutFrame.ts` decides per shortcut between a direct iframe, `http://<location.hostname>:<port><path>` and a "can't embed" panel; `Windows/UseProxyLease.ts` leases the port before the proxied iframe gets its `src`, renews it (and right away when the tab becomes visible again), leases again after a 404, and releases it on close and on `pagehide`; `Windows/ProxyBadge.tsx` marks proxied windows in the title bar and phone header.
+
+**Debugging a proxy port:** Settings → Proxy shows each port's state and reason (refreshing every 5 s). `GET /api/proxy` returns the same with lease and connection counts. The server logs "Embed proxy port opened / closed (idle) / could not be opened" with the port number.
 
 ## Metrics
 
@@ -55,6 +59,31 @@ Widgets subscribe over `/ws/metrics` with `{ metric, intervalMs }`. `Metrics/Hub
 ## SSH
 
 `Ssh/Connection.ts` pools ssh2 clients and spreads channels (shell, exec, sftp) over them so OpenSSH's `MaxSessions` limit is never hit. Host keys are trusted on first use and pinned in `DATA_DIR/ssh/known_host`. Follow commands (`journalctl -f`) run with a pty so closing the channel ends the remote process. SFTP operations run with the SSH user's permissions; path inputs are normalised to absolute POSIX paths before use.
+
+## Extension points (registries)
+
+`Client/src/Platform/Registry.ts` is a small observable map; `Platform/Registries.ts` creates one per extension point: `apps`, `widgets`, `taskbarItems`, `trayItems`, `startupAnimations`, `cursorSets`, `themes`, `wallpapers`, `actions`. Built-ins register at start-up (`Platform/BuiltIns.ts` calls `registerBuiltinApps()` from `Apps/Registry.ts` and `registerBuiltinWidgets()` from `Widgets/Registry.ts`). Catalog apps will register the same way from their manifest, tagged with `source: { kind: 'app', appId }`, so `unregisterApp` can remove everything an app contributed. Components read with `useRegistry(registries.apps)` or `useRegistryEntry(…)`, so a later registration shows up without a reload.
+
+The server keeps no app or widget list: ids only have to match `APP_ID_PATTERN` / `WIDGET_TYPE_PATTERN` (`Shared/src/AppIds.ts`). `enabledApps` stores only the apps that are switched off. New widgets carry their default interval from the client (`WidgetDefinition.defaultIntervalMs`).
+
+## Settings
+
+- **Server-wide** (`Shared/src/Settings.ts`): one zod schema per top-level key plus `DEFAULT_SETTINGS`. Each key is one JSON row in the `settings` table (`SettingsRepository`). Reading merges stored values over the defaults field by field and falls back to the default when a value no longer validates, so old databases and new fields need no migration. `PATCH /api/settings` takes a partial patch (`settingsUpdateSchema`, strict) and merges per group (`applySettingsPatch`, which the client also uses for its optimistic update). To add a setting: add the field, its default and its patch field, then the UI.
+- **Per device** (`Client/src/Store/DeviceStore.ts`): things that differ per screen (UI scale now; notification mode, cursor size and startup sound later). Stored in `localStorage` under `landscape.device.<deviceId>` (the id is generated once and kept in `landscape.deviceId`), parsed field by field so one bad value does not reset the others, and never synced. Shown with the "This device" tag (`Apps/Settings/SettingRow.tsx`).
+- **Settings app** sections are data: `Apps/Settings/Sections.ts` (id, label, icon, lazy component). Each section renders inside its own error boundary. `openApp('settings', { section: 'proxy' })` opens a section directly.
+
+**UI scale** is CSS `zoom` on `<html>` (`Design/Scale.ts`). Under zoom, pointer coordinates, `getBoundingClientRect()` and `window.innerWidth` are screen pixels while CSS lengths are layout pixels. `usePointerDrag`, `useViewportSize`, `workArea()`, the desktop grid, the window minimize target and `Menu` convert with `toLayout()` / `layoutViewport()`. New code that turns a screen measurement into a CSS position must do the same.
+
+## Crash isolation and safe mode
+
+`Components/ErrorBoundary.tsx` wraps every window's content, every widget (inside its frame, so it can still be moved and removed), each taskbar part and each Settings section. A crash shows "<label> stopped working" with **Reload** (mounts the subtree again) and **Copy details** (label, error, stack, component stack, browser and the last ten failures). Taskbar items use the compact variant, an icon that reloads on click.
+
+`Platform/SafeMode.ts`: `?safe=1` (or "Start in safe mode" on the lock screen) turns safe mode on for the tab (kept in `sessionStorage`); `?safe=0` or the banner's **Leave safe mode** turns it off. Every customization checks `isSafeMode()` before it applies. Today that is the UI scale; later milestones add catalog apps, cursor, startup animation and taskbar style.
+
+## Debugging
+
+- `landscapeDebug` in the browser console (`Platform/DebugHandle.ts`): `registries` (for example `landscapeDebug.registries.apps.list()`), `stores` (`desktop`, `windows`, `ui`, `device`; zustand stores, read with `.getState()`) and `isSafeMode()`. The E2E tests use it to register a deliberately failing widget.
+- Server logs are JSON (pino) on stdout; `LOG_LEVEL=debug` adds proxy request failures and similar detail. Secrets are never logged.
 
 ## Persistence
 
