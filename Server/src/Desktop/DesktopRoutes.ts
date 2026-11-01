@@ -338,14 +338,20 @@ export function registerDesktopRoutes(app: FastifyInstance, ctx: ServerContext):
 
   app.patch('/api/settings', async (request) => {
     const input = parseOrThrow(settingsUpdateSchema, request.body);
-    if (input.wallpaper && !wallpapers.exists(input.wallpaper.kind, input.wallpaper.file)) {
-      throw badRequest('Wallpaper not found');
-    }
+    if (input.wallpaper && !wallpaperExists(input.wallpaper)) throw badRequest('Wallpaper not found');
     const updated = ctx.repos.settings.update(input);
     if (input.monitor) ctx.monitor.rescheduleIfChanged();
     ctx.events.publish({ type: 'settings-changed' });
     return updated;
   });
+
+  /** App wallpapers ("app" kind) come from an installed bundle; the others from the stores. */
+  function wallpaperExists(choice: { kind: 'bundled' | 'upload' | 'app'; file: string }): boolean {
+    if (choice.kind !== 'app') return wallpapers.exists(choice.kind, choice.file);
+    const [appId, bundle] = choice.file.split(/:(.+)/);
+    const installed = appId ? ctx.apps.find(appId) : undefined;
+    return Boolean(installed && bundle && installed.manifest.contributes.wallpapers.some((w) => w.file === bundle) && ctx.apps.readFile(installed, bundle));
+  }
 }
 
 function sendImage(reply: FastifyReply, fullPath: string, fileName: string, cacheControl: string) {

@@ -31,7 +31,7 @@ async function request<T>(method: string, url: string, body?: unknown, init: Req
   }
   let response: Response;
   try {
-    response = await fetch(url, { method, headers, body: payload, credentials: 'same-origin', ...init });
+    response = await fetch(url, { method, body: payload, credentials: 'same-origin', ...init, headers: { ...headers, ...((init.headers as Record<string, string> | undefined) ?? {}) } });
   } catch (error) {
     throw new ApiRequestError(0, 'network', error instanceof Error ? error.message : 'Network error');
   }
@@ -60,11 +60,11 @@ async function request<T>(method: string, url: string, body?: unknown, init: Req
 }
 
 export const api = {
-  get: <T>(url: string) => request<T>('GET', url),
-  post: <T>(url: string, body?: unknown) => request<T>('POST', url, body),
-  put: <T>(url: string, body?: unknown) => request<T>('PUT', url, body),
-  patch: <T>(url: string, body?: unknown) => request<T>('PATCH', url, body),
-  delete: <T>(url: string) => request<T>('DELETE', url),
+  get: <T>(url: string, init?: RequestInit) => request<T>('GET', url, undefined, init),
+  post: <T>(url: string, body?: unknown, init?: RequestInit) => request<T>('POST', url, body, init),
+  put: <T>(url: string, body?: unknown, init?: RequestInit) => request<T>('PUT', url, body, init),
+  patch: <T>(url: string, body?: unknown, init?: RequestInit) => request<T>('PATCH', url, body, init),
+  delete: <T>(url: string, init?: RequestInit) => request<T>('DELETE', url, undefined, init),
   upload: <T>(url: string, file: File | Blob, fieldName = 'file') => {
     const form = new FormData();
     form.append(fieldName, file, file instanceof File ? file.name : 'upload');

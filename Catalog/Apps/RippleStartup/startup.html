@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ripple</title>
+<style>
+  :root { --bg: #000000; --fg: #ffffff; --duration: 2200ms; --period: 1100ms; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .stage { position: absolute; inset: 0; display: grid; place-items: center; }
+  .ring { position: absolute; left: 50%; top: 50%; width: 12vmin; height: 12vmin; margin: -6vmin 0 0 -6vmin; border-radius: 50%; border: 2px solid currentColor; opacity: 0; animation: ripple var(--period) ease-out infinite; }
+  .ring:nth-child(2) { animation-delay: calc(var(--period) / -3); }
+  .ring:nth-child(3) { animation-delay: calc(var(--period) / -1.5); }
+  .text { position: relative; font-size: clamp(20px, 4vmin, 48px); font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; animation: fade var(--duration) ease-in-out both; }
+  @keyframes ripple { from { transform: scale(0.2); opacity: 0.9; } to { transform: scale(8); opacity: 0; } }
+  @keyframes fade { 0% { opacity: 0; transform: translateY(6px); } 20%, 80% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .ring { animation: none; opacity: 0.3; transform: scale(2); } .text { animation: none; } }
+</style>
+</head>
+<body>
+<div class="stage"><div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="text" id="text">LANdscape</div></div>
+<script>
+  // The host passes the Startup settings as params (durationMs, text, background, foreground, …) and ends the
+  // animation after durationMs anyway; closing ourselves keeps the timing exact.
+  (() => {
+    let timer = 0;
+    const apply = (params) => {
+      const p = params && typeof params === 'object' ? params : {};
+      const root = document.documentElement.style;
+      if (typeof p.background === 'string') root.setProperty('--bg', p.background);
+      if (typeof p.foreground === 'string') root.setProperty('--fg', p.foreground);
+      const duration = typeof p.durationMs === 'number' ? p.durationMs : 2200;
+      root.setProperty('--duration', `${duration}ms`);
+      root.setProperty('--period', `${Math.max(900, duration / 2)}ms`);
+      document.getElementById('text').textContent = typeof p.text === 'string' && p.text ? p.text : 'LANdscape';
+      clearTimeout(timer);
+      timer = setTimeout(() => landscape.ui.close(), duration);
+    };
+    apply(landscape.context.params);
+    landscape.ui.onParams(apply);
+  })();
+</script>
+</body>
+</html>

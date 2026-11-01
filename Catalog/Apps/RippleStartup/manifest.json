@@ -1,0 +1,21 @@
+{
+  "id": "ripple-startup",
+  "name": "Ripple",
+  "version": "1.0.0",
+  "author": "LANdscape",
+  "description": "A startup animation: rings ripple out from the centre under your startup text, in the colours from the Startup settings. Ends when the duration is over.",
+  "icon": "icon.svg",
+  "categories": [
+    "appearance"
+  ],
+  "permissions": [],
+  "contributes": {
+    "startupAnimations": [
+      {
+        "id": "ripple",
+        "name": "Ripple",
+        "entry": "startup.html"
+      }
+    ]
+  }
+}

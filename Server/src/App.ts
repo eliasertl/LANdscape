@@ -41,6 +41,10 @@ import { registerNotificationRoutes } from './Notify/NotificationRoutes';
 import { Watchers } from './Notify/Watchers';
 import { MonitorService } from './Monitor/MonitorService';
 import { registerMonitorRoutes } from './Monitor/MonitorRoutes';
+import { AppStore } from './Apps/AppStore';
+import { CatalogService } from './Apps/Catalog';
+import { registerAppRoutes } from './Apps/AppRoutes';
+import { readFileSync } from 'node:fs';
 
 export interface BuiltApp {
   app: FastifyInstance;
@@ -66,6 +70,7 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
   mkdirSync(path.join(config.dataDir, 'wallpapers'), { recursive: true });
   mkdirSync(path.join(config.dataDir, 'startup'), { recursive: true });
   mkdirSync(path.join(config.dataDir, 'cursors'), { recursive: true });
+  mkdirSync(path.join(config.dataDir, 'apps'), { recursive: true });
 
   const app = Fastify({
     logger: options.logger === false ? false : { level: config.logLevel },
@@ -108,7 +113,24 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
     notifyOnChange: () => repos.settings.get().notifications.watchers.monitors,
   });
   const watchers = new Watchers({ docker, metrics, notifications, settings: () => repos.settings.get().notifications, log: app.log });
-  const ctx: ServerContext = { config, db, repos, sessions, lockout, metrics, docker, ssh, sftp, proxy, events, notifications, monitor, log: app.log };
+  const catalog = new CatalogService({ url: config.catalogUrl, bundledFile: config.catalogFile, log: app.log });
+  const apps = new AppStore(config.dataDir, repos, app.log, {
+    onInstalled: (installed) => {
+      monitor.reconcile();
+      events.publish({ type: 'apps-changed', appId: installed.id });
+    },
+    onRemoved: (id) => {
+      monitor.reconcile();
+      events.publish({ type: 'apps-changed', appId: id });
+    },
+  });
+  let sdkRuntime = '';
+  try {
+    sdkRuntime = readFileSync(config.sdkRuntimeFile, 'utf8');
+  } catch {
+    app.log.warn({ file: config.sdkRuntimeFile }, 'SDK runtime not found; app frames will not get window.landscape');
+  }
+  const ctx: ServerContext = { config, db, repos, sessions, lockout, metrics, docker, ssh, sftp, proxy, events, notifications, monitor, apps, catalog, sdkRuntime, log: app.log };
   registerSamplers(metrics, {
     config,
     docker,
@@ -144,6 +166,7 @@ export async function buildApp(options: BuildOptions): Promise<BuiltApp> {
   registerEventsWs(app, ctx);
   registerNotificationRoutes(app, ctx);
   registerMonitorRoutes(app, ctx);
+  registerAppRoutes(app, ctx);
   await installStatic(app, config.clientDir);
 
   const pruneTimer = setInterval(

@@ -5,6 +5,7 @@ import { useUiStore } from '../Store/UiStore';
 import { Dialog } from '../Components/Dialog';
 import { Button } from '../Components/Button';
 import { Select } from '../Components/Select';
+import { TextField } from '../Components/TextField';
 import { Toggle } from '../Components/Toggle';
 import { toast } from '../Components/Toast';
 import { errorMessage } from '../Api/Http';
@@ -72,6 +73,9 @@ export function WidgetSettingsDialog({ widgetId }: { widgetId: string }) {
         const value = settings[field.key] ?? field.defaultValue;
         if (field.type === 'toggle') {
           return <Toggle key={field.key} label={field.label} checked={Boolean(value)} onChange={(checked) => setSettings({ ...settings, [field.key]: checked })} />;
+        }
+        if (field.type === 'text') {
+          return <TextField key={field.key} label={field.label} value={typeof value === 'string' || typeof value === 'number' ? String(value) : ''} onChange={(e) => setSettings({ ...settings, [field.key]: e.target.value })} />;
         }
         return (
           <Select

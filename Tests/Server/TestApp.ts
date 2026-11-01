@@ -28,6 +28,9 @@ export async function createTestApp(overrides: Partial<Config> = {}): Promise<Te
     dockerSocket: path.join(dataDir, 'no-docker.sock'),
     ssh: { host: '127.0.0.1', port: 2222, user: null, keyPath: path.join(dataDir, 'no-key') },
     logLevel: 'silent',
+    sdkRuntimeFile: path.resolve(import.meta.dirname, '..', '..', 'Sdk', 'dist', 'runtime.js'),
+    catalogFile: null,
+    catalogUrl: 'http://127.0.0.1:9/catalog.json',
     ...overrides,
   });
   const built = await buildApp({ config, logger: false, watchers: false });

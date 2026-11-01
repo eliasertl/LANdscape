@@ -8,6 +8,8 @@ export * from './Settings';
 export * from './Grid';
 export * from './Layout';
 export * from './Keyboard';
+export * from './Permissions';
+export * from './AppManifest';
 export * from './Snap';
 export * from './WallpaperSchedule';
 export * from './Proxy';

@@ -1,6 +1,8 @@
 import type { WidgetType } from './AppIds';
 import type { Settings } from './Settings';
 import type { AnchoredPosition } from './Layout';
+import type { AppManifest } from './AppManifest';
+import type { Permission } from './Permissions';
 
 export type Theme = 'light' | 'dark' | 'system';
 
@@ -72,7 +74,7 @@ export interface WindowGeometry {
 export type WindowMemory = Record<string, WindowGeometry>;
 
 export interface WallpaperChoice {
-  kind: 'bundled' | 'upload';
+  kind: 'bundled' | 'upload' | 'app';
   file: string;
 }
 
@@ -201,6 +203,19 @@ export interface ContainerInfo {
   icon: string | null;
 }
 
+/** A catalog app on this server (Docs/AppPlatform.md). */
+export interface InstalledApp {
+  id: string;
+  version: string;
+  manifest: AppManifest;
+  /** Grants every permission (including unrestricted net:fetch); the sandbox stays. */
+  trusted: boolean;
+  granted: Permission[];
+  source: 'catalog' | 'url' | 'upload' | 'bundled';
+  installedAt: string;
+  updatedAt: string;
+}
+
 export type NotificationLevel = 'info' | 'warning' | 'error';
 
 export interface Notification {
@@ -254,6 +269,7 @@ export type EventsServerMessage =
   | { type: 'monitor-status'; status: MonitorStatus }
   | { type: 'monitor-targets' }
   | { type: 'settings-changed' }
+  | { type: 'apps-changed'; appId: string }
   | { type: 'error'; message: string };
 
 export interface FileEntry {

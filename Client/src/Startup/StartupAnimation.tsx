@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import type { Settings } from '@landscape/shared';
 import { registries, type StartupAnimationProps } from '../Platform/Registries';
 import { useRegistryEntry } from '../Platform/Registry';
@@ -87,7 +87,7 @@ export function StartupAnimation({ settings, userGesture, onDone, preview }: Sta
   return (
     <div className={`${styles.overlay} ${done ? styles.leaving : ''}`} style={{ background: settings.background, color: settings.foreground }} data-startup-animation={settings.preset} aria-hidden="true">
       <ErrorBoundary label="Startup animation" frame={() => <FadePreset params={params} onDone={finish} reducedMotion={reduced} />}>
-        {reduced ? <FadePreset params={params} onDone={finish} reducedMotion /> : <Preset params={params} onDone={finish} reducedMotion={reduced} />}
+        <Suspense fallback={null}>{reduced ? <FadePreset params={params} onDone={finish} reducedMotion /> : <Preset params={params} onDone={finish} reducedMotion={reduced} />}</Suspense>
       </ErrorBoundary>
       {settings.skippable && !done && <span className={`${styles.hint} text-footnote`}>Click or press a key to skip</span>}
     </div>

@@ -1,5 +1,6 @@
 import { topLeftAnchor } from '@landscape/shared';
 import type { Database } from '../Database';
+import { AppsRepository } from './AppsRepository';
 import { FoldersRepository } from './FoldersRepository';
 import { NotificationsRepository } from './NotificationsRepository';
 import { MonitorTargetsRepository } from './MonitorTargetsRepository';
@@ -16,6 +17,7 @@ export interface Repositories {
   folders: FoldersRepository;
   notifications: NotificationsRepository;
   monitorTargets: MonitorTargetsRepository;
+  apps: AppsRepository;
   windowMemory: WindowMemoryRepository;
   settings: SettingsRepository;
 }
@@ -28,6 +30,7 @@ export function createRepositories(db: Database): Repositories {
     folders: new FoldersRepository(db),
     notifications: new NotificationsRepository(db),
     monitorTargets: new MonitorTargetsRepository(db),
+    apps: new AppsRepository(db),
     windowMemory: new WindowMemoryRepository(db),
     settings: new SettingsRepository(db),
   };
@@ -45,4 +48,4 @@ export function seedDefaults(repos: Repositories): void {
   repos.settings.setFlag('seeded', true);
 }
 
-export { FoldersRepository, MonitorTargetsRepository, NotificationsRepository, SessionsRepository, SettingsRepository, ShortcutsRepository, WidgetsRepository, WindowMemoryRepository };
+export { AppsRepository, FoldersRepository, MonitorTargetsRepository, NotificationsRepository, SessionsRepository, SettingsRepository, ShortcutsRepository, WidgetsRepository, WindowMemoryRepository };

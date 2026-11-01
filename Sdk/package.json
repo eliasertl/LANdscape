@@ -1,0 +1,20 @@
+{
+  "name": "@landscape/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "SDK for LANdscape catalog apps: the RPC client (injected into every app frame), typed calls per permission and registration helpers.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "esbuild src/Runtime.ts --bundle --format=iife --target=es2022 --minify --outfile=dist/runtime.js && tsc -p . --declaration --emitDeclarationOnly --noEmit false --outDir dist/types",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@landscape/shared": "*"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

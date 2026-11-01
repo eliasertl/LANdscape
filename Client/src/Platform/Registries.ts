@@ -48,6 +48,8 @@ export interface ThemeDefinition extends RegistryEntry {
   name: string;
   /** Design-token overrides (`--color-accent`, …) per color scheme. */
   tokens: { light?: Record<string, string>; dark?: Record<string, string> };
+  /** Accent the pack suggests (applied through the accent machinery for contrast-checked text). */
+  accent?: string;
 }
 
 export interface WallpaperDefinition extends RegistryEntry {

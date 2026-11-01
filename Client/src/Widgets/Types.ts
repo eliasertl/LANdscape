@@ -11,7 +11,7 @@ export interface WidgetProps {
 export interface WidgetSettingsField {
   key: string;
   label: string;
-  type: 'select' | 'toggle';
+  type: 'select' | 'toggle' | 'text';
   /** Static options, or a function for options that depend on live data (e.g. interface names). */
   options?: { value: string; label: string }[] | (() => { value: string; label: string }[]);
   defaultValue: unknown;

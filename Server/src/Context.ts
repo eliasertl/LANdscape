@@ -12,6 +12,8 @@ import type { ProxyService } from './Proxy/ProxyService';
 import type { EventBus } from './Events/EventBus';
 import type { NotificationService } from './Notify/NotificationService';
 import type { MonitorService } from './Monitor/MonitorService';
+import type { AppStore } from './Apps/AppStore';
+import type { CatalogService } from './Apps/Catalog';
 
 /** Everything route modules need, passed explicitly instead of via decorators. */
 export interface ServerContext {
@@ -28,5 +30,9 @@ export interface ServerContext {
   events: EventBus;
   notifications: NotificationService;
   monitor: MonitorService;
+  apps: AppStore;
+  catalog: CatalogService;
+  /** The SDK runtime (Sdk/dist/runtime.js) injected into every app frame. */
+  sdkRuntime: string;
   log: FastifyBaseLogger;
 }

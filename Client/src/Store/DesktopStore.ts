@@ -260,5 +260,9 @@ export function proxyTotal(range: ProxyRange): number {
 }
 
 export function wallpaperFileUrl(choice: { kind: string; file: string }): string {
+  if (choice.kind === 'app') {
+    const [appId, bundle] = choice.file.split(/:(.+)/);
+    return `/apps/files/${appId}/${bundle}`;
+  }
   return `/wallpapers/${choice.kind}/${choice.file}`;
 }

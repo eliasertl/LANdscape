@@ -3,6 +3,9 @@ import type { AppDefinition } from '../Apps/Types';
 /** Rounded colored tile with the app's Phosphor icon, like a macOS app icon. */
 export function AppTile({ app, size }: { app: AppDefinition; size: number }) {
   const Icon = app.icon;
+  if (app.iconUrl) {
+    return <img src={app.iconUrl} width={size} height={size} alt="" draggable={false} style={{ borderRadius: Math.round(size * 0.225), objectFit: 'cover', flex: 'none', background: '#fff' }} />;
+  }
   return (
     <span
       aria-hidden="true"
