@@ -13,9 +13,14 @@ import { isSafeMode } from '../Platform/SafeMode';
  * merged with the defaults, and invalid ones are dropped.
  */
 export const UI_SCALES = [0.8, 0.9, 1, 1.1, 1.25, 1.5] as const;
+export const CURSOR_SCALES = [1, 1.25, 1.5, 2] as const;
 
 const deviceSettingsSchema = z.object({
   uiScale: z.number().min(0.75).max(1.5).default(1),
+  /** Size of the custom cursor on this screen (multiplier of the 32 px drawing). */
+  cursorScale: z.number().min(1).max(2).default(1),
+  /** Whether the startup sound plays in this browser. */
+  startupSound: z.boolean().default(true),
 });
 
 export type DeviceSettings = z.infer<typeof deviceSettingsSchema>;

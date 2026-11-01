@@ -49,8 +49,7 @@ export function useDesktopShortcuts(): void {
       registerShortcutHandler('window.next', () => windows().focusNext()),
       registerShortcutHandler('desktop.show', () => windows().minimizeAll()),
       registerShortcutHandler('settings.open', () => openApp('settings')),
-      // Until the server-side lock (milestone 4), "lock" ends the session.
-      registerShortcutHandler('session.lock', () => void useSessionStore.getState().logout()),
+      registerShortcutHandler('session.lock', () => void useSessionStore.getState().lock()),
     ];
     return () => unregister.forEach((fn) => fn());
   }, []);

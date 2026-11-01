@@ -49,6 +49,12 @@ Sizes S/M/L are 44/56/68 px; icons are 12 px smaller than the bar. Vertical bars
 
 Title bars have macOS traffic lights on the left by default, or Windows-style minimize / maximize / close buttons (46 px wide, close turns red on hover) on the right with the title left-aligned. Snapping shows a rounded, accent-tinted translucent rectangle with a 2 px accent border where the window will land.
 
+## Lock screen, startup, cursor
+
+- **Lock screen:** the blurred wallpaper (blur from Settings), an optional clock at 10 vh (digital 56 px or large 112 px, with the date), an optional message beneath it, and the frosted card. When a locked session unlocks, the card shows the username, "Locked — enter your password to continue", the password field, **Unlock**, and a quiet "Log out instead".
+- **Startup animation:** a full-screen overlay in the chosen background/foreground colors with a "Click or press a key to skip" hint at the bottom. Presets: logo fade (wordmark or uploaded logo scales from 0.96 and fades), boot log (mono lines typed with a blinking block cursor), particle burst (160 dots ease out from the center and fade), wallpaper zoom (the current wallpaper zooms from 1.6× and un-blurs), progress line (wordmark over a 3 px line). Reduced motion: a 600 ms fade of the wordmark/logo.
+- **Cursors:** 32 × 32 SVGs. *Soft rounded* is a plump white arrow with a dark 2 px outline and round joins; *large high-contrast* is a black arrow with a 3 px yellow (`#ffd60a`) outline. Both have pointer (hand), I-beam, move (four arrows), resize (two arrows) and busy (ring) forms.
+
 ## Keyboard shortcuts
 
 Shortcuts are shown as mono "Ctrl + Alt + ←" chips; clicking one turns it accent-outlined with "Press keys…". A conflicting chip gets an orange border and both rows say "Also used by …".

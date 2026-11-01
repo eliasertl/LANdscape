@@ -302,3 +302,51 @@
 .kbdConflict {
   border-color: var(--system-orange);
 }
+
+/* Startup colors, cursor preview and hotspots */
+.colorField {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-secondary-label);
+}
+
+.colorField > input {
+  width: 28px;
+  height: 22px;
+  padding: 0;
+  border: var(--border-width) solid var(--color-separator);
+  border-radius: var(--radius);
+  background: transparent;
+}
+
+.cursorPreview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: var(--radius-group);
+  background: linear-gradient(135deg, #2b5cff 0%, #1fc8c3 55%, #c86cff 100%);
+}
+
+.hotspot {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--color-secondary-label);
+}
+
+.hotspot > input {
+  width: 44px;
+  height: var(--control-height);
+  padding: 0 4px;
+  border: var(--border-width) solid var(--color-separator);
+  border-radius: var(--radius);
+  background: var(--color-background);
+  color: var(--color-label);
+  font-size: 12px;
+}

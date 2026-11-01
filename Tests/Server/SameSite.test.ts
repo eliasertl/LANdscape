@@ -33,6 +33,10 @@ const SIDE_EFFECT_FREE_GETS = [
   '/api/system/status',
   '/api/system/version',
   '/api/proxy',
+  '/api/auth/sessions',
+  '/api/uploads/media',
+  '/startup/:file',
+  '/cursors/:file',
   // WebSocket endpoints: GET only to upgrade; the guard checks Origin on the upgrade (tested below).
   '/ws/metrics',
   '/ws/terminal',

@@ -12,10 +12,10 @@ export class ApiRequestError extends Error {
   }
 }
 
-type UnauthorizedHandler = () => void;
+type UnauthorizedHandler = (kind: 'unauthorized' | 'locked') => void;
 let onUnauthorized: UnauthorizedHandler | null = null;
 
-/** Registers the callback that locks the UI when a request comes back 401. */
+/** Registers the callback that shows the lock screen when a request comes back 401 (no session) or 423 (locked session). */
 export function setUnauthorizedHandler(handler: UnauthorizedHandler): void {
   onUnauthorized = handler;
 }
@@ -35,7 +35,8 @@ async function request<T>(method: string, url: string, body?: unknown, init: Req
   } catch (error) {
     throw new ApiRequestError(0, 'network', error instanceof Error ? error.message : 'Network error');
   }
-  if (response.status === 401 && !url.startsWith('/api/auth/login')) onUnauthorized?.();
+  if (response.status === 401 && !url.startsWith('/api/auth/login') && !url.startsWith('/api/auth/unlock')) onUnauthorized?.('unauthorized');
+  if (response.status === 423) onUnauthorized?.('locked');
   if (response.status === 204) return undefined as T;
   const text = await response.text();
   let data: unknown = null;

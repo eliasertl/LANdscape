@@ -6,7 +6,8 @@ A self-hosted, macOS-style web desktop for your homeserver. Your services become
 
 ## Features
 
-- **Lock screen** with the blurred wallpaper and a login card. 5 failed attempts lock the IP for 15 minutes.
+- **Lock screen** with the blurred wallpaper, an optional clock and message, and a login card. 5 failed attempts lock the IP for 15 minutes. **Lock** any time with `Ctrl+Alt+L` or automatically after idle minutes; locking happens on the server, so a locked tab cannot call the API until the password is entered again. Settings lists every signed-in browser and can log the others out.
+- **Startup animation** (optional): a logo fade, boot log, particle burst, wallpaper zoom or progress line, with your own logo/video and an optional chime or sound, on page load, after login or both. **Custom cursors:** two original sets (soft rounded, large high-contrast) or your own PNG/SVG per state, sized per device.
 - **Desktop** with wallpaper, draggable shortcut icons, folders and resizable widgets. Items are anchored to the edge or center of the screen, so the layout keeps its shape on a laptop and on an ultra-wide monitor alike. Layout is saved on the server, so every device sees the same desktop.
 - **Shortcuts** to any URL. The server checks whether the site allows embedding (X-Frame-Options / CSP `frame-ancestors`) before you save, fetches and stores the favicon, or uses an uploaded icon.
 - **Embed proxy** for sites that refuse to be framed (typical for self-hosted apps like Docmost): each such shortcut gets its own LANdscape port (8081–8100) that passes the site through 1:1 with the framing headers removed, so it still opens in a window — logins included. Only reachable while you are logged in to LANdscape, and only open while a window uses it. See [Embed proxy](#embed-proxy).
@@ -182,6 +183,9 @@ Ports are released when a shortcut stops using the proxy or is deleted; changing
 - **Lock screen says too many attempts** — wait 15 minutes, or restart the container (lockouts are kept in memory).
 - **"Cannot write the host key store"** — the data directory's `ssh/` folder is not writable by the server user. The entrypoint normally fixes this on start; if you run with `user:` in compose, make the folder writable or set `PUID`/`PGID` to its owner.
 - **Ctrl+Space (or another shortcut) does nothing** — keyboard focus is inside an iframe (a shortcut window). Click the desktop or the search icon in the taskbar. If you rebound it, Settings → Keyboard Shortcuts shows the current keys and any conflicts; "Reset all to defaults" brings the defaults back.
+- **"The session is locked" / the lock screen asks only for a password** — the session was locked (shortcut, Settings → Lock & Security → Lock, or idle time). Enter the password; "Log out instead" starts over. Settings → Lock & Security → Lock after sets the idle time (Never turns it off).
+- **Logged out on another device after "Log out others"** — that is the point: every other browser must log in again. The current one stays.
+- **The startup animation blocks me** — click or press any key (if "Skippable" is on), or open LANdscape with `?safe=1`; safe mode never plays it. Sound only plays after you interacted with the page; the per-device switch is in Settings → Startup.
 - **The taskbar is gone** — auto-hide is on: move the pointer to the screen edge it lives on. Safe mode (`?safe=1`) always shows the default bar at the bottom.
 - **A login inside an embedded site does not stick** — sites on a different host than LANdscape are third-party iframes; Safari and Chrome block their cookies. Services on the same host but another port are fine.
 

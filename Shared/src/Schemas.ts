@@ -33,6 +33,10 @@ export const loginSchema = z.object({
   password: z.string().min(1).max(1024),
 });
 
+export const unlockSchema = z.object({ password: z.string().min(1).max(1024) });
+
+export const sessionKeySchema = z.string().regex(/^[a-f0-9]{16}$/, 'Invalid session key');
+
 const shortcutFields = {
   name: z.string().trim().min(1, 'Name is required').max(SHORTCUT_NAME_MAX),
   url: httpUrlSchema,

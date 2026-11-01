@@ -157,9 +157,27 @@ export interface DesktopBootstrap {
 
 export interface SessionInfo {
   authenticated: boolean;
+  /** The session exists but is locked: the API refuses calls until the password is entered again. */
+  locked: boolean;
   username: string | null;
   /** Wallpaper for the lock screen (bundled wallpapers only; uploads stay private until login). */
   lockScreenWallpaper: string | null;
+  /** Lock-screen look (public: the screen shows before login). */
+  lockScreen: { clock: 'none' | 'digital' | 'large'; showDate: boolean; message: string; blur: number };
+  /** Startup animation to play on page load (public subset; null when it does not play on load). */
+  startup: Settings['startup'] | null;
+}
+
+/** One row of Settings → Lock & Security → Sessions. Ids are opaque keys, never the cookie value. */
+export interface SessionSummary {
+  key: string;
+  device: string;
+  userAgent: string;
+  createdAt: string;
+  lastSeenAt: string;
+  expiresAt: string;
+  locked: boolean;
+  current: boolean;
 }
 
 export interface ApiError {

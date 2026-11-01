@@ -93,6 +93,12 @@ export const MIGRATIONS: string[] = [
     offset_col = MAX(0, CAST(ROUND((x - 16) / 96.0) AS INTEGER)),
     offset_row = MAX(0, CAST(ROUND((y - 16) / 112.0) AS INTEGER));
   `,
+  // Server-side lock (locked_at is set while a session is locked) and a readable device name for
+  // Settings → Lock & Security → Sessions.
+  `
+  ALTER TABLE sessions ADD COLUMN locked_at TEXT;
+  ALTER TABLE sessions ADD COLUMN device TEXT NOT NULL DEFAULT '';
+  `,
 ];
 
 export function runMigrations(db: Database): void {

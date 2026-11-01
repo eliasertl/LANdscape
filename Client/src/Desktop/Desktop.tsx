@@ -25,6 +25,9 @@ import { taskbarInset } from '@landscape/shared';
 import { useIsPhone } from '../Hooks/UseMediaQuery';
 import { PhoneShell } from '../Phone/PhoneShell';
 import { SafeModeBanner } from './SafeModeBanner';
+import { useIdleWatcher } from '../Lock/IdleWatcher';
+import { useCursor } from '../Cursor/UseCursor';
+import { AfterLoginAnimation } from '../Startup/AfterLoginAnimation';
 import styles from './Desktop.module.css';
 
 export function Desktop() {
@@ -32,6 +35,8 @@ export function Desktop() {
   const error = useDesktopStore((s) => s.error);
   const load = useDesktopStore((s) => s.load);
   const phone = useIsPhone();
+  useIdleWatcher();
+  useCursor();
 
   useEffect(() => {
     void load();
@@ -54,7 +59,12 @@ export function Desktop() {
       </div>
     );
   }
-  return phone ? <PhoneShell /> : <DesktopShell />;
+  return (
+    <>
+      {phone ? <PhoneShell /> : <DesktopShell />}
+      <AfterLoginAnimation />
+    </>
+  );
 }
 
 function DesktopShell() {
