@@ -17,6 +17,7 @@ import { Taskbar } from '../Taskbar/Taskbar';
 import { StartMenu } from '../StartMenu/StartMenu';
 import { WidgetLayer } from '../Widgets/WidgetLayer';
 import { Spinner } from '../Components/Spinner';
+import { applyAppearance } from '../Design/Theme';
 import { Button } from '../Components/Button';
 import { useKeyboardShortcut } from '../Hooks/UseKeyboardShortcut';
 import { useDesktopShortcuts } from './DesktopShortcuts';
@@ -25,6 +26,15 @@ import { taskbarInset } from '@landscape/shared';
 import { useIsPhone } from '../Hooks/UseMediaQuery';
 import { PhoneShell } from '../Phone/PhoneShell';
 import { SafeModeBanner } from './SafeModeBanner';
+import { useIdleWatcher } from '../Lock/IdleWatcher';
+import { useCursor } from '../Cursor/UseCursor';
+import { AfterLoginAnimation } from '../Startup/AfterLoginAnimation';
+import { useNotificationStore } from '../Store/NotificationStore';
+import { useMonitorStore } from '../Store/MonitorStore';
+import { NotificationCenter } from '../Notifications/NotificationCenter';
+import { loadInstalledApps, watchInstalledApps } from '../Platform/InstalledApps';
+import { broadcastTheme } from '../Platform/AppBroker';
+import { onThemeChange } from '../Design/Theme';
 import styles from './Desktop.module.css';
 
 export function Desktop() {
@@ -32,10 +42,32 @@ export function Desktop() {
   const error = useDesktopStore((s) => s.error);
   const load = useDesktopStore((s) => s.load);
   const phone = useIsPhone();
+  useIdleWatcher();
+  useCursor();
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Live events (notifications, monitor states, app changes) for the whole desktop, and the installed catalog apps.
+  useEffect(() => {
+    if (!loaded) return;
+    const disconnectNotifications = useNotificationStore.getState().connect();
+    const disconnectMonitor = useMonitorStore.getState().connect();
+    const unwatchApps = watchInstalledApps();
+    const unwatchTheme = onThemeChange(broadcastTheme);
+    void loadInstalledApps().then(() => {
+      // Theme packs from apps only resolve once the apps are registered.
+      const settings = useDesktopStore.getState().settings;
+      if (settings?.appearance.themePack) applyAppearance(settings.appearance);
+    });
+    return () => {
+      disconnectNotifications();
+      disconnectMonitor();
+      unwatchApps();
+      unwatchTheme();
+    };
+  }, [loaded]);
 
   if (error && !loaded) {
     return (
@@ -54,7 +86,12 @@ export function Desktop() {
       </div>
     );
   }
-  return phone ? <PhoneShell /> : <DesktopShell />;
+  return (
+    <>
+      {phone ? <PhoneShell /> : <DesktopShell />}
+      <AfterLoginAnimation />
+    </>
+  );
 }
 
 function DesktopShell() {
@@ -141,6 +178,7 @@ function DesktopShell() {
       <Taskbar />
       <StartMenu onLogout={() => void logout()} />
       <Overlays />
+      <NotificationCenter />
       <SafeModeBanner />
     </div>
   );

@@ -49,6 +49,25 @@ Sizes S/M/L are 44/56/68 px; icons are 12 px smaller than the bar. Vertical bars
 
 Title bars have macOS traffic lights on the left by default, or Windows-style minimize / maximize / close buttons (46 px wide, close turns red on hover) on the right with the title left-aligned. Snapping shows a rounded, accent-tinted translucent rectangle with a 2 px accent border where the window will land.
 
+## App Store and app surfaces
+
+The App Store is a core app with three tabs (Browse, Installed, Install from URL or file). Browse is a list/detail split: rows with a 40 px icon, name, version and a one-line description, an "Installed" or accent "Update" tag; the detail shows the description, size, permissions as mono chips with their plain-language meaning (dangerous ones in orange with a warning icon) and the Install button. The approval dialog repeats the permissions, flags new ones on updates, warns about dangerous ones, and has the Trusted switch with its warning. Installed cards have the trusted switch and one switch per permission.
+
+App surfaces inherit the frame they live in (window content, widget card, tray slot); apps are expected to call `landscape.theme.apply()` and use the tokens so they match the desktop.
+
+## Notifications and the command palette
+
+- **Toasts** stay as they are (top right, frosted, auto-dismiss). The **bell** in the tray fills when something is unread and carries a red count badge; **do not disturb** shows a crossed bell.
+- The **notification center** is a 400 px frosted panel above the tray (it follows the taskbar's edge like the launcher): header with "Mark all read" and "Clear", a list where unread rows have a faint accent tint and an accent dot, and a footer with the do-not-disturb switch. Levels use the accent (info), orange (warning) and red (error) icons.
+- **Health dots** sit at the bottom-left of a shortcut icon: green up, red down, grey unknown, with a dark ring so they read on any wallpaper. The tray's **service health** item is one dot (green/red/grey) plus the number of services down.
+- **Actions** in the launcher get an accent tile with the action's icon and an "Action" tag. Picking one with parameters swaps the panel for a small form (back arrow, title, one field per parameter, Cancel / Run).
+
+## Lock screen, startup, cursor
+
+- **Lock screen:** the blurred wallpaper (blur from Settings), an optional clock at 10 vh (digital 56 px or large 112 px, with the date), an optional message beneath it, and the frosted card. When a locked session unlocks, the card shows the username, "Locked — enter your password to continue", the password field, **Unlock**, and a quiet "Log out instead".
+- **Startup animation:** a full-screen overlay in the chosen background/foreground colors with a "Click or press a key to skip" hint at the bottom. Presets: logo fade (wordmark or uploaded logo scales from 0.96 and fades), boot log (mono lines typed with a blinking block cursor), particle burst (160 dots ease out from the center and fade), wallpaper zoom (the current wallpaper zooms from 1.6× and un-blurs), progress line (wordmark over a 3 px line). Reduced motion: a 600 ms fade of the wordmark/logo.
+- **Cursors:** 32 × 32 SVGs. *Soft rounded* is a plump white arrow with a dark 2 px outline and round joins; *large high-contrast* is a black arrow with a 3 px yellow (`#ffd60a`) outline. Both have pointer (hand), I-beam, move (four arrows), resize (two arrows) and busy (ring) forms.
+
 ## Keyboard shortcuts
 
 Shortcuts are shown as mono "Ctrl + Alt + ←" chips; clicking one turns it accent-outlined with "Press keys…". A conflicting chip gets an orange border and both rows say "Also used by …".

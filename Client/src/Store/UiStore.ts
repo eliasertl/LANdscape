@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { ReactNode } from 'react';
 import type { AnchoredPosition, CellRect, Folder, Shortcut } from '@landscape/shared';
 import type { MenuItem, MenuPosition } from '../Components/Menu';
+import type { ShortcutPrefill } from '../Apps/Docker/ContainerShortcut';
 
 export interface ConfirmRequest {
   title: ReactNode;
@@ -13,7 +14,7 @@ export interface ConfirmRequest {
   onCancel?: () => void;
 }
 
-export type ShortcutDialogState = { mode: 'create' } | { mode: 'edit'; shortcut: Shortcut } | null;
+export type ShortcutDialogState = { mode: 'create'; prefill?: ShortcutPrefill } | { mode: 'edit'; shortcut: Shortcut } | null;
 
 /** "New Folder…" (optionally moving a shortcut into it right away) or "Rename…". */
 export type FolderPromptState = { mode: 'create'; position: AnchoredPosition; moveShortcutId?: string } | { mode: 'rename'; folder: Folder } | null;

@@ -50,3 +50,54 @@
   background: var(--color-accent);
   transition: height 400ms ease;
 }
+
+/* Tray buttons (bell, service health) */
+.button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 5px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-label);
+  font-size: 17px;
+}
+
+.button:hover,
+.buttonActive {
+  background: var(--color-control-fill);
+}
+
+.badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: var(--color-destructive);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+}
+
+.healthDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.healthCount {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--system-red);
+}

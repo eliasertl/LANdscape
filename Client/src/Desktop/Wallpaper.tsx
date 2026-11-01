@@ -47,6 +47,7 @@ export function Wallpaper() {
           src={layer.url}
           alt=""
           className={`${styles.layer} ${index === layers.length - 1 ? styles.top : ''}`}
+          data-wallpaper-layer={index === layers.length - 1 ? '' : undefined}
           onTransitionEnd={() => setLayers((current) => current.slice(-1))}
           draggable={false}
         />

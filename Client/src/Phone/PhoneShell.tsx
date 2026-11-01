@@ -4,10 +4,13 @@ import { useCurrentWallpaperUrl } from '../Desktop/Wallpaper';
 import { useSessionStore } from '../Store/SessionStore';
 import { useUiStore } from '../Store/UiStore';
 import { useWindowStore } from '../Store/WindowStore';
-import { EntryIcon, entryKey, launchEntry, useLauncherEntries } from '../StartMenu/StartMenu';
+import { EntryIcon, entryKey, entryName, launchEntry, useLauncherEntries } from '../StartMenu/StartMenu';
 import { shortcutMenuItems } from '../Desktop/DesktopContextMenu';
 import { Overlays } from '../Desktop/Overlays';
+import { toast } from '../Components/Toast';
 import { SafeModeBanner } from '../Desktop/SafeModeBanner';
+import { NotificationCenter } from '../Notifications/NotificationCenter';
+import { NotificationBell } from '../Taskbar/Tray/NotificationBell';
 import { openApp } from '../Desktop/Launch';
 import { PhoneWindow } from './PhoneWindow';
 import styles from './PhoneShell.module.css';
@@ -43,6 +46,9 @@ export function PhoneShell() {
             <MagnifyingGlass weight="bold" />
             <input type="search" placeholder="Search apps and shortcuts" aria-label="Search apps and shortcuts" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" />
           </label>
+          <span className={`${styles.more} material`} data-phone-bell>
+            <NotificationBell />
+          </span>
           <button
             type="button"
             className={`${styles.more} material`}
@@ -96,7 +102,9 @@ export function PhoneShell() {
               type="button"
               className={styles.tile}
               data-launcher-entry={entryKey(entry)}
-              onClick={() => launchEntry(entry)}
+              onClick={() => {
+                if (!launchEntry(entry)) toast.info('This action asks for details; run it from the desktop launcher.');
+              }}
               onContextMenu={(e) => {
                 e.preventDefault();
                 if (entry.kind === 'shortcut') openContextMenu(shortcutMenuItems(entry.shortcut), { x: e.clientX, y: e.clientY });
@@ -105,7 +113,7 @@ export function PhoneShell() {
               <span className={styles.tileIcon}>
                 <EntryIcon entry={entry} size={56} />
               </span>
-              <span className={styles.tileLabel}>{entry.kind === 'app' ? entry.app.name : entry.shortcut.name}</span>
+              <span className={styles.tileLabel}>{entryName(entry)}</span>
             </button>
           ))}
         </div>
@@ -115,6 +123,7 @@ export function PhoneShell() {
         <PhoneWindow key={w.id} win={w} active={w.id === active?.id} />
       ))}
       <Overlays />
+      <NotificationCenter />
       <SafeModeBanner />
     </div>
   );

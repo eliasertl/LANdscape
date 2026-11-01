@@ -1,7 +1,7 @@
 import { X } from '@phosphor-icons/react';
 import type { Settings } from '@landscape/shared';
 import { useDesktopStore } from '../../Store/DesktopStore';
-import { Segmented, Select } from '../../Components/Select';
+import { Segmented } from '../../Components/Select';
 import { Toggle } from '../../Components/Toggle';
 import { Button } from '../../Components/Button';
 import { toast } from '../../Components/Toast';
@@ -153,9 +153,6 @@ export default function TaskbarSection() {
               />
             </SettingRow>
           ))}
-          <SettingRow label="More tray items" detail="The notification bell and the service-health summary arrive with the notification center.">
-            <Select aria-label="Tray placeholder" value="" onChange={() => undefined} options={[{ value: '', label: 'Coming soon' }]} disabled />
-          </SettingRow>
         </div>
       </section>
     </>

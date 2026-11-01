@@ -3,7 +3,6 @@ import { ArrowsClockwise, CheckCircle, Question, UploadSimple, WarningCircle } f
 import {
   ICON_CELLS,
   ICON_UPLOAD_MAX_BYTES,
-  cellToPx,
   findFirstFree,
   httpUrlSchema,
   proxyPortsFullMessage,
@@ -12,7 +11,10 @@ import {
   type IconMode,
   type OpenMode,
 } from '@landscape/shared';
-import { occupiedCells, viewportBounds } from './DesktopGrid';
+import { occupiedCells, positionForCell, viewportBounds } from './DesktopGrid';
+import { Toggle } from '../Components/Toggle';
+import { Select } from '../Components/Select';
+import { containerUrl } from '../Apps/Docker/ContainerShortcut';
 import { api, errorMessage } from '../Api/Http';
 import { useDesktopStore, shortcutIconUrl, proxyTotal } from '../Store/DesktopStore';
 import { useUiStore, type ShortcutDialogState } from '../Store/UiStore';
@@ -48,13 +50,16 @@ export function ShortcutDialog({ state }: { state: NonNullable<ShortcutDialogSta
   const updateShortcut = useDesktopStore((s) => s.updateShortcut);
   const total = useDesktopStore((s) => proxyTotal(s.proxy));
   const editing = state.mode === 'edit' ? state.shortcut : null;
+  const prefill = state.mode === 'create' ? (state.prefill ?? null) : null;
   const portsUsedByOthers = useDesktopStore((s) => s.shortcuts.filter((x) => x.proxyPort !== null && x.id !== editing?.id).length);
 
-  const [name, setName] = useState(editing?.name ?? '');
-  const [url, setUrl] = useState(editing?.url ?? '');
+  const [name, setName] = useState(editing?.name ?? prefill?.name ?? '');
+  const [url, setUrl] = useState(editing?.url ?? prefill?.url ?? '');
   const [iconMode, setIconMode] = useState<IconMode>(editing?.iconMode ?? 'favicon');
   const [iconFile, setIconFile] = useState<string | null>(editing?.iconMode === 'upload' ? editing.iconFile : null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(editing?.iconMode === 'upload' ? shortcutIconUrl(editing) : null);
+  const [healthCheck, setHealthCheck] = useState(editing?.healthCheck ?? true);
+  const [labelIconTried, setLabelIconTried] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [openMode, setOpenMode] = useState<OpenMode>(editing?.openMode ?? 'auto');
   const [check, setCheck] = useState<CheckState>(
@@ -94,6 +99,21 @@ export function ShortcutDialog({ state }: { state: NonNullable<ShortcutDialogSta
       setCheck({ status: 'done', result: { status: 'unknown', reason: errorMessage(error), finalUrl: null, title: null } });
     }
   };
+
+  // A container label icon (CasaOS etc.): fetched through the icon upload so it is stored like any upload.
+  useEffect(() => {
+    if (!prefill?.iconUrl || labelIconTried) return;
+    setLabelIconTried(true);
+    fetch(prefill.iconUrl)
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error('icon'))))
+      .then((blob) => api.upload<{ file: string; url: string }>('/api/uploads/icon', blob))
+      .then((result) => {
+        setIconFile(result.file);
+        setUploadPreview(result.url);
+        setIconMode('upload');
+      })
+      .catch(() => undefined);
+  }, [prefill, labelIconTried]);
 
   // Debounced auto-check while typing a URL.
   useEffect(() => {
@@ -137,12 +157,12 @@ export function ShortcutDialog({ state }: { state: NonNullable<ShortcutDialogSta
     }
     setSaving(true);
     try {
-      const payload = { name: name.trim(), url: target, iconMode, iconFile: iconMode === 'upload' ? iconFile : null, openMode };
+      const payload = { name: name.trim(), url: target, iconMode, iconFile: iconMode === 'upload' ? iconFile : null, openMode, healthCheck };
       if (editing) await updateShortcut(editing.id, payload);
       else {
         // New icons take the first free grid cell, column by column from the top left.
         const spot = findFirstFree(ICON_CELLS.cols, ICON_CELLS.rows, occupiedCells(null), viewportBounds());
-        await createShortcut({ ...payload, ...cellToPx(spot.col, spot.row) });
+        await createShortcut({ ...payload, position: positionForCell({ ...spot, ...ICON_CELLS }) });
       }
       close(null);
     } catch (error) {
@@ -223,6 +243,21 @@ export function ShortcutDialog({ state }: { state: NonNullable<ShortcutDialogSta
           </div>
         </div>
 
+        {prefill && prefill.ports.length > 1 && (
+          <div className={styles.section}>
+            <span className={styles.sectionLabel}>Published port</span>
+            <Select
+              aria-label="Published port"
+              value={String(prefill.ports.find((p) => url.includes(`:${p}/`)) ?? prefill.ports[0])}
+              onChange={(value) => {
+                setUrl(containerUrl(Number(value)));
+                setUrlError(null);
+              }}
+              options={prefill.ports.map((p) => ({ value: String(p), label: `${p} → ${containerUrl(p)}` }))}
+            />
+          </div>
+        )}
+
         <EmbedStatus check={check} openMode={openMode} onRecheck={() => void runCheck(url)} />
 
         <div className={styles.section}>
@@ -278,6 +313,16 @@ export function ShortcutDialog({ state }: { state: NonNullable<ShortcutDialogSta
               {portNote.text}
             </span>
           )}
+        </div>
+
+        <div className={styles.section}>
+          <label className={styles.toggleRow}>
+            <span className={styles.rowText}>
+              <span className={styles.sectionLabel}>Health check</span>
+              <span className="text-footnote text-secondary">The server fetches the URL periodically; the icon shows a green, red or grey dot.</span>
+            </span>
+            <Toggle checked={healthCheck} onChange={setHealthCheck} />
+          </label>
         </div>
       </form>
     </Dialog>

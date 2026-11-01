@@ -6,7 +6,7 @@ import globals from 'globals';
 
 export default tseslint.config(
   {
-    ignores: [
+    ignores: ['Catalog/**', 'Sdk/dist/**', 
       '**/node_modules/**',
       '**/dist/**',
       'Scratch/**',

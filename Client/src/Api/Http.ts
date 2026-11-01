@@ -12,10 +12,10 @@ export class ApiRequestError extends Error {
   }
 }
 
-type UnauthorizedHandler = () => void;
+type UnauthorizedHandler = (kind: 'unauthorized' | 'locked') => void;
 let onUnauthorized: UnauthorizedHandler | null = null;
 
-/** Registers the callback that locks the UI when a request comes back 401. */
+/** Registers the callback that shows the lock screen when a request comes back 401 (no session) or 423 (locked session). */
 export function setUnauthorizedHandler(handler: UnauthorizedHandler): void {
   onUnauthorized = handler;
 }
@@ -31,11 +31,12 @@ async function request<T>(method: string, url: string, body?: unknown, init: Req
   }
   let response: Response;
   try {
-    response = await fetch(url, { method, headers, body: payload, credentials: 'same-origin', ...init });
+    response = await fetch(url, { method, body: payload, credentials: 'same-origin', ...init, headers: { ...headers, ...((init.headers as Record<string, string> | undefined) ?? {}) } });
   } catch (error) {
     throw new ApiRequestError(0, 'network', error instanceof Error ? error.message : 'Network error');
   }
-  if (response.status === 401 && !url.startsWith('/api/auth/login')) onUnauthorized?.();
+  if (response.status === 401 && !url.startsWith('/api/auth/login') && !url.startsWith('/api/auth/unlock')) onUnauthorized?.('unauthorized');
+  if (response.status === 423) onUnauthorized?.('locked');
   if (response.status === 204) return undefined as T;
   const text = await response.text();
   let data: unknown = null;
@@ -59,11 +60,11 @@ async function request<T>(method: string, url: string, body?: unknown, init: Req
 }
 
 export const api = {
-  get: <T>(url: string) => request<T>('GET', url),
-  post: <T>(url: string, body?: unknown) => request<T>('POST', url, body),
-  put: <T>(url: string, body?: unknown) => request<T>('PUT', url, body),
-  patch: <T>(url: string, body?: unknown) => request<T>('PATCH', url, body),
-  delete: <T>(url: string) => request<T>('DELETE', url),
+  get: <T>(url: string, init?: RequestInit) => request<T>('GET', url, undefined, init),
+  post: <T>(url: string, body?: unknown, init?: RequestInit) => request<T>('POST', url, body, init),
+  put: <T>(url: string, body?: unknown, init?: RequestInit) => request<T>('PUT', url, body, init),
+  patch: <T>(url: string, body?: unknown, init?: RequestInit) => request<T>('PATCH', url, body, init),
+  delete: <T>(url: string, init?: RequestInit) => request<T>('DELETE', url, undefined, init),
   upload: <T>(url: string, file: File | Blob, fieldName = 'file') => {
     const form = new FormData();
     form.append(fieldName, file, file instanceof File ? file.name : 'upload');

@@ -3,6 +3,7 @@ import { registerShortcutHandler } from '../Platform/Keyboard';
 import { useWindowStore } from '../Store/WindowStore';
 import { useUiStore } from '../Store/UiStore';
 import { useSessionStore } from '../Store/SessionStore';
+import { useNotificationStore } from '../Store/NotificationStore';
 import { openApp } from './Launch';
 
 /**
@@ -49,8 +50,8 @@ export function useDesktopShortcuts(): void {
       registerShortcutHandler('window.next', () => windows().focusNext()),
       registerShortcutHandler('desktop.show', () => windows().minimizeAll()),
       registerShortcutHandler('settings.open', () => openApp('settings')),
-      // Until the server-side lock (milestone 4), "lock" ends the session.
-      registerShortcutHandler('session.lock', () => void useSessionStore.getState().logout()),
+      registerShortcutHandler('session.lock', () => void useSessionStore.getState().lock()),
+      registerShortcutHandler('notifications.toggle', () => useNotificationStore.getState().toggle()),
     ];
     return () => unregister.forEach((fn) => fn());
   }, []);
