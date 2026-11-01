@@ -96,15 +96,32 @@ export interface ProxyRange {
   end: number;
 }
 
+/** closed = assigned but not bound (no window uses it); the listener opens on demand. */
+export type ProxyPortState = 'closed' | 'opening' | 'open' | 'error';
+
 export interface ProxyPortStatus {
   port: number;
   shortcutId: string;
   name: string;
   /** Origin the port forwards to. */
   target: string;
+  state: ProxyPortState;
   listening: boolean;
   /** Why the listener is not running, if it failed. */
   error: string | null;
+  /** Short explanation of the state for Settings → Proxy ("In use by 1 window", "Idle, closes in 42 s", …). */
+  reason: string;
+  /** Live leases (open windows) and active connections (in-flight requests, WebSockets). */
+  leases: number;
+  connections: number;
+  closesInMs: number | null;
+}
+
+export interface ProxyLease {
+  leaseId: string;
+  port: number;
+  /** The lease expires this long after the last renewal. */
+  ttlMs: number;
 }
 
 export interface ProxyOverview extends ProxyRange {

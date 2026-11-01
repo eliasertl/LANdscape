@@ -58,10 +58,20 @@ function isOriginForm(url: string | undefined): url is string {
   return typeof url === 'string' && url.startsWith('/');
 }
 
+export interface ListenerActivity {
+  /** In-flight requests plus upgraded (WebSocket) connections; idle keep-alive sockets are not counted. */
+  active: number;
+  /** When a request or connection last started or ended (ms since epoch). */
+  lastActivityAt: number;
+}
+
 /** One http server bound to one proxy port. */
 export class ProxyListener {
   readonly server: http.Server;
   private readonly sockets = new Set<Socket | Duplex>();
+  private inflight = 0;
+  private upgraded = 0;
+  private lastActivityAt = Date.now();
 
   constructor(private readonly options: ListenerOptions) {
     this.server = http.createServer((req, res) => this.handleRequest(req, res));
@@ -96,6 +106,10 @@ export class ProxyListener {
     });
   }
 
+  activity(): ListenerActivity {
+    return { active: this.inflight + this.upgraded, lastActivityAt: this.lastActivityAt };
+  }
+
   close(): Promise<void> {
     return new Promise((resolve) => {
       if (!this.server.listening) {
@@ -109,6 +123,12 @@ export class ProxyListener {
   }
 
   private handleRequest(req: IncomingMessage, res: ServerResponse): void {
+    this.inflight += 1;
+    this.lastActivityAt = Date.now();
+    res.once('close', () => {
+      this.inflight -= 1;
+      this.lastActivityAt = Date.now();
+    });
     const route = this.options.route();
     if (!route) {
       sendProxyPage(res, 404, 'No service on this port', 'This LANdscape proxy port is not assigned to a shortcut.');
@@ -188,6 +208,12 @@ export class ProxyListener {
     upstream.setTimeout(RESPONSE_TIMEOUT_MS, () => upstream.destroy(new Error('timeout')));
 
     upstream.on('upgrade', (upstreamRes, upstreamSocket, upstreamHead) => {
+      this.upgraded += 1;
+      this.lastActivityAt = Date.now();
+      socket.once('close', () => {
+        this.upgraded -= 1;
+        this.lastActivityAt = Date.now();
+      });
       upstream.setTimeout(0);
       upstreamSocket.setTimeout(0);
       const { headers: outHeaders } = rewriteResponseHeaders(upstreamRes.headers, context, { upgrade: true });
