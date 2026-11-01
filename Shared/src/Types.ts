@@ -1,4 +1,5 @@
-import type { AppId, WidgetType } from './AppIds';
+import type { WidgetType } from './AppIds';
+import type { Settings } from './Settings';
 
 export type Theme = 'light' | 'dark' | 'system';
 
@@ -59,13 +60,6 @@ export type WindowMemory = Record<string, WindowGeometry>;
 export interface WallpaperChoice {
   kind: 'bundled' | 'upload';
   file: string;
-}
-
-export interface Settings {
-  theme: Theme;
-  wallpaper: WallpaperChoice;
-  enabledApps: Record<AppId, boolean>;
-  proxyIndicator: ProxyIndicator;
 }
 
 export interface WallpaperInfo {

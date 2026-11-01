@@ -1,12 +1,23 @@
-import { APP_IDS, type AppId, type ProxyIndicator, type Settings, type Theme, type WallpaperChoice } from '@landscape/shared';
+import {
+  DEFAULT_SETTINGS,
+  SETTINGS_FIELDS,
+  applySettingsPatch,
+  readSettingValue,
+  type Settings,
+  type SettingsKey,
+  type SettingsUpdateInput,
+  type WallpaperChoice,
+} from '@landscape/shared';
 import type { Database } from '../Database';
 
-export const DEFAULT_WALLPAPER: WallpaperChoice = { kind: 'bundled', file: 'aurora.webp' };
+export const DEFAULT_WALLPAPER: WallpaperChoice = DEFAULT_SETTINGS.wallpaper;
 
-function defaultEnabledApps(): Record<AppId, boolean> {
-  return Object.fromEntries(APP_IDS.map((id) => [id, true])) as Record<AppId, boolean>;
-}
+const KEYS = Object.keys(SETTINGS_FIELDS) as SettingsKey[];
 
+/**
+ * Settings are a key/value table: one JSON value per top-level key of
+ * `Settings` (see Shared/src/Settings.ts for the schema and defaults).
+ */
 export class SettingsRepository {
   constructor(private readonly db: Database) {}
 
@@ -29,26 +40,22 @@ export class SettingsRepository {
   }
 
   get(): Settings {
-    const theme = this.getRaw<Theme>('theme') ?? 'system';
-    const wallpaper = this.getRaw<WallpaperChoice>('wallpaper') ?? DEFAULT_WALLPAPER;
-    const enabledApps = { ...defaultEnabledApps(), ...(this.getRaw<Partial<Record<AppId, boolean>>>('enabledApps') ?? {}) };
-    const proxyIndicator = this.getRaw<ProxyIndicator>('proxyIndicator') === 'none' ? 'none' : 'badge';
-    return { theme, wallpaper, enabledApps, proxyIndicator };
+    const result = {} as Record<SettingsKey, unknown>;
+    for (const key of KEYS) result[key] = readSettingValue(key, this.getRaw(key));
+    return result as Settings;
   }
 
-  update(patch: {
-    theme?: Theme;
-    wallpaper?: WallpaperChoice;
-    enabledApps?: Partial<Record<AppId, boolean>>;
-    proxyIndicator?: ProxyIndicator;
-  }): Settings {
+  /**
+   * Merges a validated patch and stores only the keys it touches. Returns
+   * null-free settings; throws when the merged result is invalid (cannot
+   * happen with a patch that passed settingsUpdateSchema, kept as a guard).
+   */
+  update(patch: SettingsUpdateInput): Settings {
     this.db.transaction(() => {
-      if (patch.theme) this.setRaw('theme', patch.theme);
-      if (patch.proxyIndicator) this.setRaw('proxyIndicator', patch.proxyIndicator);
-      if (patch.wallpaper) this.setRaw('wallpaper', patch.wallpaper);
-      if (patch.enabledApps) {
-        const current = this.get().enabledApps;
-        this.setRaw('enabledApps', { ...current, ...patch.enabledApps });
+      const next = applySettingsPatch(this.get(), patch);
+      for (const key of Object.keys(patch) as SettingsKey[]) {
+        if (patch[key] === undefined) continue;
+        this.setRaw(key, SETTINGS_FIELDS[key].parse(next[key]));
       }
     });
     return this.get();

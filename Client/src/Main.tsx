@@ -6,6 +6,9 @@ import './Design/Tokens.css';
 import './Design/Base.css';
 import './Design/Typography.css';
 import { App } from './App';
+import { registerBuiltins } from './Platform/BuiltIns';
+
+registerBuiltins();
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <StrictMode>

@@ -1,4 +1,5 @@
-import { APPS } from '../Registry';
+import { registries } from '../../Platform/Registries';
+import { useRegistry } from '../../Platform/Registry';
 import { useDesktopStore } from '../../Store/DesktopStore';
 import { useWindowStore } from '../../Store/WindowStore';
 import { Toggle } from '../../Components/Toggle';
@@ -10,8 +11,9 @@ import styles from './SettingsApp.module.css';
 export function AppsSection() {
   const settings = useDesktopStore((s) => s.settings);
   const updateSettings = useDesktopStore((s) => s.updateSettings);
+  const apps = useRegistry(registries.apps);
 
-  const setEnabled = (id: (typeof APPS)[number]['id'], enabled: boolean) => {
+  const setEnabled = (id: string, enabled: boolean) => {
     void updateSettings({ enabledApps: { [id]: enabled } })
       .then(() => {
         if (!enabled) void useWindowStore.getState().closeAll(`app:${id}`);
@@ -24,7 +26,7 @@ export function AppsSection() {
       <h3 className={styles.sectionTitle}>Built-in apps</h3>
       <p className="text-callout text-secondary">Disabled apps disappear from the start menu and cannot be opened. Settings is always available.</p>
       <div className={styles.group}>
-        {APPS.map((app) => (
+        {apps.map((app) => (
           <div key={app.id} className={styles.row}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
               <AppTile app={app} size={32} />

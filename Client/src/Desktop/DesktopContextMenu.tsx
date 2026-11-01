@@ -4,7 +4,7 @@ import { cellToPx, findNearestFree, pxToCell, type Shortcut } from '@landscape/s
 import type { MenuItem } from '../Components/Menu';
 import { useDesktopStore } from '../Store/DesktopStore';
 import { useUiStore } from '../Store/UiStore';
-import { WIDGETS } from '../Widgets/Registry';
+import { registries } from '../Platform/Registries';
 import { openApp, openShortcut } from './Launch';
 import { toast } from '../Components/Toast';
 import { occupiedCells, viewportBounds } from './DesktopGrid';
@@ -19,7 +19,7 @@ export function desktopMenuItems(at: { x: number; y: number }): MenuItem[] {
       type: 'submenu',
       label: 'Add Widget',
       icon: createElement(SquaresFour),
-      items: WIDGETS.map((widget) => ({
+      items: registries.widgets.list().map((widget) => ({
         label: widget.name,
         icon: createElement(widget.icon),
         onSelect: () => {
@@ -27,7 +27,7 @@ export function desktopMenuItems(at: { x: number; y: number }): MenuItem[] {
           const cells = widget.size;
           const spot = findNearestFree({ ...pxToCell(at.x - 20, at.y - 20), ...cells }, occupiedCells(null), viewportBounds());
           const position = cellToPx(spot.col, spot.row);
-          void desktop.addWidget(widget.type, position.x, position.y).catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not add widget'));
+          void desktop.addWidget(widget.id, position.x, position.y, { intervalMs: widget.defaultIntervalMs }).catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not add widget'));
         },
       })),
     },

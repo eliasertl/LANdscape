@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { APP_IDS, WIDGET_MAX_INTERVAL_MS, WIDGET_MIN_INTERVAL_MS, WIDGET_TYPES } from './AppIds';
+import { APP_ID_PATTERN, WIDGET_MAX_INTERVAL_MS, WIDGET_MIN_INTERVAL_MS, WIDGET_TYPE_PATTERN } from './AppIds';
 import { SHORTCUT_NAME_MAX, SHORTCUT_URL_MAX } from './Constants';
 import { METRIC_NAMES } from './Metrics';
 
@@ -56,7 +56,7 @@ export const widgetSettingsSchema = z
   .catchall(z.unknown());
 
 export const widgetCreateSchema = z.object({
-  type: z.enum(WIDGET_TYPES),
+  type: z.string().regex(WIDGET_TYPE_PATTERN, 'Invalid widget type'),
   x: coordinate,
   y: coordinate,
   settings: widgetSettingsSchema.partial().optional(),
@@ -78,23 +78,9 @@ export const windowGeometrySchema = z.object({
 
 export const appKeySchema = z
   .string()
-  .regex(/^(shortcut:[A-Za-z0-9_-]{1,64}|app:[a-z-]{1,32})$/, 'Invalid app key');
+  .regex(/^(shortcut:[A-Za-z0-9_-]{1,64}|app:[a-z0-9][a-z0-9-]{0,47})$/, 'Invalid app key');
 
-const enabledAppsSchema = z.object(
-  Object.fromEntries(APP_IDS.map((id) => [id, z.boolean()])) as Record<(typeof APP_IDS)[number], z.ZodBoolean>,
-);
-
-export const settingsUpdateSchema = z.object({
-  theme: z.enum(['light', 'dark', 'system']).optional(),
-  wallpaper: z
-    .object({
-      kind: z.enum(['bundled', 'upload']),
-      file: z.string().regex(/^[A-Za-z0-9._-]{1,128}$/),
-    })
-    .optional(),
-  enabledApps: enabledAppsSchema.partial().optional(),
-  proxyIndicator: z.enum(['badge', 'none']).optional(),
-});
+export const appIdSchema = z.string().regex(APP_ID_PATTERN, 'Invalid app id');
 
 export const metricsClientMessageSchema = z.discriminatedUnion('type', [
   z.object({
@@ -157,4 +143,3 @@ export type ShortcutCreateInput = z.infer<typeof shortcutCreateSchema>;
 export type ShortcutUpdateInput = z.infer<typeof shortcutUpdateSchema>;
 export type WidgetCreateInput = z.infer<typeof widgetCreateSchema>;
 export type WidgetUpdateInput = z.infer<typeof widgetUpdateSchema>;
-export type SettingsUpdateInput = z.infer<typeof settingsUpdateSchema>;
