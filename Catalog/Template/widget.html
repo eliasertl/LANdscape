@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+      }
+      .big {
+        font-size: 28px;
+        font-weight: 600;
+        letter-spacing: -0.5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div style="text-align: center">
+      <div class="big" id="value">…</div>
+      <div class="muted" id="label">Clicks</div>
+    </div>
+    <script>
+      (async () => {
+        landscape.theme.apply();
+        const label = document.getElementById('label');
+        const value = document.getElementById('value');
+        const applyParams = (p) => {
+          label.textContent = (p.settings && p.settings.label) || 'Clicks';
+        };
+        applyParams(landscape.context.params);
+        landscape.ui.onParams(applyParams);
+        const refresh = async () => {
+          value.textContent = String((await landscape.storage.get('count')) ?? 0);
+        };
+        await refresh();
+        setInterval(refresh, 3000);
+      })();
+    </script>
+  </body>
+</html>

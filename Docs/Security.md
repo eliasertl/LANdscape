@@ -47,6 +47,10 @@ Shortcuts whose sites forbid framing can be served through `Server/src/Proxy/`: 
 
 Accepted risks: the proxy accepts self-signed certificates on targets (like the embed check); the proxy origin is plain HTTP, so on an untrusted network the app's traffic between browser and LANdscape is as exposed as LANdscape's own; apps that hard-code their original URL in JavaScript bypass the proxy (and its cookie namespace) for those requests. Logs contain ports, target origins and error codes, never cookies, headers or bodies.
 
+## Catalog apps
+
+Apps are untrusted code. They run in `<iframe sandbox="allow-scripts">` frames without `allow-same-origin` (opaque origin: no cookies, DOM or API access), their documents are built server-side with every asset inlined and a CSP that forbids network access, and their only channel is `postMessage` to the broker, which checks a per-frame nonce and the app's granted permissions on every call. Bundles are validated on install (manifest, referenced files, image sniffing, SVG script check, zip path safety and size limits); catalog installs verify the sha256 from the index. "Trusted" grants every permission but never lifts the sandbox. `net:fetch` is a server-side fetch limited to the manifest's hosts unless trusted, with credential headers stripped both ways. Details and the rejected alternatives are in [AppPlatform.md](AppPlatform.md).
+
 ## Secrets
 
 The password hash, session secret and SSH key are never sent to the client and never logged (`Config.ts` has a redacting view used for the startup log).

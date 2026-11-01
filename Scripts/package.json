@@ -8,6 +8,7 @@
     "wallpapers": "tsx src/GenerateWallpapers.ts",
     "seed": "tsx --env-file-if-exists=../Scratch/.env src/SeedDev.ts",
     "hash-password": "tsx src/HashPassword.ts",
+    "catalog": "tsx src/BuildCatalog.ts",
     "build": "esbuild src/HashPassword.ts --bundle --platform=node --target=node24 --format=esm --packages=external --alias:@landscape/shared=../Shared/src/index.ts --outfile=dist/HashPassword.js",
     "typecheck": "tsc -p ."
   },

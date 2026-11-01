@@ -49,6 +49,12 @@ Sizes S/M/L are 44/56/68 px; icons are 12 px smaller than the bar. Vertical bars
 
 Title bars have macOS traffic lights on the left by default, or Windows-style minimize / maximize / close buttons (46 px wide, close turns red on hover) on the right with the title left-aligned. Snapping shows a rounded, accent-tinted translucent rectangle with a 2 px accent border where the window will land.
 
+## App Store and app surfaces
+
+The App Store is a core app with three tabs (Browse, Installed, Install from URL or file). Browse is a list/detail split: rows with a 40 px icon, name, version and a one-line description, an "Installed" or accent "Update" tag; the detail shows the description, size, permissions as mono chips with their plain-language meaning (dangerous ones in orange with a warning icon) and the Install button. The approval dialog repeats the permissions, flags new ones on updates, warns about dangerous ones, and has the Trusted switch with its warning. Installed cards have the trusted switch and one switch per permission.
+
+App surfaces inherit the frame they live in (window content, widget card, tray slot); apps are expected to call `landscape.theme.apply()` and use the tokens so they match the desktop.
+
 ## Notifications and the command palette
 
 - **Toasts** stay as they are (top right, frosted, auto-dismiss). The **bell** in the tray fills when something is unread and carries a red count badge; **do not disturb** shows a crossed bell.

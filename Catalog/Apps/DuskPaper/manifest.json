@@ -1,0 +1,76 @@
+{
+  "id": "dusk-paper",
+  "name": "Dusk & Paper",
+  "version": "1.0.0",
+  "author": "LANdscape",
+  "description": "Two themes with their own accents: Dusk, a deep indigo night with amber, and Paper, warm off-white with moss green. Comes with a matching wallpaper. No code, no permissions.",
+  "icon": "icon.svg",
+  "categories": [
+    "appearance"
+  ],
+  "permissions": [],
+  "contributes": {
+    "themes": [
+      {
+        "id": "dusk",
+        "name": "Dusk",
+        "accent": "#ff9f0a",
+        "tokens": {
+          "dark": {
+            "--color-background": "#0b0a14",
+            "--color-secondary-background": "#15132a",
+            "--color-tertiary-background": "#1e1b38",
+            "--color-elevated-background": "#181634",
+            "--color-separator": "rgba(180, 170, 255, 0.18)",
+            "--color-control-fill": "rgba(150, 140, 255, 0.2)",
+            "--material-card": "rgba(22, 20, 48, 0.7)",
+            "--material-widget": "rgba(16, 14, 40, 0.62)"
+          },
+          "light": {
+            "--color-background": "#f7f5ff",
+            "--color-secondary-background": "#ece8fb",
+            "--color-tertiary-background": "#e2dcf7",
+            "--color-elevated-background": "#ffffff",
+            "--color-separator": "rgba(60, 50, 120, 0.16)",
+            "--material-card": "rgba(247, 245, 255, 0.7)",
+            "--material-widget": "rgba(247, 245, 255, 0.62)"
+          }
+        }
+      },
+      {
+        "id": "paper",
+        "name": "Paper",
+        "accent": "#3a8f5c",
+        "tokens": {
+          "light": {
+            "--color-background": "#fbf7ef",
+            "--color-secondary-background": "#f1ebdd",
+            "--color-tertiary-background": "#e8e0cc",
+            "--color-elevated-background": "#fffdf8",
+            "--color-label": "#2b2416",
+            "--color-secondary-label": "rgba(43, 36, 22, 0.6)",
+            "--color-separator": "rgba(60, 50, 30, 0.16)",
+            "--material-card": "rgba(251, 247, 239, 0.72)",
+            "--material-widget": "rgba(251, 247, 239, 0.64)"
+          },
+          "dark": {
+            "--color-background": "#141210",
+            "--color-secondary-background": "#1f1b16",
+            "--color-tertiary-background": "#2a251e",
+            "--color-elevated-background": "#231f19",
+            "--color-separator": "rgba(255, 240, 210, 0.14)",
+            "--material-card": "rgba(31, 27, 22, 0.72)",
+            "--material-widget": "rgba(24, 21, 17, 0.64)"
+          }
+        }
+      }
+    ],
+    "wallpapers": [
+      {
+        "id": "dusk",
+        "name": "Dusk horizon",
+        "file": "wallpapers/dusk.svg"
+      }
+    ]
+  }
+}

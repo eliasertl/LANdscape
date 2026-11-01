@@ -21,9 +21,11 @@ Client (Client/src)
    ├─ Desktop/     wallpaper, icons, context menus, dialogs, Overlays
    ├─ Windows/     window manager (frames, drag/resize, iframe content)
    ├─ Taskbar/ StartMenu/ Phone/
-   ├─ Apps/<Name>/ built-in apps behind Apps/Registry.ts
+   ├─ Apps/<Name>/ built-in apps behind Apps/Registry.ts; Apps/AppFrame.tsx + AppWindow.tsx host catalog apps
    └─ Widgets/<Name>/ widgets behind Widgets/Registry.ts
-Shared/src        types, zod schemas, constants, WebSocket message types
+Shared/src        types, zod schemas, constants, WebSocket message types, app manifest + permissions
+Sdk/src           the SDK for catalog apps (runtime injected into frames, types)
+Catalog/          catalog app sources, the template, built zips and index.json
 ```
 
 ## Request flow
@@ -81,6 +83,10 @@ Widgets subscribe over `/ws/metrics` with `{ metric, intervalMs }`. `Metrics/Hub
 ## SSH
 
 `Ssh/Connection.ts` pools ssh2 clients and spreads channels (shell, exec, sftp) over them so OpenSSH's `MaxSessions` limit is never hit. Host keys are trusted on first use and pinned in `DATA_DIR/ssh/known_host`. Follow commands (`journalctl -f`) run with a pty so closing the channel ends the remote process. SFTP operations run with the SSH user's permissions; path inputs are normalised to absolute POSIX paths before use.
+
+## App platform
+
+Catalog apps are frontend-only bundles that run in sandboxed frames and reach LANdscape only through the SDK broker. The full architecture and security model are in [AppPlatform.md](AppPlatform.md); how to write one in [AppSdk.md](AppSdk.md). In short: `Server/src/Apps/` installs bundles into `DATA_DIR/apps/<id>/<version>/` and builds each frame's document with everything inlined (`FrameInjector.ts`), `Client/src/Platform/AppBroker.ts` validates and permission-checks every `postMessage` call, and `Client/src/Platform/InstalledApps.ts` registers what an app contributes into the same registries the built-ins use. The App Store (`Client/src/Apps/AppStore/`) is a core app. The catalog (`Catalog/`) is built by `npm run catalog` and read live from GitHub with the image's copy as the fallback.
 
 ## Notifications, monitor, actions
 
