@@ -124,6 +124,28 @@ export const MIGRATIONS: string[] = [
 
   ALTER TABLE shortcuts ADD COLUMN health_check INTEGER NOT NULL DEFAULT 1;
   `,
+  // Catalog apps (Docs/AppPlatform.md): the installed manifest, trust and grants, and the per-app
+  // key/value storage the SDK's `storage` permission uses.
+  `
+  CREATE TABLE apps (
+    id TEXT PRIMARY KEY,
+    version TEXT NOT NULL,
+    manifest TEXT NOT NULL,
+    trusted INTEGER NOT NULL DEFAULT 0,
+    granted TEXT NOT NULL DEFAULT '[]',
+    source TEXT NOT NULL,
+    installed_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE TABLE app_storage (
+    app_id TEXT NOT NULL,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (app_id, key)
+  );
+  `,
 ];
 
 export function runMigrations(db: Database): void {

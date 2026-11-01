@@ -20,7 +20,7 @@ const LOCKED_ROUTES = new Set(['POST /api/auth/unlock', 'POST /api/auth/logout',
 const PASSIVE_ROUTES = new Set(['GET /api/auth/session']);
 
 function isProtectedPath(url: string): boolean {
-  return url.startsWith('/api/') || url.startsWith('/ws/') || url.startsWith('/icons/') || url.startsWith('/wallpapers/upload/') || url.startsWith('/cursors/');
+  return url.startsWith('/api/') || url.startsWith('/ws/') || url.startsWith('/icons/') || url.startsWith('/wallpapers/upload/') || url.startsWith('/cursors/') || url.startsWith('/apps/');
 }
 
 export function readSessionId(request: FastifyRequest): string | null {
