@@ -30,6 +30,10 @@ export interface SafeFetchOptions {
   accept?: string;
   method?: 'GET' | 'HEAD';
   timeoutMs?: number;
+  /** App fetches: extra request headers (hop-by-hop and credential headers are filtered by the caller). */
+  extraHeaders?: Record<string, string>;
+  overrideMethod?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  body?: string;
 }
 
 /** Performs a single request without following redirects (the caller handles hops). */
@@ -38,15 +42,17 @@ export async function fetchOnce(url: URL, options: SafeFetchOptions = {}): Promi
   const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? FETCH_TIMEOUT_MS);
   try {
     return await undiciFetch(url, {
-      method: options.method ?? 'GET',
+      method: options.overrideMethod ?? options.method ?? 'GET',
       redirect: 'manual',
       dispatcher: agent,
       signal: controller.signal,
       headers: {
+        ...(options.extraHeaders ?? {}),
         'user-agent': 'LANdscape/1.0 (+https://github.com/eliasertl/LANdscape)',
         accept: options.accept ?? '*/*',
         'accept-language': 'en',
       },
+      body: options.body,
     });
   } finally {
     clearTimeout(timer);

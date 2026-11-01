@@ -154,3 +154,75 @@
 .footerButton:hover {
   background: var(--color-control-fill);
 }
+
+/* The panel opens from the taskbar's edge (Taskbar.tsx sets data-taskbar-position on <html>). */
+:global(:root[data-taskbar-position='top']) .host {
+  top: calc(var(--taskbar-height) + 20px);
+  bottom: auto;
+}
+
+:global(:root[data-taskbar-position='top']) .panel {
+  transform-origin: top center;
+}
+
+:global(:root[data-taskbar-position='left']) .host,
+:global(:root[data-taskbar-position='right']) .host {
+  top: 0;
+  bottom: 0;
+  align-items: center;
+}
+
+:global(:root[data-taskbar-position='left']) .host {
+  left: calc(var(--taskbar-height) + 24px);
+  right: auto;
+  justify-content: flex-start;
+}
+
+:global(:root[data-taskbar-position='left']) .panel {
+  transform-origin: left center;
+}
+
+:global(:root[data-taskbar-position='right']) .host {
+  right: calc(var(--taskbar-height) + 24px);
+  left: auto;
+  justify-content: flex-end;
+}
+
+:global(:root[data-taskbar-position='right']) .panel {
+  transform-origin: right center;
+}
+
+:global(:root[data-taskbar-position='left']) .panel,
+:global(:root[data-taskbar-position='right']) .panel {
+  max-height: min(560px, calc(100vh - 48px));
+}
+
+/* Actions in the launcher and the inline parameter prompt */
+.actionIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 70%, white) 0%, var(--color-accent) 60%, color-mix(in srgb, var(--color-accent) 80%, black) 100%);
+  color: var(--color-on-accent);
+}
+
+.params {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 14px 14px;
+}
+
+.paramsHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.paramsActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

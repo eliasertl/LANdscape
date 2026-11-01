@@ -9,7 +9,15 @@ export function DockerCountWidget({ widget }: WidgetProps) {
   const state = useMetric('dockerCount', widget.settings.intervalMs);
   return (
     <WidgetFrame widget={widget} title="Docker" unavailable={state.status === 'unavailable' ? state.reason : null}>
-      {state.status === 'ok' ? (
+      {state.status === 'ok' && widget.size === 's' ? (
+        <div className={styles.compact} onDoubleClick={() => openApp('docker')} title="Double-click to open the Docker app">
+          <span className={styles.compactLabel}>Docker</span>
+          <span className={styles.compactBig}>
+            {state.data.running}
+            <span className={styles.muted}> / {state.data.total}</span>
+          </span>
+        </div>
+      ) : state.status === 'ok' ? (
         <div className={styles.stack} style={{ cursor: 'default' }} onDoubleClick={() => openApp('docker')} title="Double-click to open the Docker app">
           <div className={styles.row}>
             <span className={styles.big}>

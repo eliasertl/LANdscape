@@ -60,6 +60,92 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE shortcuts ADD COLUMN proxy_tag TEXT;
   CREATE UNIQUE INDEX shortcuts_proxy_port ON shortcuts(proxy_port) WHERE proxy_port IS NOT NULL;
   `,
+  // Anchored layout (Shared/src/Layout.ts): positions become "cells from an edge or the center"
+  // instead of pixels, so a layout keeps its shape on other screen sizes. Existing items become
+  // top-left anchors computed from the old 96 × 112 px grid, so nothing moves. Also: widget size
+  // steps, desktop folders, and the folder a shortcut lives in. The old x/y columns stay unused.
+  `
+  CREATE TABLE folders (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    anchor_x TEXT NOT NULL DEFAULT 'left',
+    anchor_y TEXT NOT NULL DEFAULT 'top',
+    offset_col INTEGER NOT NULL DEFAULT 0,
+    offset_row INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+  );
+
+  ALTER TABLE shortcuts ADD COLUMN anchor_x TEXT NOT NULL DEFAULT 'left';
+  ALTER TABLE shortcuts ADD COLUMN anchor_y TEXT NOT NULL DEFAULT 'top';
+  ALTER TABLE shortcuts ADD COLUMN offset_col INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE shortcuts ADD COLUMN offset_row INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE shortcuts ADD COLUMN folder_id TEXT REFERENCES folders(id) ON DELETE SET NULL;
+  UPDATE shortcuts SET
+    offset_col = MAX(0, CAST(ROUND((x - 16) / 96.0) AS INTEGER)),
+    offset_row = MAX(0, CAST(ROUND((y - 16) / 112.0) AS INTEGER));
+
+  ALTER TABLE widgets ADD COLUMN anchor_x TEXT NOT NULL DEFAULT 'left';
+  ALTER TABLE widgets ADD COLUMN anchor_y TEXT NOT NULL DEFAULT 'top';
+  ALTER TABLE widgets ADD COLUMN offset_col INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE widgets ADD COLUMN offset_row INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE widgets ADD COLUMN size TEXT NOT NULL DEFAULT 'm';
+  UPDATE widgets SET
+    offset_col = MAX(0, CAST(ROUND((x - 16) / 96.0) AS INTEGER)),
+    offset_row = MAX(0, CAST(ROUND((y - 16) / 112.0) AS INTEGER));
+  `,
+  // Server-side lock (locked_at is set while a session is locked) and a readable device name for
+  // Settings → Lock & Security → Sessions.
+  `
+  ALTER TABLE sessions ADD COLUMN locked_at TEXT;
+  ALTER TABLE sessions ADD COLUMN device TEXT NOT NULL DEFAULT '';
+  `,
+  // Notification center history, monitor targets registered by apps, and the per-shortcut
+  // health-check switch (the monitor service checks every shortcut with it on).
+  `
+  CREATE TABLE notifications (
+    id TEXT PRIMARY KEY,
+    source TEXT NOT NULL,
+    level TEXT NOT NULL,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    read_at TEXT,
+    data TEXT
+  );
+  CREATE INDEX notifications_created_at ON notifications(created_at);
+
+  CREATE TABLE monitor_targets (
+    id TEXT PRIMARY KEY,
+    kind TEXT NOT NULL,
+    label TEXT NOT NULL,
+    address TEXT NOT NULL,
+    owner TEXT NOT NULL
+  );
+
+  ALTER TABLE shortcuts ADD COLUMN health_check INTEGER NOT NULL DEFAULT 1;
+  `,
+  // Catalog apps (Docs/AppPlatform.md): the installed manifest, trust and grants, and the per-app
+  // key/value storage the SDK's `storage` permission uses.
+  `
+  CREATE TABLE apps (
+    id TEXT PRIMARY KEY,
+    version TEXT NOT NULL,
+    manifest TEXT NOT NULL,
+    trusted INTEGER NOT NULL DEFAULT 0,
+    granted TEXT NOT NULL DEFAULT '[]',
+    source TEXT NOT NULL,
+    installed_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE TABLE app_storage (
+    app_id TEXT NOT NULL,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (app_id, key)
+  );
+  `,
 ];
 
 export function runMigrations(db: Database): void {

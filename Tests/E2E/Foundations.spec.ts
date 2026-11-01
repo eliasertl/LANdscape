@@ -28,9 +28,9 @@ test.describe('foundations', () => {
       const boom = () => {
         throw new Error('Deliberate test failure');
       };
-      debug.registries.widgets?.register({ id: 'crash-test', name: 'Crash test', description: '', icon, component: boom, metric: null, size: { cols: 2, rows: 1 }, defaultIntervalMs: 5000 });
+      debug.registries.widgets?.register({ id: 'crash-test', name: 'Crash test', description: '', icon, component: boom, metric: null, sizes: { m: { cols: 2, rows: 1 } }, defaultIntervalMs: 5000 });
       debug.registries.apps?.register({ id: 'crash-test', name: 'Crash test', description: '', icon, color: '#f00', component: boom, defaultSize: { width: 500, height: 300 }, requires: null, single: true });
-      await debug.stores.desktop?.getState().addWidget?.('crash-test', 600, 240, { intervalMs: 5000 });
+      await debug.stores.desktop?.getState().addWidget?.('crash-test', { anchorX: 'left', anchorY: 'top', offsetCol: 6, offsetRow: 2 }, 'm', { intervalMs: 5000 });
       debug.stores.windows?.getState().open?.({ kind: 'app', appId: 'crash-test', title: 'Crash test' });
     });
     const widgetCard = page.locator('[data-error-boundary="Crash test widget"]');

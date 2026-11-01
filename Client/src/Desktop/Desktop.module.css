@@ -22,3 +22,15 @@
   color: var(--color-secondary-label);
   background: var(--color-background);
 }
+
+/* Settings → Desktop → Labels */
+.labelsHidden [data-shortcut-id] > span:last-child,
+.labelsHidden [data-folder-id] > span:last-child {
+  display: none;
+}
+
+.labelsShadow [data-shortcut-id] > span:last-child,
+.labelsShadow [data-folder-id] > span:last-child {
+  background: rgba(0, 0, 0, 0.45);
+  text-shadow: none;
+}

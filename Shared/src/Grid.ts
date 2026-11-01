@@ -1,10 +1,37 @@
 /**
- * The desktop grid shared by shortcut icons and widgets. One cell is exactly
- * one app icon (96 × 112 px). Icons take one cell; every widget spans a whole
- * number of icon cells (rendered at cols*unitX - gap by rows*unitY - gap so
- * neighbours keep a gap). Positions are stored in px but always land on cells.
+ * The desktop grid shared by shortcut icons, folders and widgets. One cell
+ * is exactly one app icon; its size follows the icon size and grid density
+ * from Settings → Desktop (gridMetrics). Icons take one cell; every widget
+ * spans a whole number of cells (rendered at cols*unitX - gap by
+ * rows*unitY - gap so neighbours keep a gap). Positions are stored as
+ * anchors in cells (Layout.ts), never in pixels.
  */
-export const DESKTOP_GRID = { unitX: 96, unitY: 112, originX: 16, originY: 16, gap: 8 } as const;
+export type IconSize = 's' | 'm' | 'l';
+export type GridDensity = 'compact' | 'normal' | 'roomy';
+
+export interface GridMetrics {
+  unitX: number;
+  unitY: number;
+  originX: number;
+  originY: number;
+  gap: number;
+  /** Rendered icon image size in px. */
+  iconPx: number;
+}
+
+export const ICON_PX: Record<IconSize, number> = { s: 48, m: 56, l: 72 };
+const DENSITY_DELTA: Record<GridDensity, number> = { compact: -8, normal: 0, roomy: 16 };
+
+/** Cell size for an icon size and density; "m"/"normal" is the original 96 × 112 grid. */
+export function gridMetrics(iconSize: IconSize = 'm', density: GridDensity = 'normal'): GridMetrics {
+  const iconPx = ICON_PX[iconSize];
+  const delta = DENSITY_DELTA[density];
+  return { unitX: iconPx + 40 + delta, unitY: iconPx + 56 + delta, originX: 16, originY: 16, gap: 8, iconPx };
+}
+
+export const DEFAULT_GRID: GridMetrics = gridMetrics();
+/** @deprecated use gridMetrics(); kept for code that only needs the default cell. */
+export const DESKTOP_GRID = DEFAULT_GRID;
 
 export const ICON_CELLS = { cols: 1, rows: 1 } as const;
 
@@ -21,35 +48,32 @@ export interface GridBounds {
   rows: number;
 }
 
-export function pxToCell(x: number, y: number): { col: number; row: number } {
-  return {
-    col: Math.round((x - DESKTOP_GRID.originX) / DESKTOP_GRID.unitX),
-    row: Math.round((y - DESKTOP_GRID.originY) / DESKTOP_GRID.unitY),
-  };
+export function pxToCell(x: number, y: number, grid: GridMetrics = DEFAULT_GRID): { col: number; row: number } {
+  return { col: Math.round((x - grid.originX) / grid.unitX), row: Math.round((y - grid.originY) / grid.unitY) };
 }
 
-export function cellToPx(col: number, row: number): { x: number; y: number } {
-  return { x: DESKTOP_GRID.originX + col * DESKTOP_GRID.unitX, y: DESKTOP_GRID.originY + row * DESKTOP_GRID.unitY };
+export function cellToPx(col: number, row: number, grid: GridMetrics = DEFAULT_GRID): { x: number; y: number } {
+  return { x: grid.originX + col * grid.unitX, y: grid.originY + row * grid.unitY };
 }
 
 /** Grid units needed for a widget of the given pixel size. */
-export function cellsForSize(width: number, height: number): { cols: number; rows: number } {
+export function cellsForSize(width: number, height: number, grid: GridMetrics = DEFAULT_GRID): { cols: number; rows: number } {
   return {
-    cols: Math.max(1, Math.ceil((width + DESKTOP_GRID.gap) / DESKTOP_GRID.unitX - 1e-6)),
-    rows: Math.max(1, Math.ceil((height + DESKTOP_GRID.gap) / DESKTOP_GRID.unitY - 1e-6)),
+    cols: Math.max(1, Math.ceil((width + grid.gap) / grid.unitX - 1e-6)),
+    rows: Math.max(1, Math.ceil((height + grid.gap) / grid.unitY - 1e-6)),
   };
 }
 
 /** Rendered pixel size for a widget spanning cols × rows units. */
-export function sizeForCells(cols: number, rows: number): { width: number; height: number } {
-  return { width: cols * DESKTOP_GRID.unitX - DESKTOP_GRID.gap, height: rows * DESKTOP_GRID.unitY - DESKTOP_GRID.gap };
+export function sizeForCells(cols: number, rows: number, grid: GridMetrics = DEFAULT_GRID): { width: number; height: number } {
+  return { width: cols * grid.unitX - grid.gap, height: rows * grid.unitY - grid.gap };
 }
 
 /** Usable grid for a desktop area of the given pixel size. */
-export function gridBounds(width: number, height: number): GridBounds {
+export function gridBounds(width: number, height: number, grid: GridMetrics = DEFAULT_GRID): GridBounds {
   return {
-    cols: Math.max(1, Math.floor((width - DESKTOP_GRID.originX) / DESKTOP_GRID.unitX)),
-    rows: Math.max(1, Math.floor((height - DESKTOP_GRID.originY) / DESKTOP_GRID.unitY)),
+    cols: Math.max(1, Math.floor((width - grid.originX) / grid.unitX)),
+    rows: Math.max(1, Math.floor((height - grid.originY) / grid.unitY)),
   };
 }
 

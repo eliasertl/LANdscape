@@ -1,12 +1,12 @@
-import { WIDGET_FALLBACK_INTERVAL_MS, type Widget, type WidgetSettings, type WidgetType } from '@landscape/shared';
+import { WIDGET_FALLBACK_INTERVAL_MS, type AnchoredPosition, type Widget, type WidgetSettings, type WidgetSize, type WidgetType } from '@landscape/shared';
 import type { Database, Row } from '../Database';
 import { newId, nowIso } from '../Ids';
+import { positionFromRow, type PositionRow } from './Positions';
 
-interface WidgetRow extends Row {
+interface WidgetRow extends Row, PositionRow {
   id: string;
   type: string;
-  x: number;
-  y: number;
+  size: string;
   settings: string;
   created_at: string;
 }
@@ -30,8 +30,8 @@ function toWidget(row: WidgetRow): Widget {
   return {
     id: row.id,
     type: row.type,
-    x: Number(row.x),
-    y: Number(row.y),
+    position: positionFromRow(row),
+    size: row.size as WidgetSize,
     settings: parseSettings(row.settings),
     createdAt: row.created_at,
   };
@@ -50,29 +50,36 @@ export class WidgetsRepository {
   }
 
   /** The client sends the widget's default interval; the fallback covers older clients and the first-run seed. */
-  create(type: WidgetType, x: number, y: number, settings: Partial<WidgetSettings> = {}): Widget {
+  create(type: WidgetType, position: AnchoredPosition, size: WidgetSize = 'm', settings: Partial<WidgetSettings> = {}): Widget {
     const id = newId();
     const merged: WidgetSettings = { intervalMs: WIDGET_FALLBACK_INTERVAL_MS, ...settings };
     this.db.run(
-      'INSERT INTO widgets (id, type, x, y, settings, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO widgets (id, type, anchor_x, anchor_y, offset_col, offset_row, size, settings, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       id,
       type,
-      x,
-      y,
+      position.anchorX,
+      position.anchorY,
+      position.offsetCol,
+      position.offsetRow,
+      size,
       JSON.stringify(merged),
       nowIso(),
     );
     return this.find(id) as Widget;
   }
 
-  update(id: string, patch: { x?: number; y?: number; settings?: WidgetSettings }): Widget | undefined {
+  update(id: string, patch: { position?: AnchoredPosition; size?: WidgetSize; settings?: WidgetSettings }): Widget | undefined {
     const current = this.find(id);
     if (!current) return undefined;
     const settings = patch.settings ? { ...current.settings, ...patch.settings } : current.settings;
+    const position = patch.position ?? current.position;
     this.db.run(
-      'UPDATE widgets SET x = ?, y = ?, settings = ? WHERE id = ?',
-      patch.x ?? current.x,
-      patch.y ?? current.y,
+      'UPDATE widgets SET anchor_x = ?, anchor_y = ?, offset_col = ?, offset_row = ?, size = ?, settings = ? WHERE id = ?',
+      position.anchorX,
+      position.anchorY,
+      position.offsetCol,
+      position.offsetRow,
+      patch.size ?? current.size,
       JSON.stringify(settings),
       id,
     );

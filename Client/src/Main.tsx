@@ -9,10 +9,12 @@ import { App } from './App';
 import { registerBuiltins } from './Platform/BuiltIns';
 import { applyDeviceSettings } from './Store/DeviceStore';
 import { installDebugHandle } from './Platform/DebugHandle';
+import { installKeyboardShortcuts } from './Platform/Keyboard';
 
 registerBuiltins();
 applyDeviceSettings();
 installDebugHandle();
+installKeyboardShortcuts();
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <StrictMode>

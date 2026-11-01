@@ -4,6 +4,7 @@ import { useDesktopStore } from '../Store/DesktopStore';
 import { useWindowStore } from '../Store/WindowStore';
 import { useUiStore } from '../Store/UiStore';
 import { useDeviceStore } from '../Store/DeviceStore';
+import { useSessionStore } from '../Store/SessionStore';
 
 declare global {
   interface Window {
@@ -21,6 +22,6 @@ export function installDebugHandle(): void {
   window.landscapeDebug = {
     registries,
     isSafeMode,
-    stores: { desktop: useDesktopStore, windows: useWindowStore, ui: useUiStore, device: useDeviceStore },
+    stores: { desktop: useDesktopStore, windows: useWindowStore, ui: useUiStore, device: useDeviceStore, session: useSessionStore },
   };
 }

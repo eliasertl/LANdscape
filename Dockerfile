@@ -20,20 +20,26 @@ COPY Shared/package.json Shared/
 COPY Server/package.json Server/
 COPY Client/package.json Client/
 COPY Scripts/package.json Scripts/
+COPY Sdk/package.json Sdk/
 RUN npm ci --no-audit --no-fund
 
 COPY tsconfig.base.json ./
 COPY Shared Shared
+COPY Sdk Sdk
 COPY Server Server
 COPY Client Client
 COPY Scripts Scripts
 COPY Assets Assets
+COPY Catalog Catalog
 
 # Wallpapers are generated (not downloaded) into Client/public so Vite copies them into the build.
+# The catalog zips are rebuilt so the bundled fallback matches the sources in this commit.
 RUN npm run wallpapers -w Scripts \
+ && npm run build -w Sdk \
  && npm run build -w Server \
  && npm run build -w Client \
- && npm run build -w Scripts
+ && npm run build -w Scripts \
+ && npm run catalog -w Scripts
 
 # ---------------------------------------------------------------------------
 FROM ${NODE_IMAGE} AS prod-deps
@@ -44,6 +50,7 @@ COPY Shared/package.json Shared/
 COPY Server/package.json Server/
 COPY Client/package.json Client/
 COPY Scripts/package.json Scripts/
+COPY Sdk/package.json Sdk/
 # Only the server's runtime dependencies; the client is static and sharp is build-only.
 RUN npm ci --omit=dev --no-audit --no-fund --workspace=Server --workspace=Shared \
  && npm cache clean --force
@@ -80,6 +87,10 @@ COPY --from=build /app/Server/dist ./Server/dist
 COPY --from=build /app/Client/dist ./Client/dist
 COPY --from=build /app/Scripts/package.json ./Scripts/package.json
 COPY --from=build /app/Scripts/dist ./Scripts/dist
+# The SDK runtime is injected into app frames; the catalog is the offline fallback and holds the bundled apps.
+COPY --from=build /app/Sdk/dist/runtime.js ./Sdk/dist/runtime.js
+COPY --from=build /app/Catalog/index.json ./Catalog/index.json
+COPY --from=build /app/Catalog/dist ./Catalog/dist
 COPY Scripts/Entrypoint.sh /usr/local/bin/landscape-entrypoint
 COPY Scripts/HashPassword.sh /usr/local/bin/hash-password
 RUN chmod +x /usr/local/bin/landscape-entrypoint /usr/local/bin/hash-password \

@@ -1,0 +1,52 @@
+{
+  "id": "ink-cursors",
+  "name": "Ink cursors",
+  "version": "1.0.0",
+  "author": "LANdscape",
+  "description": "A slim black cursor set with a thin white outline, drawn as SVG so it stays sharp at any cursor size. No code, no permissions.",
+  "icon": "icon.svg",
+  "categories": [
+    "appearance"
+  ],
+  "permissions": [],
+  "contributes": {
+    "cursorSets": [
+      {
+        "id": "ink",
+        "name": "Ink",
+        "cursors": {
+          "default": {
+            "file": "cursors/default.svg",
+            "hotspotX": 7,
+            "hotspotY": 4
+          },
+          "pointer": {
+            "file": "cursors/pointer.svg",
+            "hotspotX": 13,
+            "hotspotY": 5
+          },
+          "text": {
+            "file": "cursors/text.svg",
+            "hotspotX": 16,
+            "hotspotY": 16
+          },
+          "move": {
+            "file": "cursors/move.svg",
+            "hotspotX": 16,
+            "hotspotY": 16
+          },
+          "resize": {
+            "file": "cursors/resize.svg",
+            "hotspotX": 16,
+            "hotspotY": 16
+          },
+          "busy": {
+            "file": "cursors/busy.svg",
+            "hotspotX": 16,
+            "hotspotY": 16
+          }
+        }
+      }
+    ]
+  }
+}

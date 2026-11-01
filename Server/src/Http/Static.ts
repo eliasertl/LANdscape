@@ -42,7 +42,7 @@ export async function installStatic(app: FastifyInstance, clientDir: string): Pr
 
   app.setNotFoundHandler(async (request, reply) => {
     const url = request.url.split('?')[0] ?? '';
-    const isApiLike = url.startsWith('/api/') || url.startsWith('/ws/') || url.startsWith('/icons/') || url.startsWith('/wallpapers/');
+    const isApiLike = url.startsWith('/api/') || url.startsWith('/ws/') || url.startsWith('/icons/') || url.startsWith('/wallpapers/') || url.startsWith('/apps/') || url.startsWith('/cursors/') || url.startsWith('/startup/');
     if (request.method === 'GET' && !isApiLike && !url.startsWith('/assets/')) {
       void reply.type('text/html; charset=utf-8').header('Cache-Control', 'no-cache');
       return sendIndex();

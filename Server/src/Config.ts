@@ -28,6 +28,12 @@ export interface Config {
   logLevel: string;
   /** Directory containing the built client (index.html, assets, wallpapers). */
   clientDir: string;
+  /** The compiled SDK runtime injected into app frames (Sdk/dist/runtime.js). */
+  sdkRuntimeFile: string;
+  /** The catalog index bundled in the image (fallback when GitHub is unreachable), or null. */
+  catalogFile: string | null;
+  /** Where the live catalog index is fetched from. */
+  catalogUrl: string;
   version: string;
 }
 
@@ -121,7 +127,8 @@ export function loadConfig(overrides: Partial<Config> = {}): Config {
   }
 
   const dataDir = path.resolve(env('DATA_DIR', '/etc/landscape') as string);
-  const defaultClientDir = path.resolve(import.meta.dirname, '..', '..', 'Client', 'dist');
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..');
+  const defaultClientDir = path.join(repoRoot, 'Client', 'dist');
 
   const config: Config = {
     port: envInt('PORT', 8080),
@@ -144,6 +151,9 @@ export function loadConfig(overrides: Partial<Config> = {}): Config {
     trustProxy: envBool('TRUST_PROXY', false),
     logLevel: env('LOG_LEVEL', 'info') as string,
     clientDir: env('CLIENT_DIR', defaultClientDir) as string,
+    sdkRuntimeFile: env('SDK_RUNTIME_FILE', path.join(repoRoot, 'Sdk', 'dist', 'runtime.js')) as string,
+    catalogFile: env('CATALOG_FILE', path.join(repoRoot, 'Catalog', 'index.json')) ?? null,
+    catalogUrl: env('CATALOG_URL', 'https://raw.githubusercontent.com/eliasertl/LANdscape/main/Catalog/index.json') as string,
     version: readVersion(),
     ...overrides,
   };
@@ -168,6 +178,7 @@ export function redactConfig(config: Config): Record<string, unknown> {
     proxyPorts: `${config.proxyPorts.start}-${config.proxyPorts.end}`,
     trustProxy: config.trustProxy,
     clientDir: config.clientDir,
+    catalogUrl: config.catalogUrl,
     version: config.version,
   };
 }

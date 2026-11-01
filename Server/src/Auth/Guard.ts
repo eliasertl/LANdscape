@@ -1,20 +1,26 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { SESSION_COOKIE_NAME } from '@landscape/shared';
 import type { SessionService } from './Sessions';
-import { forbidden, unauthorized } from '../Http/Errors';
+import { forbidden, locked, unauthorized } from '../Http/Errors';
 import { hasSameOrigin } from '../Http/RequestUtils';
 
 declare module 'fastify' {
   interface FastifyRequest {
     sessionId: string | null;
+    /** True when the session exists but is locked (only unlock, logout and the probe are allowed). */
+    sessionLocked: boolean;
   }
 }
 
 /** Routes that must work without a session. Everything else under /api, /ws, /icons requires one. */
 const PUBLIC_ROUTES = new Set(['GET /healthz', 'POST /api/auth/login', 'GET /api/auth/session']);
+/** Routes a locked session may still call. */
+const LOCKED_ROUTES = new Set(['POST /api/auth/unlock', 'POST /api/auth/logout', 'GET /api/auth/session']);
+/** Routes that do not count as user activity for the idle lock. */
+const PASSIVE_ROUTES = new Set(['GET /api/auth/session']);
 
 function isProtectedPath(url: string): boolean {
-  return url.startsWith('/api/') || url.startsWith('/ws/') || url.startsWith('/icons/') || url.startsWith('/wallpapers/upload/');
+  return url.startsWith('/api/') || url.startsWith('/ws/') || url.startsWith('/icons/') || url.startsWith('/wallpapers/upload/') || url.startsWith('/cursors/') || url.startsWith('/apps/');
 }
 
 export function readSessionId(request: FastifyRequest): string | null {
@@ -42,17 +48,20 @@ export function readSessionIdFromHeader(app: FastifyInstance, cookieHeader: stri
 /**
  * Installs the global session guard. Static client files stay public (the
  * lock screen has to load), everything that touches data or the host needs a
- * valid session. WebSocket upgrades additionally require a same-origin Origin.
+ * valid, unlocked session. WebSocket upgrades additionally require a
+ * same-origin Origin.
  */
 export function installGuard(app: FastifyInstance, sessions: SessionService): void {
   app.decorateRequest('sessionId', null);
+  app.decorateRequest('sessionLocked', false);
 
   app.addHook('onRequest', (request: FastifyRequest, reply: FastifyReply, done) => {
     const pathname = request.url.split('?')[0] ?? request.url;
     const key = `${request.method} ${pathname}`;
 
-    const session = sessions.validate(readSessionId(request));
+    const session = sessions.validate(readSessionId(request), !PASSIVE_ROUTES.has(key));
     request.sessionId = session?.id ?? null;
+    request.sessionLocked = session?.locked ?? false;
 
     if (PUBLIC_ROUTES.has(key) || !isProtectedPath(pathname)) {
       // Login is public but still state-changing: pages on the embed proxy ports are the same
@@ -76,6 +85,10 @@ export function installGuard(app: FastifyInstance, sessions: SessionService): vo
     // Same-origin check for state-changing API calls too (defence in depth next to SameSite=Strict).
     if (pathname.startsWith('/api/') && request.method !== 'GET' && request.method !== 'HEAD' && !hasSameOrigin(request)) {
       done(forbidden('Cross-origin requests are not allowed'));
+      return;
+    }
+    if (session.locked && !LOCKED_ROUTES.has(key)) {
+      done(locked());
       return;
     }
     done();

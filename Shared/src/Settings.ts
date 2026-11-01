@@ -13,9 +13,156 @@ import { APP_ID_PATTERN } from './AppIds';
 
 export const themeSchema = z.enum(['light', 'dark', 'system']);
 
+/** bundled/upload files live in the client build or DATA_DIR; "app" is "<appId>:<bundle path>" of an installed app's wallpaper. */
 export const wallpaperChoiceSchema = z.object({
-  kind: z.enum(['bundled', 'upload']),
-  file: z.string().regex(/^[A-Za-z0-9._-]{1,128}$/),
+  kind: z.enum(['bundled', 'upload', 'app']),
+  file: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,200}$/).refine((v) => !v.includes('..'), 'Invalid file'),
+});
+
+const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Use a hex color like #ff8800');
+
+export const ACCENT_PRESETS = {
+  blue: '#007aff',
+  purple: '#af52de',
+  pink: '#ff2d55',
+  red: '#ff3b30',
+  orange: '#ff9500',
+  yellow: '#ffcc00',
+  green: '#34c759',
+  teal: '#30b0c7',
+  graphite: '#8e8e93',
+} as const;
+
+export const appearanceSettingsSchema = z.object({
+  /** A preset name or a hex color. */
+  accent: z.union([z.enum(Object.keys(ACCENT_PRESETS) as [keyof typeof ACCENT_PRESETS, ...(keyof typeof ACCENT_PRESETS)[]]), hexColor]),
+  /** Blur radius of the translucent materials in px. */
+  blur: z.number().int().min(0).max(40),
+  /** A theme contributed by an app ("<appId>/<themeId>"), or null for the built-in look. */
+  themePack: z.string().regex(/^[a-z0-9][a-z0-9-]{0,47}\/[a-z0-9][a-z0-9-]{0,47}$/).nullable(),
+  slideshow: z.object({
+    enabled: z.boolean(),
+    intervalMinutes: z.number().int().min(1).max(1440),
+    order: z.enum(['sequence', 'shuffle']),
+    wallpapers: z.array(wallpaperChoiceSchema).max(100),
+  }),
+  timeOfDay: z.object({
+    enabled: z.boolean(),
+    morning: wallpaperChoiceSchema.nullable(),
+    day: wallpaperChoiceSchema.nullable(),
+    evening: wallpaperChoiceSchema.nullable(),
+    night: wallpaperChoiceSchema.nullable(),
+  }),
+});
+
+export const desktopSettingsSchema = z.object({
+  iconSize: z.enum(['s', 'm', 'l']),
+  labels: z.enum(['show', 'hide', 'shadow']),
+  /** Clicks needed to open a desktop icon. */
+  openWith: z.enum(['single', 'double']),
+  showIcons: z.boolean(),
+  density: z.enum(['compact', 'normal', 'roomy']),
+});
+
+export const taskbarSettingsSchema = z.object({
+  /** floating = centered pill (default); win10/win11 = full-width docked; dock = floating with magnification. */
+  style: z.enum(['floating', 'win10', 'win11', 'dock']),
+  position: z.enum(['bottom', 'top', 'left', 'right']),
+  autoHide: z.boolean(),
+  size: z.enum(['s', 'm', 'l']),
+  /** Window titles next to the icons (Windows styles). */
+  showTitles: z.boolean(),
+  clock: z.object({
+    seconds: z.boolean(),
+    hours: z.enum(['auto', '12', '24']),
+    showDate: z.boolean(),
+  }),
+  /** Pinned items in order: "app:<id>" or "shortcut:<id>". */
+  pinned: z.array(z.string().regex(/^(app|shortcut):[A-Za-z0-9_-]{1,64}$/)).max(50),
+  /** Tray items switched off (registry ids). */
+  trayHidden: z.array(z.string().regex(/^[a-z0-9][a-z0-9-]{0,47}(\/[a-z0-9][a-z0-9-]{0,47})?$/)).max(50),
+});
+
+export const windowSettingsSchema = z.object({
+  animation: z.enum(['normal', 'fast', 'off']),
+  /** macOS traffic lights on the left, or Windows-style buttons on the right. */
+  buttons: z.enum(['mac', 'windows']),
+  openMaximized: z.boolean(),
+  cascade: z.boolean(),
+});
+
+export const keyboardSettingsSchema = z.object({
+  /** Overrides per action id: a combo like "Ctrl+Alt+ArrowLeft", or "" to unbind. Missing = default. */
+  bindings: z.record(z.string().regex(/^[a-z]+\.[A-Za-z]+$/), z.string().max(64)),
+});
+
+const dataFileName = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/);
+
+export const STARTUP_PRESETS = ['logo-fade', 'boot-log', 'particles', 'zoom', 'progress'] as const;
+
+export const startupSettingsSchema = z.object({
+  /** When the animation plays: on page load (before the lock screen), after login, both, or never. */
+  when: z.enum(['never', 'load', 'login', 'both']),
+  /** A built-in preset or an animation id contributed by an app ("<appId>/<name>"). */
+  preset: z.string().regex(/^[a-z0-9][a-z0-9-]{0,47}(\/[a-z0-9][a-z0-9-]{0,47})?$/),
+  durationMs: z.number().int().min(300).max(10000),
+  /** Playback speed multiplier for presets with motion (boot log lines, particles). */
+  speed: z.number().min(0.25).max(3),
+  /** Click or key ends the animation early. */
+  skippable: z.boolean(),
+  background: hexColor,
+  foreground: hexColor,
+  /** Text shown by text presets (logo fade, progress line). */
+  text: z.string().max(64),
+  /** Uploaded logo (PNG/JPEG/WebP/SVG/GIF) or short video (WebM/MP4) in DATA_DIR/startup, or null for the LANdscape logo. */
+  logoFile: dataFileName.nullable(),
+  sound: z.object({
+    kind: z.enum(['none', 'chime', 'upload']),
+    file: dataFileName.nullable(),
+    volume: z.number().int().min(0).max(100),
+  }),
+});
+
+export const CURSOR_STATES = ['default', 'pointer', 'text', 'move', 'resize', 'busy'] as const;
+
+export const cursorSettingsSchema = z.object({
+  /** "system" (no custom cursor), a built-in set, an app-contributed set id, or "custom" for the uploads below. */
+  set: z.string().regex(/^[a-z0-9][a-z0-9-]{0,47}(\/[a-z0-9][a-z0-9-]{0,47})?$/),
+  /** Uploaded PNG/SVG per state with its hotspot, used by the "custom" set (missing states fall back to the system cursor). */
+  custom: z.partialRecord(z.enum(CURSOR_STATES), z.object({ file: dataFileName, hotspotX: z.number().int().min(0).max(128), hotspotY: z.number().int().min(0).max(128) })),
+});
+
+export const lockSettingsSchema = z.object({
+  /** Minutes without activity (across tabs) before the session locks; 0 = never. */
+  idleMinutes: z.number().int().min(0).max(1440),
+  clock: z.enum(['none', 'digital', 'large']),
+  showDate: z.boolean(),
+  message: z.string().max(120),
+  /** Blur of the lock-screen wallpaper in px. */
+  blur: z.number().int().min(0).max(60),
+});
+
+export const securitySettingsSchema = z.object({
+  /** Session lifetime in days (sliding). */
+  sessionDays: z.number().int().min(1).max(365),
+});
+
+export const notificationSettingsSchema = z.object({
+  /** Do not disturb: history still fills, nothing pops up. */
+  dnd: z.boolean(),
+  watchers: z.object({
+    /** Container stopped, died or was OOM-killed (Docker events). */
+    docker: z.boolean(),
+    disk: z.object({ enabled: z.boolean(), percent: z.number().int().min(50).max(99) }),
+    temperature: z.object({ enabled: z.boolean(), celsius: z.number().int().min(40).max(110) }),
+    /** A monitored service went down or came back. */
+    monitors: z.boolean(),
+  }),
+});
+
+export const monitorSettingsSchema = z.object({
+  /** Seconds between checks of every target. */
+  intervalSeconds: z.number().int().min(10).max(3600),
 });
 
 export const proxySettingsSchema = z.object({
@@ -31,6 +178,17 @@ export const SETTINGS_FIELDS = {
   enabledApps: z.record(z.string().regex(APP_ID_PATTERN), z.boolean()),
   proxyIndicator: z.enum(['badge', 'none']),
   proxy: proxySettingsSchema,
+  appearance: appearanceSettingsSchema,
+  desktop: desktopSettingsSchema,
+  taskbar: taskbarSettingsSchema,
+  windows: windowSettingsSchema,
+  keyboard: keyboardSettingsSchema,
+  startup: startupSettingsSchema,
+  cursor: cursorSettingsSchema,
+  lock: lockSettingsSchema,
+  security: securitySettingsSchema,
+  notifications: notificationSettingsSchema,
+  monitor: monitorSettingsSchema,
 } as const;
 
 export type SettingsKey = keyof typeof SETTINGS_FIELDS;
@@ -45,6 +203,43 @@ export const DEFAULT_SETTINGS: Settings = {
   enabledApps: {},
   proxyIndicator: 'badge',
   proxy: { idleGraceSeconds: 60 },
+  appearance: {
+    accent: 'blue',
+    blur: 24,
+    themePack: null,
+    slideshow: { enabled: false, intervalMinutes: 30, order: 'sequence', wallpapers: [] },
+    timeOfDay: { enabled: false, morning: null, day: null, evening: null, night: null },
+  },
+  desktop: { iconSize: 'm', labels: 'show', openWith: 'double', showIcons: true, density: 'normal' },
+  taskbar: {
+    style: 'floating',
+    position: 'bottom',
+    autoHide: false,
+    size: 'm',
+    showTitles: false,
+    clock: { seconds: false, hours: 'auto', showDate: true },
+    pinned: [],
+    trayHidden: [],
+  },
+  windows: { animation: 'normal', buttons: 'mac', openMaximized: false, cascade: true },
+  keyboard: { bindings: {} },
+  startup: {
+    when: 'never',
+    preset: 'logo-fade',
+    durationMs: 2200,
+    speed: 1,
+    skippable: true,
+    background: '#000000',
+    foreground: '#ffffff',
+    text: 'LANdscape',
+    logoFile: null,
+    sound: { kind: 'none', file: null, volume: 60 },
+  },
+  cursor: { set: 'system', custom: {} },
+  lock: { idleMinutes: 0, clock: 'digital', showDate: true, message: '', blur: 28 },
+  security: { sessionDays: 30 },
+  notifications: { dnd: false, watchers: { docker: true, disk: { enabled: true, percent: 90 }, temperature: { enabled: true, celsius: 85 }, monitors: true } },
+  monitor: { intervalSeconds: 60 },
 };
 
 /** A partial update: top-level keys are optional, groups may name only the fields that change. */
@@ -55,6 +250,25 @@ export const settingsUpdateSchema = z
     enabledApps: SETTINGS_FIELDS.enabledApps,
     proxyIndicator: SETTINGS_FIELDS.proxyIndicator,
     proxy: proxySettingsSchema.partial(),
+    appearance: appearanceSettingsSchema
+      .extend({ slideshow: appearanceSettingsSchema.shape.slideshow.partial(), timeOfDay: appearanceSettingsSchema.shape.timeOfDay.partial() })
+      .partial(),
+    desktop: desktopSettingsSchema.partial(),
+    taskbar: taskbarSettingsSchema.extend({ clock: taskbarSettingsSchema.shape.clock.partial() }).partial(),
+    windows: windowSettingsSchema.partial(),
+    keyboard: keyboardSettingsSchema.partial(),
+    startup: startupSettingsSchema.extend({ sound: startupSettingsSchema.shape.sound.partial() }).partial(),
+    cursor: cursorSettingsSchema.partial(),
+    lock: lockSettingsSchema.partial(),
+    security: securitySettingsSchema.partial(),
+    notifications: notificationSettingsSchema
+      .extend({
+        watchers: notificationSettingsSchema.shape.watchers
+          .extend({ disk: notificationSettingsSchema.shape.watchers.shape.disk.partial(), temperature: notificationSettingsSchema.shape.watchers.shape.temperature.partial() })
+          .partial(),
+      })
+      .partial(),
+    monitor: monitorSettingsSchema.partial(),
   })
   .partial()
   .strict();
