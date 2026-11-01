@@ -63,14 +63,14 @@ export default function ProxySection() {
             </div>
             <Toggle checked={settings?.proxyIndicator !== 'none'} onChange={setBadge} />
           </div>
-          <SettingRow label="Close idle ports after" detail="A port opens when a window shows its site and closes once no window or connection has used it for this long.">
+          <SettingRow label="Close idle ports after" detail="A port opens when a window shows its site and closes once nothing has used it for this long. Default: 1 min.">
             <Select
               aria-label="Close idle ports after"
               value={String(grace)}
               onChange={(value) => setGrace(Number(value))}
               options={[...new Set([10, 30, 60, 120, 300, 900, 3600, grace])]
                 .sort((a, b) => a - b)
-                .map((s) => ({ value: String(s), label: formatSeconds(s) + (s === 60 ? ' (default)' : '') }))}
+                .map((s) => ({ value: String(s), label: formatSeconds(s) }))}
             />
           </SettingRow>
         </div>
