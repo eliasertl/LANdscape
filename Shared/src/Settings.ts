@@ -61,6 +61,38 @@ export const desktopSettingsSchema = z.object({
   density: z.enum(['compact', 'normal', 'roomy']),
 });
 
+export const taskbarSettingsSchema = z.object({
+  /** floating = centered pill (default); win10/win11 = full-width docked; dock = floating with magnification. */
+  style: z.enum(['floating', 'win10', 'win11', 'dock']),
+  position: z.enum(['bottom', 'top', 'left', 'right']),
+  autoHide: z.boolean(),
+  size: z.enum(['s', 'm', 'l']),
+  /** Window titles next to the icons (Windows styles). */
+  showTitles: z.boolean(),
+  clock: z.object({
+    seconds: z.boolean(),
+    hours: z.enum(['auto', '12', '24']),
+    showDate: z.boolean(),
+  }),
+  /** Pinned items in order: "app:<id>" or "shortcut:<id>". */
+  pinned: z.array(z.string().regex(/^(app|shortcut):[A-Za-z0-9_-]{1,64}$/)).max(50),
+  /** Tray items switched off (registry ids). */
+  trayHidden: z.array(z.string().regex(/^[a-z0-9][a-z0-9-]{0,47}(\/[a-z0-9][a-z0-9-]{0,47})?$/)).max(50),
+});
+
+export const windowSettingsSchema = z.object({
+  animation: z.enum(['normal', 'fast', 'off']),
+  /** macOS traffic lights on the left, or Windows-style buttons on the right. */
+  buttons: z.enum(['mac', 'windows']),
+  openMaximized: z.boolean(),
+  cascade: z.boolean(),
+});
+
+export const keyboardSettingsSchema = z.object({
+  /** Overrides per action id: a combo like "Ctrl+Alt+ArrowLeft", or "" to unbind. Missing = default. */
+  bindings: z.record(z.string().regex(/^[a-z]+\.[A-Za-z]+$/), z.string().max(64)),
+});
+
 export const proxySettingsSchema = z.object({
   /** Seconds an embed proxy port stays open after its last window closed and its last connection ended. */
   idleGraceSeconds: z.number().int().min(10).max(3600),
@@ -76,6 +108,9 @@ export const SETTINGS_FIELDS = {
   proxy: proxySettingsSchema,
   appearance: appearanceSettingsSchema,
   desktop: desktopSettingsSchema,
+  taskbar: taskbarSettingsSchema,
+  windows: windowSettingsSchema,
+  keyboard: keyboardSettingsSchema,
 } as const;
 
 export type SettingsKey = keyof typeof SETTINGS_FIELDS;
@@ -97,6 +132,18 @@ export const DEFAULT_SETTINGS: Settings = {
     timeOfDay: { enabled: false, morning: null, day: null, evening: null, night: null },
   },
   desktop: { iconSize: 'm', labels: 'show', openWith: 'double', showIcons: true, density: 'normal' },
+  taskbar: {
+    style: 'floating',
+    position: 'bottom',
+    autoHide: false,
+    size: 'm',
+    showTitles: false,
+    clock: { seconds: false, hours: 'auto', showDate: true },
+    pinned: [],
+    trayHidden: [],
+  },
+  windows: { animation: 'normal', buttons: 'mac', openMaximized: false, cascade: true },
+  keyboard: { bindings: {} },
 };
 
 /** A partial update: top-level keys are optional, groups may name only the fields that change. */
@@ -111,6 +158,9 @@ export const settingsUpdateSchema = z
       .extend({ slideshow: appearanceSettingsSchema.shape.slideshow.partial(), timeOfDay: appearanceSettingsSchema.shape.timeOfDay.partial() })
       .partial(),
     desktop: desktopSettingsSchema.partial(),
+    taskbar: taskbarSettingsSchema.extend({ clock: taskbarSettingsSchema.shape.clock.partial() }).partial(),
+    windows: windowSettingsSchema.partial(),
+    keyboard: keyboardSettingsSchema.partial(),
   })
   .partial()
   .strict();

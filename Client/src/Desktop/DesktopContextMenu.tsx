@@ -8,6 +8,8 @@ import {
   Image,
   PencilSimple,
   Plus,
+  PushPin,
+  PushPinSlash,
   SquaresFour,
   Trash,
   WindowsLogo,
@@ -20,12 +22,14 @@ import { registries } from '../Platform/Registries';
 import { openApp, openShortcut } from './Launch';
 import { toast } from '../Components/Toast';
 import { errorMessage } from '../Api/Http';
-import { currentGrid, occupiedCells, positionForCell, viewportBounds } from './DesktopGrid';
+import { currentGrid, occupiedCells, positionForCell, surfaceOrigin, viewportBounds } from './DesktopGrid';
+import { isPinned, togglePin } from '../Taskbar/TaskbarApps';
 
-/** The nearest free spot for a new item near a point on the desktop (layout px). */
+/** The nearest free spot for a new item near a point on screen (layout px, viewport-relative). */
 function freePositionNear(at: { x: number; y: number }, cols: number, rows: number) {
   const grid = currentGrid();
-  const desired = { col: Math.floor((at.x - grid.originX) / grid.unitX), row: Math.floor((at.y - grid.originY) / grid.unitY), cols, rows };
+  const origin = surfaceOrigin();
+  const desired = { col: Math.floor((at.x - origin.x - grid.originX) / grid.unitX), row: Math.floor((at.y - origin.y - grid.originY) / grid.unitY), cols, rows };
   const spot = findNearestFree(desired, occupiedCells(null), viewportBounds(grid));
   return positionForCell({ ...spot, cols, rows }, viewportBounds(grid));
 }
@@ -80,6 +84,11 @@ export function shortcutMenuItems(shortcut: Shortcut): MenuItem[] {
     { type: 'separator' },
     { label: 'Edit…', icon: createElement(PencilSimple), onSelect: () => ui.openShortcutDialog({ mode: 'edit', shortcut }) },
     { type: 'submenu', label: 'Move to', icon: createElement(FolderSimple), items: folderItems },
+    {
+      label: isPinned(`shortcut:${shortcut.id}`) ? 'Unpin from taskbar' : 'Pin to taskbar',
+      icon: createElement(isPinned(`shortcut:${shortcut.id}`) ? PushPinSlash : PushPin),
+      onSelect: () => togglePin(`shortcut:${shortcut.id}`),
+    },
     {
       label: 'Re-check embedding',
       icon: createElement(ArrowsClockwise),

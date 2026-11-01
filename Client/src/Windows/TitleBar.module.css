@@ -108,3 +108,55 @@
     opacity: 1;
   }
 }
+
+/* Windows-style buttons on the right (Settings → Windows → Title-bar buttons). */
+.windowsStyle {
+  padding-left: 10px;
+  padding-right: 0;
+}
+
+.windowsStyle .title {
+  position: static;
+  justify-content: flex-start;
+  pointer-events: none;
+  min-width: 0;
+}
+
+.controls {
+  display: flex;
+  align-self: stretch;
+  flex: none;
+  z-index: 1;
+}
+
+.control {
+  width: 46px;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-secondary-label);
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.focused .control {
+  color: var(--color-label);
+}
+
+.control:hover {
+  background: var(--color-control-fill);
+}
+
+.controlClose:hover {
+  background: var(--color-destructive);
+  color: #fff;
+}
+
+@media (max-width: 767px) {
+  .control {
+    width: 44px;
+  }
+}

@@ -1,0 +1,52 @@
+.tray {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+.vertical {
+  flex-direction: column;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 4px;
+  border-radius: 8px;
+  color: var(--color-secondary-label);
+}
+
+.item:hover {
+  background: var(--color-control-fill);
+}
+
+/* Built-in CPU / memory meter */
+.meter {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 18px;
+}
+
+.bar {
+  position: relative;
+  width: 5px;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--color-control-fill);
+  overflow: hidden;
+}
+
+.fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 2px;
+  background: var(--color-accent);
+  transition: height 400ms ease;
+}

@@ -10,8 +10,8 @@ A self-hosted, macOS-style web desktop for your homeserver. Your services become
 - **Desktop** with wallpaper, draggable shortcut icons, folders and resizable widgets. Items are anchored to the edge or center of the screen, so the layout keeps its shape on a laptop and on an ultra-wide monitor alike. Layout is saved on the server, so every device sees the same desktop.
 - **Shortcuts** to any URL. The server checks whether the site allows embedding (X-Frame-Options / CSP `frame-ancestors`) before you save, fetches and stores the favicon, or uses an uploaded icon.
 - **Embed proxy** for sites that refuse to be framed (typical for self-hosted apps like Docmost): each such shortcut gets its own LANdscape port (8081–8100) that passes the site through 1:1 with the framing headers removed, so it still opens in a window — logins included. Only reachable while you are logged in to LANdscape, and only open while a window uses it. See [Embed proxy](#embed-proxy).
-- **Window manager** in macOS style: traffic lights, drag, resize from every edge, minimize to the taskbar with a spring animation, maximize, several windows per shortcut, remembered sizes and positions.
-- **Taskbar** (frosted glass) with a start menu/launcher (search, keyboard navigation, `Ctrl+Space`), grouped open windows and a clock.
+- **Window manager** in macOS style: traffic lights (or Windows-style buttons), drag, resize from every edge, snap to halves and quarters by dragging to an edge or with `Ctrl+Alt+Arrow`, minimize to the taskbar with a spring animation, maximize, several windows per shortcut, remembered sizes and positions. Every shortcut can be rebound in Settings → Keyboard Shortcuts.
+- **Taskbar** in four styles (floating pill, Windows 10, Windows 11, macOS-like dock) on any edge, with auto-hide, three sizes, pinned apps and shortcuts, a tray (CPU/memory meter) and a configurable clock; a start menu/launcher (search, keyboard navigation, `Ctrl+Space`) and grouped open windows.
 - **Widgets** for CPU, RAM, disk usage, network throughput and IPs, temperatures, uptime, Docker container count and a clock. Each has its own update interval. Values come from the host, not the container.
 - **Admin apps:** Settings (theme, wallpaper, enabled apps, integration status), Terminal (SSH + xterm.js), Files (SFTP with upload/download/rename/delete/preview), Text Editor (CodeMirror), Docker (containers, start/stop/restart, live logs), Task Manager (host processes, kill via SSH), Log Viewer (Docker logs, `journalctl`, any file, follow mode).
 - **Phone layout** below 768 px: launcher grid, full-screen windows.
@@ -181,7 +181,8 @@ Ports are released when a shortcut stops using the proxy or is deleted; changing
 - **Logged out after a restart** — set `SESSION_SECRET` explicitly or make sure the data directory is persisted (the generated secret lives there).
 - **Lock screen says too many attempts** — wait 15 minutes, or restart the container (lockouts are kept in memory).
 - **"Cannot write the host key store"** — the data directory's `ssh/` folder is not writable by the server user. The entrypoint normally fixes this on start; if you run with `user:` in compose, make the folder writable or set `PUID`/`PGID` to its owner.
-- **Ctrl+Space does nothing** — keyboard focus is inside an iframe (a shortcut window). Click the desktop or the search icon in the taskbar.
+- **Ctrl+Space (or another shortcut) does nothing** — keyboard focus is inside an iframe (a shortcut window). Click the desktop or the search icon in the taskbar. If you rebound it, Settings → Keyboard Shortcuts shows the current keys and any conflicts; "Reset all to defaults" brings the defaults back.
+- **The taskbar is gone** — auto-hide is on: move the pointer to the screen edge it lives on. Safe mode (`?safe=1`) always shows the default bar at the bottom.
 - **A login inside an embedded site does not stick** — sites on a different host than LANdscape are third-party iframes; Safari and Chrome block their cookies. Services on the same host but another port are fine.
 
 ## Which sites embed?

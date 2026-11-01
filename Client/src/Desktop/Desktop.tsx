@@ -19,6 +19,9 @@ import { WidgetLayer } from '../Widgets/WidgetLayer';
 import { Spinner } from '../Components/Spinner';
 import { Button } from '../Components/Button';
 import { useKeyboardShortcut } from '../Hooks/UseKeyboardShortcut';
+import { useDesktopShortcuts } from './DesktopShortcuts';
+import { useEffectiveTaskbar } from '../Taskbar/UseTaskbarSettings';
+import { taskbarInset } from '@landscape/shared';
 import { useIsPhone } from '../Hooks/UseMediaQuery';
 import { PhoneShell } from '../Phone/PhoneShell';
 import { SafeModeBanner } from './SafeModeBanner';
@@ -60,7 +63,6 @@ function DesktopShell() {
   const desktopSettings = useDesktopStore((s) => s.settings?.desktop);
   const openContextMenu = useUiStore((s) => s.openContextMenu);
   const selectShortcut = useUiStore((s) => s.selectShortcut);
-  const toggleStartMenu = useUiStore((s) => s.toggleStartMenu);
   const setStartMenuOpen = useUiStore((s) => s.setStartMenuOpen);
   const openFolderId = useUiStore((s) => s.openFolderId);
   const openFolder = useUiStore((s) => s.openFolder);
@@ -70,6 +72,8 @@ function DesktopShell() {
   const widgets = useDesktopStore((s) => s.widgets);
   const viewport = useViewportSize();
   const grid = useCurrentGrid();
+  const taskbar = useEffectiveTaskbar();
+  const inset = taskbarInset(taskbar);
 
   // Once widgets have rendered, untangle stored collisions.
   useEffect(() => {
@@ -82,9 +86,9 @@ function DesktopShell() {
   // Keep the shown layout collision-free whenever items, the grid or the viewport change.
   useLayoutEffect(() => {
     refreshDisplayLayout();
-  }, [shortcuts, widgets, folders, viewport, grid.unitX, grid.unitY]);
+  }, [shortcuts, widgets, folders, viewport, grid.unitX, grid.unitY, inset.top, inset.left]);
 
-  useKeyboardShortcut({ key: ' ', ctrl: true }, toggleStartMenu);
+  useDesktopShortcuts();
   useKeyboardShortcut({ key: 'Escape' }, () => setStartMenuOpen(false));
 
   const onSurfaceContextMenu = useCallback(
@@ -99,7 +103,16 @@ function DesktopShell() {
 
   const labels = desktopSettings?.labels ?? 'show';
   const showIcons = desktopSettings?.showIcons ?? true;
-  const surfaceStyle = { '--icon-size': `${grid.iconPx}px`, '--grid-unit-x': `${grid.unitX}px`, '--grid-unit-y': `${grid.unitY}px` } as CSSProperties;
+  // The surface shrinks to the work area, so the grid never runs under the taskbar on any edge.
+  const surfaceStyle = {
+    '--icon-size': `${grid.iconPx}px`,
+    '--grid-unit-x': `${grid.unitX}px`,
+    '--grid-unit-y': `${grid.unitY}px`,
+    top: inset.top,
+    right: inset.right,
+    bottom: inset.bottom,
+    left: inset.left,
+  } as CSSProperties;
 
   return (
     <div className={styles.desktop}>

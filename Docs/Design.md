@@ -36,6 +36,23 @@ Positions are anchors (edge or center plus a cell offset), so the layout keeps i
 
 Dragging is free; a faint outline shows the target cell (the nearest free one), and on release the item glides into it and the snapped position is saved. New shortcuts take the first free cell column by column from the top left; new widgets the free cell nearest to where the menu was opened. When the window is smaller than the saved layout, items are clamped into view and step aside on screen if that makes them collide, without changing their saved positions. Layouts saved with genuinely colliding positions are untangled once after load.
 
+## Taskbar styles
+
+- **Floating** (default): the frosted pill, 10 px off the edge, launcher · apps · tray · clock.
+- **Windows 10**: full width, flush with the edge, square corners; launcher and apps start at the left (top when vertical), tray and clock sit at the right.
+- **Windows 11**: full width, launcher and apps centered, tray and clock at the right.
+- **Dock**: the floating pill with icons that grow up to 1.45× as the pointer passes (spring-driven; off under reduced motion).
+
+Sizes S/M/L are 44/56/68 px; icons are 12 px smaller than the bar. Vertical bars (left/right) stack everything and shrink the clock. Auto-hide slides the bar out along its edge over 200 ms and keeps a 4 px catcher strip. Pinned items without a window show no dot; running ones show the small dot, the focused one the accent dot and a filled background. Window titles (Windows styles) sit right of the icon in 12 px medium.
+
+## Windows
+
+Title bars have macOS traffic lights on the left by default, or Windows-style minimize / maximize / close buttons (46 px wide, close turns red on hover) on the right with the title left-aligned. Snapping shows a rounded, accent-tinted translucent rectangle with a 2 px accent border where the window will land.
+
+## Keyboard shortcuts
+
+Shortcuts are shown as mono "Ctrl + Alt + ←" chips; clicking one turns it accent-outlined with "Press keys…". A conflicting chip gets an orange border and both rows say "Also used by …".
+
 ## Folders
 
 A folder icon is a translucent rounded square showing up to four of its shortcuts' icons in a 2 × 2 mini grid (an outline folder glyph when empty). A shortcut dragged over it scales the tile up with an accent ring. Opening a folder shows a frosted popover next to it with a four-column grid of its shortcuts, a rename pencil and a close button; it springs in (`quick`) and closes on Escape or an outside click.

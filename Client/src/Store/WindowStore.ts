@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { WINDOW_DEFAULT_SIZE, WINDOW_MIN_SIZE, type AppId, type WindowGeometry } from '@landscape/shared';
+import { WINDOW_DEFAULT_SIZE, WINDOW_MIN_SIZE, snapRect, type AppId, type SnapZone, type WindowGeometry } from '@landscape/shared';
 import { useDesktopStore } from './DesktopStore';
 import { clampRect, cascadeRect, type Rect, workArea } from '../Windows/WindowGeometry';
 
@@ -48,6 +48,13 @@ interface WindowState {
   minimize: (id: string) => void;
   restore: (id: string) => void;
   toggleMaximize: (id: string) => void;
+  /** Snaps a window to a half, quarter or the whole work area ("top" maximizes). */
+  snapTo: (id: string, zone: SnapZone) => void;
+  /** Keyboard snapping: left/right halves, up maximizes, down restores a maximized window or minimizes it. */
+  snapKeyboard: (id: string, direction: 'left' | 'right' | 'up' | 'down') => void;
+  /** Brings the next window (by stacking order) to the front. */
+  focusNext: () => void;
+  minimizeAll: () => void;
   setRect: (id: string, rect: Rect, persist?: boolean) => void;
   setTitle: (id: string, title: string) => void;
   closeAll: (appKey: string) => Promise<void>;
@@ -94,6 +101,7 @@ export const useWindowStore = create<WindowState>((set, get) => ({
         return existing.id;
       }
     }
+    const windowSettings = useDesktopStore.getState().settings?.windows;
     const memory = useDesktopStore.getState().windowMemory[appKey];
     const area = workArea();
     const size = options.defaultSize ?? WINDOW_DEFAULT_SIZE;
@@ -106,7 +114,7 @@ export const useWindowStore = create<WindowState>((set, get) => ({
           height: size.height,
         };
     const siblings = state.windows.filter((w) => w.appKey === appKey && !w.closing);
-    rect = cascadeRect(rect, siblings.map((w) => w.rect), area);
+    if (windowSettings?.cascade !== false) rect = cascadeRect(rect, siblings.map((w) => w.rect), area);
     rect = clampRect(rect, area, WINDOW_MIN_SIZE);
     const id = `w${++counter}`;
     const z = state.nextZ;
@@ -120,7 +128,7 @@ export const useWindowStore = create<WindowState>((set, get) => ({
       params: options.params ?? {},
       rect,
       prevRect: null,
-      maximized: memory?.maximized ?? false,
+      maximized: memory?.maximized ?? windowSettings?.openMaximized ?? false,
       minimized: false,
       closing: false,
       z,
@@ -203,6 +211,47 @@ export const useWindowStore = create<WindowState>((set, get) => ({
     const win = windows.find((w) => w.id === id);
     if (win) persistGeometry(win);
     get().focus(id);
+  },
+
+  snapTo(id, zone) {
+    const state = get();
+    const win = state.windows.find((w) => w.id === id);
+    if (!win) return;
+    if (zone === 'top') {
+      if (!win.maximized) get().toggleMaximize(id);
+      return;
+    }
+    const rect = snapRect(zone, workArea());
+    set({ windows: state.windows.map((w) => (w.id === id ? { ...w, maximized: false, prevRect: null, rect, minimized: false } : w)) });
+    const updated = get().windows.find((w) => w.id === id);
+    if (updated) persistGeometry(updated);
+    get().focus(id);
+  },
+
+  snapKeyboard(id, direction) {
+    const win = get().windows.find((w) => w.id === id);
+    if (!win) return;
+    if (direction === 'left' || direction === 'right') get().snapTo(id, direction);
+    else if (direction === 'up') {
+      if (!win.maximized) get().toggleMaximize(id);
+    } else if (win.maximized) get().toggleMaximize(id);
+    else get().minimize(id);
+  },
+
+  focusNext() {
+    const state = get();
+    const ordered = state.windows.filter((w) => !w.closing).sort((a, b) => b.z - a.z);
+    if (ordered.length < 2) return;
+    // The window right below the focused one, or the first minimized one when all others are minimized.
+    const current = ordered.findIndex((w) => w.id === state.focusedId);
+    const next = ordered[(current + 1) % ordered.length];
+    if (!next) return;
+    if (next.minimized) get().restore(next.id);
+    else get().focus(next.id);
+  },
+
+  minimizeAll() {
+    set((s) => ({ windows: s.windows.map((w) => (w.closing ? w : { ...w, minimized: true })), focusedId: null }));
   },
 
   setRect(id, rect, persist = false) {

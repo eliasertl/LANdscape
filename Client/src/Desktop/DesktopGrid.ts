@@ -18,8 +18,7 @@ import {
 import { useDesktopStore, type PositionedItem } from '../Store/DesktopStore';
 import { useUiStore } from '../Store/UiStore';
 import { getWidget } from '../Widgets/Registry';
-import { TASKBAR_RESERVED } from '../Windows/WindowGeometry';
-import { layoutViewport } from '../Design/Scale';
+import { workArea } from './WorkArea';
 
 /** The grid cell in use: follows icon size and density from Settings → Desktop. */
 export function currentGrid(): GridMetrics {
@@ -34,10 +33,16 @@ export function useCurrentGrid(): GridMetrics {
   return useMemo(() => gridMetrics(iconSize, density), [iconSize, density]);
 }
 
-/** The grid that fits the current viewport (above the floating taskbar). */
+/** The grid that fits the work area (the viewport minus the taskbar's edge). */
 export function viewportBounds(grid = currentGrid()): GridBounds {
-  const viewport = layoutViewport();
-  return gridBounds(viewport.width, viewport.height - TASKBAR_RESERVED, grid);
+  const area = workArea();
+  return gridBounds(area.width, area.height, grid);
+}
+
+/** Where the desktop surface starts on screen (layout px): pointer positions are relative to the viewport, cells to the surface. */
+export function surfaceOrigin(): { x: number; y: number } {
+  const area = workArea();
+  return { x: area.x, y: area.y };
 }
 
 /** Cells a widget spans at its current size step (falls back to the type's medium size). */

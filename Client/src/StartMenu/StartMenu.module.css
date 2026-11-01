@@ -154,3 +154,45 @@
 .footerButton:hover {
   background: var(--color-control-fill);
 }
+
+/* The panel opens from the taskbar's edge (Taskbar.tsx sets data-taskbar-position on <html>). */
+:global(:root[data-taskbar-position='top']) .host {
+  top: calc(var(--taskbar-height) + 20px);
+  bottom: auto;
+}
+
+:global(:root[data-taskbar-position='top']) .panel {
+  transform-origin: top center;
+}
+
+:global(:root[data-taskbar-position='left']) .host,
+:global(:root[data-taskbar-position='right']) .host {
+  top: 0;
+  bottom: 0;
+  align-items: center;
+}
+
+:global(:root[data-taskbar-position='left']) .host {
+  left: calc(var(--taskbar-height) + 24px);
+  right: auto;
+  justify-content: flex-start;
+}
+
+:global(:root[data-taskbar-position='left']) .panel {
+  transform-origin: left center;
+}
+
+:global(:root[data-taskbar-position='right']) .host {
+  right: calc(var(--taskbar-height) + 24px);
+  left: auto;
+  justify-content: flex-end;
+}
+
+:global(:root[data-taskbar-position='right']) .panel {
+  transform-origin: right center;
+}
+
+:global(:root[data-taskbar-position='left']) .panel,
+:global(:root[data-taskbar-position='right']) .panel {
+  max-height: min(560px, calc(100vh - 48px));
+}

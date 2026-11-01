@@ -31,6 +31,9 @@ interface UiState {
   /** Outline of the grid cell a dragged icon or widget will snap to. */
   snapPreview: { x: number; y: number; width: number; height: number } | null;
   setSnapPreview: (preview: UiState['snapPreview']) => void;
+  /** Translucent preview of where a dragged window will snap (layout px). */
+  windowSnapPreview: { x: number; y: number; width: number; height: number } | null;
+  setWindowSnapPreview: (rect: UiState['windowSnapPreview']) => void;
   /** Folder a dragged shortcut hovers over (highlighted as the drop target). */
   dropFolderId: string | null;
   setDropFolderId: (id: string | null) => void;
@@ -65,6 +68,11 @@ export const useUiStore = create<UiState>((set, get) => ({
   confirm: null,
   snapPreview: null,
   setSnapPreview: (preview) => set({ snapPreview: preview }),
+  windowSnapPreview: null,
+  setWindowSnapPreview: (rect) => {
+    const current = get().windowSnapPreview;
+    if (JSON.stringify(current) !== JSON.stringify(rect)) set({ windowSnapPreview: rect });
+  },
   dropFolderId: null,
   setDropFolderId: (id) => {
     if (get().dropFolderId !== id) set({ dropFolderId: id });

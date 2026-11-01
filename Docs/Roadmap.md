@@ -7,8 +7,8 @@ Status legend: ☐ planned · ◐ in progress · ☑ merged
 | # | Branch | Scope | Status |
 |---|---|---|---|
 | 1 | `feature/foundations` | A1 settings model, A2 crash isolation and safe mode, A3 registries, A4 on-demand proxy ports | PR #2 |
-| 2 | `feature/desktop-and-look` | B1 anchored layout, B2 resizable widgets, B3 folders, B4 desktop settings, B5 appearance extras | ◐ |
-| 3 | `feature/taskbar-windows-keyboard` | C1–C5 taskbar styles and options, snapping, window settings, rebindable shortcuts | ☐ |
+| 2 | `feature/desktop-and-look` | B1 anchored layout, B2 resizable widgets, B3 folders, B4 desktop settings, B5 appearance extras | PR #3 |
+| 3 | `feature/taskbar-windows-keyboard` | C1–C5 taskbar styles and options, snapping, window settings, rebindable shortcuts | ◐ |
 | 4 | `feature/startup-cursor-lock` | D1–D4 startup animation, cursors, server-side lock, sessions | ☐ |
 | 5 | `feature/notifications-actions` | E1–E4 notification center, monitor service and health dots, actions and command palette, Docker → shortcut | ☐ |
 | 6 | `feature/app-platform` | F1–F7 manifest, sandbox and broker, permissions, install/update/uninstall, catalog, App Store, SDK and docs (+ G3 demo packs) | ☐ |

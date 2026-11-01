@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { GearSix, MagnifyingGlass, SignOut } from '@phosphor-icons/react';
+import { createElement } from 'react';
+import { GearSix, MagnifyingGlass, PushPin, PushPinSlash, SignOut } from '@phosphor-icons/react';
+import { isPinned, togglePin } from '../Taskbar/TaskbarApps';
 import type { Shortcut } from '@landscape/shared';
 import { registries } from '../Platform/Registries';
 import { useRegistry } from '../Platform/Registry';
@@ -154,6 +156,14 @@ function StartMenuPanel({ onClose, onLogout }: { onClose: () => void; onLogout: 
               className={`${styles.entry} ${index === active ? styles.entryActive : ''}`}
               onPointerEnter={() => setActive(index)}
               onClick={() => launch(entry)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                const key = entryKey(entry);
+                useUiStore.getState().openContextMenu(
+                  [{ label: isPinned(key) ? 'Unpin from taskbar' : 'Pin to taskbar', icon: createElement(isPinned(key) ? PushPinSlash : PushPin), onSelect: () => togglePin(key) }],
+                  { x: e.clientX, y: e.clientY },
+                );
+              }}
               tabIndex={-1}
             >
               <EntryIcon entry={entry} size={32} />

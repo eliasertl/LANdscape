@@ -233,3 +233,72 @@
   width: 160px;
   accent-color: var(--color-accent);
 }
+
+/* Taskbar live preview */
+.previewBox {
+  position: relative;
+  height: 110px;
+  border-radius: var(--radius-group);
+  border: var(--border-width) solid var(--color-separator);
+  background: linear-gradient(135deg, #2b5cff 0%, #1fc8c3 55%, #c86cff 100%);
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.previewScale {
+  width: 160%;
+  transform: scale(0.62);
+  transform-origin: bottom center;
+  padding-bottom: 8px;
+}
+
+.choice {
+  cursor: pointer;
+  justify-content: flex-start;
+}
+
+.choice > input {
+  flex: none;
+  accent-color: var(--color-accent);
+}
+
+/* Keyboard shortcuts */
+.shortcutControls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 120px;
+  height: var(--control-height);
+  padding: 0 10px;
+  border: var(--border-width) solid var(--color-separator);
+  border-radius: var(--radius);
+  background: var(--color-background);
+  color: var(--color-label);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.kbd:hover {
+  background: var(--color-control-fill);
+}
+
+.kbdRecording {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.kbdConflict {
+  border-color: var(--system-orange);
+}

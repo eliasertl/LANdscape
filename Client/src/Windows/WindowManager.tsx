@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useWindowStore } from '../Store/WindowStore';
 import { Window } from './Window';
+import { SnapOverlay } from './SnapOverlay';
 import styles from './WindowManager.module.css';
 
 /**
@@ -46,6 +47,7 @@ export function WindowManager() {
       {windows.map((win) => (
         <Window key={win.id} win={win} focused={win.id === focusedId} />
       ))}
+      <SnapOverlay />
     </div>
   );
 }

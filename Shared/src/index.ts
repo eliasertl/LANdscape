@@ -7,5 +7,7 @@ export * from './Schemas';
 export * from './Settings';
 export * from './Grid';
 export * from './Layout';
+export * from './Keyboard';
+export * from './Snap';
 export * from './WallpaperSchedule';
 export * from './Proxy';

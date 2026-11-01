@@ -33,9 +33,17 @@ Shared/src        types, zod schemas, constants, WebSocket message types
 3. `GET /api/desktop` returns everything the desktop needs in one call: shortcuts, widgets, settings, window memory, integration flags, version.
 4. Layout changes (`PUT /api/shortcuts/positions`, `PATCH /api/widgets/:id`, `PUT /api/window-memory/:appKey`) are debounced client-side and persisted server-side.
 
+## Taskbar
+
+`Client/src/Taskbar/Taskbar.tsx` renders one of four styles from `settings.taskbar` (floating pill, Windows 10 and 11 docked bars, macOS-like dock) on any edge, in three sizes, with auto-hide. Every part (launcher, apps, tray, clock) sits in its own error boundary. The bar writes `data-taskbar-position` / `data-taskbar-style` and `--taskbar-height` onto `<html>`, which the start menu CSS reads to open from the right edge. `TaskbarApps.tsx` merges the pinned keys (`settings.taskbar.pinned`, "app:<id>" or "shortcut:<id>") with the open window groups: a pinned item launches when nothing runs and shows a dot when something does; pinned items reorder by dragging along the bar (`togglePin`/`isPinned` are shared with the context menus of shortcuts and launcher entries). `TaskbarTray.tsx` renders `registries.trayItems` minus `settings.taskbar.trayHidden`; the built-in CPU/memory meter is registered in `Platform/BuiltIns.ts`. `UseDockMagnify.ts` drives the dock style with one spring per icon (off under reduced motion). `UseTaskbarSettings.ts` returns the settings in effect; safe mode falls back to the floating bar.
+
+**Work area:** `Desktop/WorkArea.ts` computes what the taskbar takes from its edge (`taskbarInset` in `Shared/src/Snap.ts`: bar plus a margin for floating styles, the bar alone for docked ones, nothing when auto-hiding). `workArea()` is the viewport minus that inset; maximized and snapped windows fill it, the desktop surface shrinks to it (so the grid never runs under a top or left bar), and `DesktopGrid.surfaceOrigin()` converts pointer positions to grid cells.
+
+**Debugging:** `document.documentElement.dataset` shows the active position and style; `landscapeDebug.stores.desktop.getState().settings.taskbar` the settings. `Settings → Taskbar` renders the real component in a scaled preview (`<Taskbar preview={…}>` never touches `<html>` or the window).
+
 ## Windows
 
-The window manager is hand-written. Windows are rendered in creation order with stable React keys so iframes never remount when the z-order changes; stacking uses `z-index`. Minimized windows stay mounted with `visibility: hidden`. Drag and resize use pointer capture; while interacting, a transparent overlay covers every iframe so the frames cannot swallow pointer events. Open/close/minimize animations are driven by `Design/Spring.ts`, a frame-rate-independent spring solver with Carbon's `response`/`dampingFraction` parameters. Each app or shortcut remembers its last geometry (`window_memory` table); new windows cascade when a sibling is already open.
+The window manager is hand-written. Windows are rendered in creation order with stable React keys so iframes never remount when the z-order changes; stacking uses `z-index`. Minimized windows stay mounted with `visibility: hidden`. Drag and resize use pointer capture; while interacting, a transparent overlay covers every iframe so the frames cannot swallow pointer events. Open/close/minimize animations are driven by `Design/Spring.ts`, a frame-rate-independent spring solver with Carbon's `response`/`dampingFraction` parameters. Each app or shortcut remembers its last geometry (`window_memory` table); new windows cascade when a sibling is already open (Settings → Windows → Cascade) and open maximized when that setting is on. **Snapping:** while a window is dragged, `Shared/src/Snap.ts → snapZoneAt` turns the pointer position into a zone (left/right half, a quarter at a corner, the whole area at the top edge); `Windows/SnapOverlay.tsx` shows the translucent target, and releasing calls `useWindowStore.snapTo`. The keyboard uses the same store (`snapKeyboard`: left/right halves, up maximizes, down restores or minimizes). `Windows/WindowMotion.ts` maps Settings → Windows → Animation (normal, fast, off) onto the spring configs; reduced motion always wins. `TitleBar.tsx` renders traffic lights or Windows-style buttons on the right (`settings.windows.buttons`).
 
 ## Embed proxy
 
@@ -73,6 +81,10 @@ Widgets subscribe over `/ws/metrics` with `{ metric, intervalMs }`. `Metrics/Hub
 ## SSH
 
 `Ssh/Connection.ts` pools ssh2 clients and spreads channels (shell, exec, sftp) over them so OpenSSH's `MaxSessions` limit is never hit. Host keys are trusted on first use and pinned in `DATA_DIR/ssh/known_host`. Follow commands (`journalctl -f`) run with a pty so closing the channel ends the remote process. SFTP operations run with the SSH user's permissions; path inputs are normalised to absolute POSIX paths before use.
+
+## Keyboard shortcuts
+
+`Shared/src/Keyboard.ts` lists every rebindable action (`SHORTCUT_ACTIONS`, with defaults on Ctrl+Alt because the browser reserves the Windows key and plain Ctrl combinations) and the pure helpers: `parseCombo`/`formatCombo` ("Ctrl+Alt+ArrowLeft"), `comboFromEvent`, `effectiveBindings` (overrides from `settings.keyboard.bindings`, "" unbinds), `findConflicts`, `isReservedCombo`, `matchShortcut`. `Client/src/Platform/Keyboard.ts` installs one document-level keydown listener that reads the bindings on every press and calls the handler registered for the action (`registerShortcutHandler`); `Desktop/DesktopShortcuts.ts` registers the desktop's handlers. Settings → Keyboard Shortcuts records a combo from the next key press, shows conflicts on both rows, and resets by writing the default back. Keys inside an iframe never reach the document; that is a browser limit.
 
 ## Extension points (registries)
 

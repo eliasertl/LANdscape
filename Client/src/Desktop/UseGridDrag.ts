@@ -3,7 +3,7 @@ import { cellToPx, findNearestFree, pxToCell, sizeForCells, type AnchoredPositio
 import { usePointerDrag } from '../Hooks/UsePointerDrag';
 import { useViewportSize } from '../Hooks/UseViewportSize';
 import { useUiStore } from '../Store/UiStore';
-import { displayCell, folderAtCell, occupiedCells, positionForCell, useCurrentGrid, viewportBounds } from './DesktopGrid';
+import { displayCell, folderAtCell, occupiedCells, positionForCell, surfaceOrigin, useCurrentGrid, viewportBounds } from './DesktopGrid';
 
 interface GridDragOptions {
   /** "shortcut:<id>", "widget:<id>" or "folder:<id>"; excluded from collision checks. */
@@ -66,9 +66,10 @@ export function useGridDrag({ itemKey, position, cols, rows, elementRef, onCommi
       if (element) element.style.transform = `translate(${px.x}px, ${px.y}px)`;
       if (onDropOnFolder) {
         // The cell under the pointer decides whether this is a drop into a folder.
+        const origin = surfaceOrigin();
         const under = {
-          col: Math.floor((clientX - grid.originX) / grid.unitX),
-          row: Math.floor((clientY - grid.originY) / grid.unitY),
+          col: Math.floor((clientX - origin.x - grid.originX) / grid.unitX),
+          row: Math.floor((clientY - origin.y - grid.originY) / grid.unitY),
         };
         const folder = folderAtCell(under.col, under.row);
         if (folder !== folderRef.current) {
