@@ -15,10 +15,18 @@ export function TemperatureWidget({ widget }: WidgetProps) {
   const state = useMetric('temperatures', widget.settings.intervalMs);
   const sensors = state.status === 'ok' ? state.data.sensors : [];
   const hottest = sensors.reduce<(typeof sensors)[number] | null>((best, s) => (!best || s.celsius > best.celsius ? s : best), null);
-  const rows = sensors.slice(0, 6);
+  const size = widget.size;
+  const rows = sensors.slice(0, size === 'l' ? 12 : 6);
   return (
     <WidgetFrame widget={widget} title="Temperatures" unavailable={state.status === 'unavailable' ? state.reason : null}>
-      {state.status === 'ok' && hottest ? (
+      {state.status === 'ok' && hottest && size === 's' ? (
+        <div className={styles.compact} title={hottest.label}>
+          <span className={styles.compactLabel}>Temp</span>
+          <span className={styles.compactBig} style={{ color: tempColor(hottest.celsius, hottest.max, hottest.critical) }}>
+            {formatTemperature(hottest.celsius)}
+          </span>
+        </div>
+      ) : state.status === 'ok' && hottest ? (
         <div className={styles.stack}>
           <div className={styles.row}>
             <span className={styles.big} style={{ color: tempColor(hottest.celsius, hottest.max, hottest.critical) }}>

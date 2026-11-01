@@ -1,0 +1,14 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <script>
+      // Runs hidden while LANdscape is open: handles the app's actions when no window is open.
+      landscape.actions.handle('greet', async (p) => {
+        await landscape.notifications.notify({ title: `Hello, ${p.name || 'World'}!`, body: 'Sent by the template app’s background page.', level: 'info' });
+      });
+    </script>
+  </body>
+</html>

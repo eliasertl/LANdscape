@@ -1,20 +1,9 @@
-import { layoutViewport } from '../Design/Scale';
+import type { Rect } from '../Desktop/WorkArea';
 
-export interface Rect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type { Rect } from '../Desktop/WorkArea';
+export { workArea } from '../Desktop/WorkArea';
 
-export const TASKBAR_RESERVED = 72;
 export const TITLEBAR_VISIBLE_MIN = 40;
-
-/** The area windows may occupy: the viewport minus the floating taskbar. */
-export function workArea(): Rect {
-  const viewport = layoutViewport();
-  return { x: 0, y: 0, width: viewport.width, height: Math.max(200, viewport.height - TASKBAR_RESERVED) };
-}
 
 /**
  * Keeps a window usable: at least min size, no larger than the work area,

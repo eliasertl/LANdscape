@@ -4,6 +4,7 @@ import { WidgetFrame } from '../WidgetFrame';
 import styles from './ClockWidget.module.css';
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+const longDateFormat = new Intl.DateTimeFormat(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
 /** Client-side clock; the interval setting controls the tick (default 1 s). */
 export function ClockWidget({ widget }: WidgetProps) {
@@ -17,12 +18,13 @@ export function ClockWidget({ widget }: WidgetProps) {
   }, [interval]);
 
   const time = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', second: showSeconds ? '2-digit' : undefined }).format(now);
+  const size = widget.size;
 
   return (
     <WidgetFrame widget={widget} title="Clock">
-      <div className={styles.clock}>
+      <div className={`${styles.clock} ${size === 's' ? styles.small : size === 'l' ? styles.large : ''}`}>
         <span className={`${styles.time} text-tabular`}>{time}</span>
-        <span className={styles.date}>{dateFormat.format(now)}</span>
+        {size !== 's' && <span className={styles.date}>{size === 'l' ? longDateFormat.format(now) : dateFormat.format(now)}</span>}
       </div>
     </WidgetFrame>
   );

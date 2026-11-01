@@ -3,6 +3,15 @@ import Docker from 'dockerode';
 import type { ContainerInfo } from '@landscape/shared';
 import type { Config } from '../Config';
 
+/** Icon URL from the labels CasaOS and common dashboards use, if any looks like an http(s) URL. */
+export function iconFromLabels(labels: Record<string, string>): string | null {
+  for (const key of ['icon', 'casaos.icon', 'io.casaos.icon', 'org.opencontainers.image.icon', 'homepage.icon', 'net.unraid.docker.icon', 'traefik.icon']) {
+    const value = labels[key];
+    if (value && /^https?:\/\//i.test(value)) return value;
+  }
+  return null;
+}
+
 /** Lazily constructed dockerode client bound to the configured socket. */
 export class DockerClient {
   private client: Docker | null = null;
@@ -51,6 +60,8 @@ export class DockerClient {
           createdAt: new Date(c.Created * 1000).toISOString(),
           startedAt,
           ports: (c.Ports ?? []).map((p) => ({ ip: p.IP ?? null, privatePort: p.PrivatePort, publicPort: p.PublicPort ?? null, type: p.Type })),
+          service: c.Labels?.['com.docker.compose.service'] ?? null,
+          icon: iconFromLabels(c.Labels ?? {}),
         } satisfies ContainerInfo;
       }),
     );

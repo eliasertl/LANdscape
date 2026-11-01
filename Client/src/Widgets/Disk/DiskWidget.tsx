@@ -7,7 +7,9 @@ import styles from '../Widgets.module.css';
 
 export function DiskWidget({ widget }: WidgetProps) {
   const state = useMetric('disks', widget.settings.intervalMs);
-  const disks = state.status === 'ok' ? state.data.disks : [];
+  const all = state.status === 'ok' ? state.data.disks : [];
+  // Small shows the root (or first) disk only; the other sizes list every mount.
+  const disks = widget.size === 's' ? all.filter((d) => d.mountPoint === '/').concat(all.filter((d) => d.mountPoint !== '/')).slice(0, 1) : all;
   return (
     <WidgetFrame widget={widget} title="Disks" unavailable={state.status === 'unavailable' ? state.reason : null}>
       {state.status === 'ok' ? (

@@ -115,3 +115,69 @@
   opacity: 1;
   background: rgba(0, 0, 0, 0.2);
 }
+
+/* Lock-screen clock and message (Settings → Lock & Security) */
+.clock {
+  position: absolute;
+  top: 10vh;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--color-text-on-wallpaper);
+  text-shadow: var(--color-text-on-wallpaper-shadow);
+  pointer-events: none;
+}
+
+.clockTime {
+  font-size: 56px;
+  line-height: 60px;
+  font-weight: 600;
+  letter-spacing: -1.5px;
+}
+
+.clockLarge .clockTime {
+  font-size: 112px;
+  line-height: 112px;
+  letter-spacing: -4px;
+}
+
+.clockDate {
+  font-size: 16px;
+  opacity: 0.85;
+}
+
+.message {
+  position: absolute;
+  top: calc(10vh + 110px);
+  left: 24px;
+  right: 24px;
+  margin: 0;
+  text-align: center;
+  color: var(--color-text-on-wallpaper);
+  text-shadow: var(--color-text-on-wallpaper-shadow);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.clockLarge + .message {
+  top: calc(10vh + 160px);
+}
+
+@media (max-width: 767px) {
+  .clock {
+    top: 8vh;
+  }
+
+  .clockTime {
+    font-size: 44px;
+    line-height: 48px;
+  }
+
+  .clockLarge .clockTime {
+    font-size: 72px;
+    line-height: 76px;
+  }
+}

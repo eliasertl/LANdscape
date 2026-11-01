@@ -1,13 +1,15 @@
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { useDesktopStore } from '../Store/DesktopStore';
 import { useUiStore } from '../Store/UiStore';
 import { useSessionStore } from '../Store/SessionStore';
 import { Wallpaper } from './Wallpaper';
 import { ShortcutIcon } from './ShortcutIcon';
+import { FolderIcon } from './FolderIcon';
+import { FolderPopover } from './FolderPopover';
 import { desktopMenuItems } from './DesktopContextMenu';
 import { Overlays } from './Overlays';
 import { SnapPreview } from './SnapPreview';
-import { refreshDisplayLayout, resolveOverlaps } from './DesktopGrid';
+import { refreshDisplayLayout, resolveOverlaps, useCurrentGrid } from './DesktopGrid';
 import { useViewportSize } from '../Hooks/UseViewportSize';
 import { toLayout } from '../Design/Scale';
 import { WindowManager } from '../Windows/WindowManager';
@@ -15,11 +17,24 @@ import { Taskbar } from '../Taskbar/Taskbar';
 import { StartMenu } from '../StartMenu/StartMenu';
 import { WidgetLayer } from '../Widgets/WidgetLayer';
 import { Spinner } from '../Components/Spinner';
+import { applyAppearance } from '../Design/Theme';
 import { Button } from '../Components/Button';
 import { useKeyboardShortcut } from '../Hooks/UseKeyboardShortcut';
+import { useDesktopShortcuts } from './DesktopShortcuts';
+import { useEffectiveTaskbar } from '../Taskbar/UseTaskbarSettings';
+import { taskbarInset } from '@landscape/shared';
 import { useIsPhone } from '../Hooks/UseMediaQuery';
 import { PhoneShell } from '../Phone/PhoneShell';
 import { SafeModeBanner } from './SafeModeBanner';
+import { useIdleWatcher } from '../Lock/IdleWatcher';
+import { useCursor } from '../Cursor/UseCursor';
+import { AfterLoginAnimation } from '../Startup/AfterLoginAnimation';
+import { useNotificationStore } from '../Store/NotificationStore';
+import { useMonitorStore } from '../Store/MonitorStore';
+import { NotificationCenter } from '../Notifications/NotificationCenter';
+import { loadInstalledApps, watchInstalledApps } from '../Platform/InstalledApps';
+import { broadcastTheme } from '../Platform/AppBroker';
+import { onThemeChange } from '../Design/Theme';
 import styles from './Desktop.module.css';
 
 export function Desktop() {
@@ -27,10 +42,32 @@ export function Desktop() {
   const error = useDesktopStore((s) => s.error);
   const load = useDesktopStore((s) => s.load);
   const phone = useIsPhone();
+  useIdleWatcher();
+  useCursor();
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Live events (notifications, monitor states, app changes) for the whole desktop, and the installed catalog apps.
+  useEffect(() => {
+    if (!loaded) return;
+    const disconnectNotifications = useNotificationStore.getState().connect();
+    const disconnectMonitor = useMonitorStore.getState().connect();
+    const unwatchApps = watchInstalledApps();
+    const unwatchTheme = onThemeChange(broadcastTheme);
+    void loadInstalledApps().then(() => {
+      // Theme packs from apps only resolve once the apps are registered.
+      const settings = useDesktopStore.getState().settings;
+      if (settings?.appearance.themePack) applyAppearance(settings.appearance);
+    });
+    return () => {
+      disconnectNotifications();
+      disconnectMonitor();
+      unwatchApps();
+      unwatchTheme();
+    };
+  }, [loaded]);
 
   if (error && !loaded) {
     return (
@@ -49,22 +86,33 @@ export function Desktop() {
       </div>
     );
   }
-  return phone ? <PhoneShell /> : <DesktopShell />;
+  return (
+    <>
+      {phone ? <PhoneShell /> : <DesktopShell />}
+      <AfterLoginAnimation />
+    </>
+  );
 }
 
 function DesktopShell() {
   const shortcuts = useDesktopStore((s) => s.shortcuts);
+  const folders = useDesktopStore((s) => s.folders);
+  const desktopSettings = useDesktopStore((s) => s.settings?.desktop);
   const openContextMenu = useUiStore((s) => s.openContextMenu);
   const selectShortcut = useUiStore((s) => s.selectShortcut);
-  const toggleStartMenu = useUiStore((s) => s.toggleStartMenu);
   const setStartMenuOpen = useUiStore((s) => s.setStartMenuOpen);
+  const openFolderId = useUiStore((s) => s.openFolderId);
+  const openFolder = useUiStore((s) => s.openFolder);
   const logout = useSessionStore((s) => s.logout);
   const surfaceRef = useRef<HTMLDivElement>(null);
 
   const widgets = useDesktopStore((s) => s.widgets);
   const viewport = useViewportSize();
+  const grid = useCurrentGrid();
+  const taskbar = useEffectiveTaskbar();
+  const inset = taskbarInset(taskbar);
 
-  // Once widgets have rendered (their grid size is read from the DOM), untangle stored collisions.
+  // Once widgets have rendered, untangle stored collisions.
   useEffect(() => {
     let frame = requestAnimationFrame(() => {
       frame = requestAnimationFrame(() => resolveOverlaps());
@@ -72,12 +120,12 @@ function DesktopShell() {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  // Keep the shown layout collision-free whenever items or the viewport change.
+  // Keep the shown layout collision-free whenever items, the grid or the viewport change.
   useLayoutEffect(() => {
     refreshDisplayLayout();
-  }, [shortcuts, widgets, viewport]);
+  }, [shortcuts, widgets, folders, viewport, grid.unitX, grid.unitY, inset.top, inset.left]);
 
-  useKeyboardShortcut({ key: ' ', ctrl: true }, toggleStartMenu);
+  useDesktopShortcuts();
   useKeyboardShortcut({ key: 'Escape' }, () => setStartMenuOpen(false));
 
   const onSurfaceContextMenu = useCallback(
@@ -90,30 +138,47 @@ function DesktopShell() {
     [openContextMenu, selectShortcut],
   );
 
+  const labels = desktopSettings?.labels ?? 'show';
+  const showIcons = desktopSettings?.showIcons ?? true;
+  // The surface shrinks to the work area, so the grid never runs under the taskbar on any edge.
+  const surfaceStyle = {
+    '--icon-size': `${grid.iconPx}px`,
+    '--grid-unit-x': `${grid.unitX}px`,
+    '--grid-unit-y': `${grid.unitY}px`,
+    top: inset.top,
+    right: inset.right,
+    bottom: inset.bottom,
+    left: inset.left,
+  } as CSSProperties;
+
   return (
     <div className={styles.desktop}>
       <Wallpaper />
       <div
         ref={surfaceRef}
-        className={styles.surface}
+        className={[styles.surface, labels === 'hide' ? styles.labelsHidden : labels === 'shadow' ? styles.labelsShadow : ''].join(' ')}
+        style={surfaceStyle}
+        data-desktop-surface
         onContextMenu={onSurfaceContextMenu}
         onPointerDown={(e) => {
           if (e.target === e.currentTarget) {
             selectShortcut(null);
             setStartMenuOpen(false);
+            openFolder(null);
           }
         }}
       >
         <SnapPreview />
-        {shortcuts.map((shortcut) => (
-          <ShortcutIcon key={shortcut.id} shortcut={shortcut} />
-        ))}
+        {showIcons && shortcuts.filter((s) => s.folderId === null).map((shortcut) => <ShortcutIcon key={shortcut.id} shortcut={shortcut} />)}
+        {showIcons && folders.map((folder) => <FolderIcon key={folder.id} folder={folder} />)}
         <WidgetLayer />
+        {openFolderId && <FolderPopover key={openFolderId} folderId={openFolderId} />}
       </div>
       <WindowManager />
       <Taskbar />
       <StartMenu onLogout={() => void logout()} />
       <Overlays />
+      <NotificationCenter />
       <SafeModeBanner />
     </div>
   );

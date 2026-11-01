@@ -81,3 +81,36 @@
 .active .dot {
   background: var(--color-accent);
 }
+
+/* Orientation, titles (Windows styles) and dock magnification */
+.vertical {
+  flex-direction: column;
+  max-width: none;
+  max-height: 60vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.iconWrap {
+  display: inline-flex;
+  line-height: 0;
+}
+
+.withTitle {
+  width: auto;
+  max-width: 180px;
+  padding: 0 10px 0 7px;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-label);
+}
+
+.dock .app {
+  transition: background-color 150ms ease;
+  will-change: transform;
+}

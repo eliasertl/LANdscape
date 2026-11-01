@@ -1,0 +1,25 @@
+{
+  "id": "template",
+  "name": "Template",
+  "version": "1.0.0",
+  "author": "LANdscape",
+  "description": "The smallest useful app: a window, a widget, an action and a background page, all talking to LANdscape through the SDK. Copy it to start your own.",
+  "icon": "icon.svg",
+  "categories": ["developer"],
+  "permissions": ["storage", "notifications", "theme:read", "metrics"],
+  "contributes": {
+    "windows": [{ "id": "main", "entry": "index.html", "defaultSize": { "width": 640, "height": 480 } }],
+    "widgets": [
+      {
+        "id": "counter",
+        "name": "Template counter",
+        "description": "A number that persists through the storage permission",
+        "entry": "widget.html",
+        "sizes": { "s": { "cols": 1, "rows": 1 }, "m": { "cols": 2, "rows": 1 } },
+        "settingsFields": [{ "key": "label", "label": "Label", "type": "text", "defaultValue": "Clicks" }]
+      }
+    ],
+    "actions": [{ "id": "greet", "title": "Say hello (Template)", "description": "Shows a notification from the template app", "params": [{ "key": "name", "label": "Name", "placeholder": "World" }] }],
+    "background": { "entry": "background.html" }
+  }
+}

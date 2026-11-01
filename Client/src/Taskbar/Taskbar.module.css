@@ -1,14 +1,125 @@
+/* Host: positioned on one edge; the bar inside takes one of the styles. */
 .host {
   position: absolute;
+  z-index: 5000;
+  display: flex;
+  pointer-events: none;
+  transition: transform 200ms ease, opacity 200ms ease;
+}
+
+.preview {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  justify-content: center;
+}
+
+/* Edges (floating styles keep a margin; docked styles sit flush). */
+.pos-bottom {
   left: 0;
   right: 0;
   bottom: 10px;
-  display: flex;
   justify-content: center;
-  z-index: 5000;
-  pointer-events: none;
 }
 
+.pos-top {
+  left: 0;
+  right: 0;
+  top: 10px;
+  justify-content: center;
+}
+
+.pos-left {
+  top: 0;
+  bottom: 0;
+  left: 10px;
+  align-items: center;
+}
+
+.pos-right {
+  top: 0;
+  bottom: 0;
+  right: 10px;
+  align-items: center;
+}
+
+.style-win10.pos-bottom,
+.style-win11.pos-bottom {
+  bottom: 0;
+}
+
+.style-win10.pos-top,
+.style-win11.pos-top {
+  top: 0;
+}
+
+.style-win10.pos-left,
+.style-win11.pos-left {
+  left: 0;
+}
+
+.style-win10.pos-right,
+.style-win11.pos-right {
+  right: 0;
+}
+
+/* Auto-hide: slide out of view on the bar's edge; a thin catcher strip stays at the edge. */
+.hiddenBar.pos-bottom {
+  transform: translateY(calc(100% + 12px));
+}
+
+.hiddenBar.pos-top {
+  transform: translateY(calc(-100% - 12px));
+}
+
+.hiddenBar.pos-left {
+  transform: translateX(calc(-100% - 12px));
+}
+
+.hiddenBar.pos-right {
+  transform: translateX(calc(100% + 12px));
+}
+
+.edgeCatcher {
+  position: fixed;
+  pointer-events: auto;
+}
+
+.pos-bottom .edgeCatcher {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+}
+
+.pos-top .edgeCatcher {
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 4px;
+}
+
+.pos-left .edgeCatcher {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+}
+
+.pos-right .edgeCatcher {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .host {
+    transition: none;
+  }
+}
+
+/* The bar itself. */
 .bar {
   pointer-events: auto;
   display: flex;
@@ -29,12 +140,85 @@
   }
 }
 
+.vertical .bar {
+  flex-direction: column;
+  width: var(--taskbar-height);
+  height: auto;
+  max-width: none;
+  max-height: calc(100vh - 24px);
+  padding: 10px 0;
+}
+
+/* Windows styles: full width (or height), flush, no rounding. */
+.style-win10 .bar,
+.style-win11 .bar {
+  width: 100%;
+  max-width: none;
+  border-radius: 0;
+  border-width: 0;
+  box-shadow: 0 -1px 0 var(--color-overlay-border);
+  padding: 0 6px;
+}
+
+.style-win10.vertical .bar,
+.style-win11.vertical .bar {
+  width: var(--taskbar-height);
+  height: 100%;
+  max-height: none;
+  padding: 6px 0;
+}
+
+.pos-top.style-win10 .bar,
+.pos-top.style-win11 .bar {
+  box-shadow: 0 1px 0 var(--color-overlay-border);
+}
+
+@supports (corner-shape: squircle) {
+  .style-win10 .bar,
+  .style-win11 .bar {
+    corner-shape: round;
+  }
+}
+
+.region {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.vertical .region {
+  flex-direction: column;
+  min-height: 0;
+}
+
+.center {
+  justify-content: center;
+}
+
+.end {
+  justify-content: flex-end;
+}
+
+.vertical .end {
+  justify-content: flex-end;
+}
+
+/* Dock: a little taller padding so magnified icons have room; the bar sits on the edge. */
+.style-dock .bar {
+  gap: 2px;
+  padding: 0 8px;
+}
+
+/* Launcher button */
 .search {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: var(--taskbar-icon);
+  height: var(--taskbar-icon);
+  flex: none;
   border: 0;
   border-radius: 12px;
   background: transparent;
@@ -59,6 +243,13 @@
 .divider {
   width: 1px;
   height: 28px;
+  flex: none;
   background: var(--color-separator);
   margin: 0 4px;
+}
+
+.vertical .divider {
+  width: 28px;
+  height: 1px;
+  margin: 4px 0;
 }

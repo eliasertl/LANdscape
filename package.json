@@ -12,17 +12,19 @@
     "Shared",
     "Server",
     "Client",
-    "Scripts"
+    "Scripts",
+    "Sdk"
   ],
   "scripts": {
     "dev": "concurrently -k -n server,client -c blue,magenta \"npm:dev:server\" \"npm:dev:client\"",
     "dev:server": "npm run dev -w Server",
     "dev:client": "npm run dev -w Client",
-    "build": "npm run wallpapers && npm run build -w Server && npm run build -w Client && npm run build -w Scripts",
+    "build": "npm run wallpapers && npm run build -w Sdk && npm run build -w Server && npm run build -w Client && npm run build -w Scripts && npm run catalog",
+    "catalog": "npm run catalog -w Scripts",
     "wallpapers": "npm run wallpapers -w Scripts",
     "seed": "npm run seed -w Scripts",
     "hash-password": "npm run hash-password -w Scripts --",
-    "typecheck": "tsc -p Shared && tsc -p Server && tsc -p Client && tsc -p Scripts && tsc -p Tests",
+    "typecheck": "tsc -p Shared && tsc -p Sdk && tsc -p Server && tsc -p Client && tsc -p Scripts && tsc -p Tests",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",

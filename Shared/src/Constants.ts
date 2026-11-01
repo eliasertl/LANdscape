@@ -24,3 +24,9 @@ export const WINDOW_MIN_SIZE = { width: 320, height: 200 } as const;
 export const WINDOW_DEFAULT_SIZE = { width: 1000, height: 680 } as const;
 
 export const SESSION_COOKIE_NAME = 'landscape_session';
+
+/** Uploads for the startup animation and cursors (Settings → Startup / Cursor). */
+export const STARTUP_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+export const STARTUP_VIDEO_MAX_BYTES = 15 * 1024 * 1024;
+export const STARTUP_SOUND_MAX_BYTES = 2 * 1024 * 1024;
+export const CURSOR_UPLOAD_MAX_BYTES = 256 * 1024;

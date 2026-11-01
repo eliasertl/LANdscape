@@ -2,8 +2,8 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 96px;
-  height: 112px;
+  width: var(--grid-unit-x, 96px);
+  height: var(--grid-unit-y, 112px);
   padding: 8px 4px;
   display: flex;
   flex-direction: column;
@@ -84,4 +84,27 @@
 .selected .label {
   background: var(--color-accent);
   text-shadow: none;
+}
+
+/* Service health dot (monitor service) */
+.health {
+  position: absolute;
+  left: -3px;
+  bottom: -3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+.health-up {
+  background: var(--system-green);
+}
+
+.health-down {
+  background: var(--system-red);
+}
+
+.health-unknown {
+  background: var(--system-gray);
 }

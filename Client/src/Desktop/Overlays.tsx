@@ -5,6 +5,8 @@ import { WidgetSettingsDialog } from '../Widgets/WidgetSettingsDialog';
 import { Menu } from '../Components/Menu';
 import { ConfirmDialog } from '../Components/Dialog';
 import { ToastHost, toast } from '../Components/Toast';
+import { PromptDialog } from '../Components/PromptDialog';
+import { useDesktopStore } from '../Store/DesktopStore';
 
 /** Context menu, dialogs and toasts shared by the desktop and phone shells. */
 export function Overlays() {
@@ -15,6 +17,19 @@ export function Overlays() {
   const widgetSettingsId = useUiStore((s) => s.widgetSettingsId);
   const confirm = useUiStore((s) => s.confirm);
   const requestConfirm = useUiStore((s) => s.requestConfirm);
+  const folderPrompt = useUiStore((s) => s.folderPrompt);
+  const openFolderPrompt = useUiStore((s) => s.openFolderPrompt);
+
+  const submitFolder = async (name: string) => {
+    const desktop = useDesktopStore.getState();
+    if (!folderPrompt) return;
+    if (folderPrompt.mode === 'rename') await desktop.renameFolder(folderPrompt.folder.id, name.trim());
+    else {
+      const folder = await desktop.createFolder(name.trim(), folderPrompt.position);
+      if (folderPrompt.moveShortcutId) await desktop.moveShortcutToFolder(folderPrompt.moveShortcutId, folder.id);
+    }
+    openFolderPrompt(null);
+  };
 
   const onConfirm = async () => {
     if (!confirm) return;
@@ -33,6 +48,17 @@ export function Overlays() {
       {shortcutDialog && <ShortcutDialog state={shortcutDialog} />}
       {wallpaperDialogOpen && <WallpaperDialog />}
       {widgetSettingsId && <WidgetSettingsDialog widgetId={widgetSettingsId} />}
+      {folderPrompt && (
+        <PromptDialog
+          title={folderPrompt.mode === 'rename' ? 'Rename Folder' : 'New Folder'}
+          label="Name"
+          initialValue={folderPrompt.mode === 'rename' ? folderPrompt.folder.name : ''}
+          placeholder="Media"
+          confirmLabel={folderPrompt.mode === 'rename' ? 'Rename' : 'Create'}
+          onSubmit={submitFolder}
+          onCancel={() => openFolderPrompt(null)}
+        />
+      )}
       {confirm && (
         <ConfirmDialog
           title={confirm.title}

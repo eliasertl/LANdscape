@@ -27,10 +27,20 @@ export function NetworkWidget({ widget }: WidgetProps) {
   const txHistory = useHistory(state.status === 'ok' ? tx : null, 40);
   const showIps = widget.settings.showAddresses !== false;
   const addresses = shown.flatMap((i) => i.addresses.map((a) => ({ iface: i.name, address: a })));
+  const size = widget.size;
 
   return (
     <WidgetFrame widget={widget} title={selected === 'all' ? 'Network' : `Network · ${selected}`} unavailable={state.status === 'unavailable' ? state.reason : null}>
-      {state.status === 'ok' ? (
+      {state.status === 'ok' && size === 's' ? (
+        <div className={styles.compact}>
+          <span className={styles.value} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <ArrowDown weight="bold" color="var(--system-green)" /> {formatRate(rx)}
+          </span>
+          <span className={styles.value} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <ArrowUp weight="bold" color="var(--system-blue)" /> {formatRate(tx)}
+          </span>
+        </div>
+      ) : state.status === 'ok' ? (
         <div className={styles.stack}>
           <div className={styles.row}>
             <span className={styles.value} style={{ fontSize: 15, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -40,17 +50,17 @@ export function NetworkWidget({ widget }: WidgetProps) {
               <ArrowUp weight="bold" color="var(--system-blue)" /> {formatRate(tx)}
             </span>
           </div>
-          <div style={{ position: 'relative', height: 64 }}>
-            <div style={{ position: 'absolute', inset: 0 }}>
-              <Sparkline values={rxHistory} width={256} height={64} color="var(--system-green)" />
+          <div className={styles.chart}>
+            <div>
+              <Sparkline values={rxHistory} width={256} height={size === 'l' ? 140 : 64} color="var(--system-green)" />
             </div>
-            <div style={{ position: 'absolute', inset: 0 }}>
-              <Sparkline values={txHistory} width={256} height={64} color="var(--system-blue)" />
+            <div>
+              <Sparkline values={txHistory} width={256} height={size === 'l' ? 140 : 64} color="var(--system-blue)" />
             </div>
           </div>
           {showIps && addresses.length > 0 && (
             <div className={styles.ipList}>
-              {addresses.slice(0, 6).map((a) => (
+              {addresses.slice(0, size === 'l' ? 12 : 6).map((a) => (
                 <span key={`${a.iface}-${a.address}`} className={styles.ip} title={a.iface}>
                   {a.address}
                 </span>

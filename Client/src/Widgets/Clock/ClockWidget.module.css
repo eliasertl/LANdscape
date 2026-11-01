@@ -17,3 +17,23 @@
   font-size: 12px;
   color: var(--color-secondary-label);
 }
+
+.small .time {
+  font-size: 18px;
+  line-height: 22px;
+  letter-spacing: -0.3px;
+}
+
+.large {
+  align-items: center;
+}
+
+.large .time {
+  font-size: 56px;
+  line-height: 60px;
+  letter-spacing: -1px;
+}
+
+.large .date {
+  font-size: 14px;
+}

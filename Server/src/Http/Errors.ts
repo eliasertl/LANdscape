@@ -20,6 +20,7 @@ export const notFound = (message = 'Not found') => new HttpError(404, 'not_found
 export const conflict = (message: string) => new HttpError(409, 'conflict', message);
 export const tooLarge = (message = 'Payload too large') => new HttpError(413, 'payload_too_large', message);
 export const unavailable = (code: string, message: string) => new HttpError(503, code, message);
+export const locked = (message = 'The session is locked. Enter your password to continue.') => new HttpError(423, 'locked', message);
 
 /** Parses with a zod schema and converts failures into a 400 with field details. */
 export function parseOrThrow<T>(schema: ZodType<T>, value: unknown): T {

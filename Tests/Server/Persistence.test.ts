@@ -6,6 +6,7 @@ import { buildApp } from '@server/App';
 import { loadConfig } from '@server/Config';
 import { Database } from '@server/Db/Database';
 import { createRepositories, seedDefaults } from '@server/Db/Repositories';
+import { updatePositions } from '@server/Db/Repositories/Positions';
 import { SCHEMA_VERSION } from '@server/Db/Migrations';
 import { loadOrCreateSessionSecret } from '@server/Auth/SecretStore';
 import { TEST_PASSWORD, TEST_PASSWORD_HASH, TEST_USERNAME } from './TestApp';
@@ -43,17 +44,18 @@ describe('database', () => {
       url: 'https://en.wikipedia.org',
       iconMode: 'favicon',
       iconFile: null,
-      x: 24,
-      y: 24,
+      position: { anchorX: 'left', anchorY: 'top', offsetCol: 0, offsetRow: 0 },
+      folderId: null,
       embeddable: 'yes',
       embedReason: 'ok',
       openMode: 'auto',
     });
     expect(repos.shortcuts.find(shortcut.id)).toMatchObject({ name: 'Wiki', embeddable: 'yes' });
-    repos.shortcuts.updatePositions([{ id: shortcut.id, x: 120, y: 136 }]);
-    expect(repos.shortcuts.find(shortcut.id)).toMatchObject({ x: 120, y: 136 });
+    const moved = { anchorX: 'right' as const, anchorY: 'bottom' as const, offsetCol: 1, offsetRow: 2 };
+    updatePositions(db, [{ kind: 'shortcut', id: shortcut.id, position: moved }]);
+    expect(repos.shortcuts.find(shortcut.id)).toMatchObject({ position: moved });
 
-    const widget = repos.widgets.create('cpu', 10, 10, { intervalMs: 3000 });
+    const widget = repos.widgets.create('cpu', { anchorX: 'left', anchorY: 'top', offsetCol: 1, offsetRow: 1 }, 'm', { intervalMs: 3000 });
     expect(widget.settings.intervalMs).toBe(3000);
     repos.widgets.update(widget.id, { settings: { intervalMs: 4000, extra: true } });
     expect(repos.widgets.find(widget.id)?.settings).toEqual({ intervalMs: 4000, extra: true });
