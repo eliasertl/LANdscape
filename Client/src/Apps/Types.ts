@@ -16,6 +16,8 @@ export interface AppDefinition {
   name: string;
   description: string;
   icon: Icon;
+  /** Catalog apps: their own icon image instead of a Phosphor icon on a tile. */
+  iconUrl?: string | null;
   /** Tile color used for the launcher icon (CSS color). */
   color: string;
   component: LazyExoticComponent<ComponentType<AppWindowProps>>;

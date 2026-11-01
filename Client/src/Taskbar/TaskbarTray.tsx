@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { Settings } from '@landscape/shared';
 import { registries } from '../Platform/Registries';
 import { useRegistry } from '../Platform/Registry';
@@ -20,7 +21,9 @@ export function TaskbarTray({ settings, vertical }: TaskbarTrayProps) {
         return (
           <ErrorBoundary key={item.id} label={item.title} compact>
             <span className={styles.item} data-tray-item={item.id} title={item.title}>
-              <Component vertical={vertical} />
+              <Suspense fallback={null}>
+                <Component vertical={vertical} />
+              </Suspense>
             </span>
           </ErrorBoundary>
         );
