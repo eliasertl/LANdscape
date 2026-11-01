@@ -1,0 +1,71 @@
+{
+  "schema": 1,
+  "generatedAt": "2026-11-01T17:56:42.362Z",
+  "apps": [
+    {
+      "id": "dusk-paper",
+      "name": "Dusk & Paper",
+      "version": "1.0.0",
+      "author": "LANdscape",
+      "description": "Two themes with their own accents: Dusk, a deep indigo night with amber, and Paper, warm off-white with moss green. Comes with a matching wallpaper. No code, no permissions.",
+      "categories": [
+        "appearance"
+      ],
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCI+CjxkZWZzPjxjbGlwUGF0aCBpZD0iciI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIHJ4PSIyOCIvPjwvY2xpcFBhdGg+PC9kZWZzPgo8ZyBjbGlwLXBhdGg9InVybCgjcikiPjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiBmaWxsPSIjZmJmN2VmIi8+PHBhdGggZD0iTTAgMCBIMTI4IFYxMjggWiIgZmlsbD0iIzFlMWIzOCIvPgo8Y2lyY2xlIGN4PSI4OCIgY3k9IjQwIiByPSIxNiIgZmlsbD0iI2ZmOWYwYSIvPjxjaXJjbGUgY3g9IjQwIiBjeT0iODgiIHI9IjE2IiBmaWxsPSIjM2E4ZjVjIi8+PC9nPgo8L3N2Zz4K",
+      "permissions": [],
+      "sha256": "957e056c9bf56901cbc0e69b7ebc95d931749b0b0a20edc2c262209944125f1d",
+      "size": 1780,
+      "downloadUrl": "https://raw.githubusercontent.com/eliasertl/LANdscape/main/Catalog/dist/dusk-paper-1.0.0.zip"
+    },
+    {
+      "id": "ink-cursors",
+      "name": "Ink cursors",
+      "version": "1.0.0",
+      "author": "LANdscape",
+      "description": "A slim black cursor set with a thin white outline, drawn as SVG so it stays sharp at any cursor size. No code, no permissions.",
+      "categories": [
+        "appearance"
+      ],
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCI+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiByeD0iMjgiIGZpbGw9IiMxMTExMTEiLz4KPHBhdGggZD0iTTQwIDI4IEw0MCA5MiBMNTcgNzggTDY3IDEwMiBMNzkgOTcgTDY5IDczIEw5MiA3MyBaIiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K",
+      "permissions": [],
+      "sha256": "7c64d393b3216270bdf34378f54467c3a47c7f452aaf8f22a12e37fd78e96cdd",
+      "size": 2583,
+      "downloadUrl": "https://raw.githubusercontent.com/eliasertl/LANdscape/main/Catalog/dist/ink-cursors-1.0.0.zip"
+    },
+    {
+      "id": "ripple-startup",
+      "name": "Ripple",
+      "version": "1.0.0",
+      "author": "LANdscape",
+      "description": "A startup animation: rings ripple out from the centre under your startup text, in the colours from the Startup settings. Ends when the duration is over.",
+      "categories": [
+        "appearance"
+      ],
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCI+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiByeD0iMjgiIGZpbGw9IiMwYTg0ZmYiLz4KPGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjYiPjxjaXJjbGUgY3g9IjY0IiBjeT0iNjQiIHI9IjEyIi8+PGNpcmNsZSBjeD0iNjQiIGN5PSI2NCIgcj0iMjgiIG9wYWNpdHk9IjAuNyIvPjxjaXJjbGUgY3g9IjY0IiBjeT0iNjQiIHI9IjQ0IiBvcGFjaXR5PSIwLjQiLz48L2c+Cjwvc3ZnPgo=",
+      "permissions": [],
+      "sha256": "d02b64b18786023ad9efa2973d5b57f3214d522f3f84711f4c863ad08d3160aa",
+      "size": 1900,
+      "downloadUrl": "https://raw.githubusercontent.com/eliasertl/LANdscape/main/Catalog/dist/ripple-startup-1.0.0.zip"
+    },
+    {
+      "id": "template",
+      "name": "Template",
+      "version": "1.0.0",
+      "author": "LANdscape",
+      "description": "The smallest useful app: a window, a widget, an action and a background page, all talking to LANdscape through the SDK. Copy it to start your own.",
+      "categories": [
+        "developer"
+      ],
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIHJ4PSIyOCIgZmlsbD0iIzVlNWNlNiIvPjxyZWN0IHg9IjI4IiB5PSIyOCIgd2lkdGg9IjcyIiBoZWlnaHQ9IjcyIiByeD0iMTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI4IiBzdHJva2UtZGFzaGFycmF5PSIxNCAxMCIvPjxjaXJjbGUgY3g9IjY0IiBjeT0iNjQiIHI9IjEyIiBmaWxsPSIjZmZmIi8+PC9zdmc+Cg==",
+      "permissions": [
+        "storage",
+        "notifications",
+        "theme:read",
+        "metrics"
+      ],
+      "sha256": "15adc0a5a88d1f8d3820eb2fb55cc60fc3f08a3175fa7342dcbfd8f1f0f15bd8",
+      "size": 3840,
+      "downloadUrl": "https://raw.githubusercontent.com/eliasertl/LANdscape/main/Catalog/dist/template-1.0.0.zip"
+    }
+  ]
+}

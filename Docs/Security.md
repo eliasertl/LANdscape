@@ -8,7 +8,11 @@ LANdscape is a single-user admin tool. Logging in grants control over the host t
 - The bcrypt comparison always runs, even for a wrong username, so timing does not reveal which part failed.
 - After 5 failed attempts from one IP the IP is locked for 15 minutes (in memory; a restart clears it). `request.ip` is the socket address unless `TRUST_PROXY=true`.
 - Sessions are random 256-bit ids stored in SQLite with a 30-day sliding expiry, carried in a signed (`SESSION_SECRET`), `httpOnly`, `SameSite=Strict` cookie. Logout deletes the row. The secret is generated once and stored at `DATA_DIR/session-secret` (mode 0600) when not configured.
-- The guard (`Server/src/Auth/Guard.ts`) requires a session for every `/api/*`, `/ws/*`, `/icons/*` and `/wallpapers/upload/*` path except login, the session probe and `/healthz`. Non-GET API calls (login included) and WebSocket upgrades must carry a same-origin `Origin` header (missing counts as mismatch).
+- The guard (`Server/src/Auth/Guard.ts`) requires a session for every `/api/*`, `/ws/*`, `/icons/*`, `/cursors/*` and `/wallpapers/upload/*` path except login, the session probe and `/healthz`. Non-GET API calls (login included) and WebSocket upgrades must carry a same-origin `Origin` header (missing counts as mismatch).
+- **Locking is server-side.** `POST /api/auth/lock` sets `sessions.locked_at`; a locked session gets `423 locked` on every route except unlock, logout and the probe, and the embed proxy ports treat it as logged out. Unlock takes the password with the same IP lockout as login. Sessions also lock themselves when `settings.lock.idleMinutes` passed since their last activity (`last_seen_at`, touched at most once a minute by real requests and by the client's activity heartbeat; the probe does not count). A client-only overlay would be no protection, so the lock screen is only a view of the server state.
+- **Sessions are listable and revocable** (Settings → Lock & Security). The list shows an opaque key (`sha256(id)[0..16]`), the device and user agent; revoking deletes the row, so the next request from that browser is a 401. The session lifetime (`settings.security.sessionDays`) applies to new cookies and the sliding expiry.
+- **Notifications from apps** go through `POST /api/notifications` with `source: "app:<id>"`; the SDK (milestone 6) adds the permission check. Watchers and the monitor run with the server's own access (Docker events need the socket; monitor checks use the SafeFetch rules: http(s) only, 8 s, no credentials, self-signed accepted, not restricted to public addresses because reaching LAN services is the point).
+- **Startup media is public.** Files under `/startup/*` (logo, video, sound uploaded in Settings → Startup) are served without a session because the animation can play before login; they are type-sniffed on upload and SVGs go through the same script check as icons. Cursor uploads (`/cursors/*`) need a session.
 
 ## Headers
 
@@ -42,6 +46,10 @@ Shortcuts whose sites forbid framing can be served through `Server/src/Proxy/`: 
 | Weakening the proxied app's own protections | Only `X-Frame-Options` and the `frame-ancestors` directive are removed; the rest of the CSP stays. `upgrade-insecure-requests` is also dropped because the proxy origin is plain HTTP and the directive would break HTTPS targets. Bodies are streamed, never rewritten or logged. |
 
 Accepted risks: the proxy accepts self-signed certificates on targets (like the embed check); the proxy origin is plain HTTP, so on an untrusted network the app's traffic between browser and LANdscape is as exposed as LANdscape's own; apps that hard-code their original URL in JavaScript bypass the proxy (and its cookie namespace) for those requests. Logs contain ports, target origins and error codes, never cookies, headers or bodies.
+
+## Catalog apps
+
+Apps are untrusted code. They run in `<iframe sandbox="allow-scripts">` frames without `allow-same-origin` (opaque origin: no cookies, DOM or API access), their documents are built server-side with every asset inlined and a CSP that forbids network access, and their only channel is `postMessage` to the broker, which checks a per-frame nonce and the app's granted permissions on every call. Bundles are validated on install (manifest, referenced files, image sniffing, SVG script check, zip path safety and size limits); catalog installs verify the sha256 from the index. "Trusted" grants every permission but never lifts the sandbox. `net:fetch` is a server-side fetch limited to the manifest's hosts unless trusted, with credential headers stripped both ways. Details and the rejected alternatives are in [AppPlatform.md](AppPlatform.md).
 
 ## Secrets
 

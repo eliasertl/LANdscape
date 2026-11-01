@@ -11,7 +11,7 @@ import { layoutViewport } from '../Design/Scale';
 import { PlaceholderIcon } from './PlaceholderIcon';
 import { openShortcut } from './Launch';
 import { shortcutMenuItems } from './DesktopContextMenu';
-import { currentGrid, occupiedCells, positionForCell, viewportBounds } from './DesktopGrid';
+import { currentGrid, occupiedCells, positionForCell, surfaceOrigin, viewportBounds } from './DesktopGrid';
 import { toast } from '../Components/Toast';
 import { errorMessage } from '../Api/Http';
 import styles from './Folder.module.css';
@@ -128,9 +128,10 @@ function FolderItem({ shortcut, popoverRef }: { shortcut: Shortcut; popoverRef: 
         return;
       }
       const grid = currentGrid();
+      const origin = surfaceOrigin();
       const desired = {
-        col: Math.floor((clientX - grid.originX) / grid.unitX),
-        row: Math.floor((clientY - grid.originY) / grid.unitY),
+        col: Math.floor((clientX - origin.x - grid.originX) / grid.unitX),
+        row: Math.floor((clientY - origin.y - grid.originY) / grid.unitY),
         ...ICON_CELLS,
       };
       const spot = findNearestFree(desired, occupiedCells(null), viewportBounds(grid));

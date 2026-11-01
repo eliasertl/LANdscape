@@ -21,9 +21,11 @@ Client (Client/src)
    ├─ Desktop/     wallpaper, icons, context menus, dialogs, Overlays
    ├─ Windows/     window manager (frames, drag/resize, iframe content)
    ├─ Taskbar/ StartMenu/ Phone/
-   ├─ Apps/<Name>/ built-in apps behind Apps/Registry.ts
+   ├─ Apps/<Name>/ built-in apps behind Apps/Registry.ts; Apps/AppFrame.tsx + AppWindow.tsx host catalog apps
    └─ Widgets/<Name>/ widgets behind Widgets/Registry.ts
-Shared/src        types, zod schemas, constants, WebSocket message types
+Shared/src        types, zod schemas, constants, WebSocket message types, app manifest + permissions
+Sdk/src           the SDK for catalog apps (runtime injected into frames, types)
+Catalog/          catalog app sources, the template, built zips and index.json
 ```
 
 ## Request flow
@@ -33,9 +35,17 @@ Shared/src        types, zod schemas, constants, WebSocket message types
 3. `GET /api/desktop` returns everything the desktop needs in one call: shortcuts, widgets, settings, window memory, integration flags, version.
 4. Layout changes (`PUT /api/shortcuts/positions`, `PATCH /api/widgets/:id`, `PUT /api/window-memory/:appKey`) are debounced client-side and persisted server-side.
 
+## Taskbar
+
+`Client/src/Taskbar/Taskbar.tsx` renders one of four styles from `settings.taskbar` (floating pill, Windows 10 and 11 docked bars, macOS-like dock) on any edge, in three sizes, with auto-hide. Every part (launcher, apps, tray, clock) sits in its own error boundary. The bar writes `data-taskbar-position` / `data-taskbar-style` and `--taskbar-height` onto `<html>`, which the start menu CSS reads to open from the right edge. `TaskbarApps.tsx` merges the pinned keys (`settings.taskbar.pinned`, "app:<id>" or "shortcut:<id>") with the open window groups: a pinned item launches when nothing runs and shows a dot when something does; pinned items reorder by dragging along the bar (`togglePin`/`isPinned` are shared with the context menus of shortcuts and launcher entries). `TaskbarTray.tsx` renders `registries.trayItems` minus `settings.taskbar.trayHidden`; the built-in CPU/memory meter is registered in `Platform/BuiltIns.ts`. `UseDockMagnify.ts` drives the dock style with one spring per icon (off under reduced motion). `UseTaskbarSettings.ts` returns the settings in effect; safe mode falls back to the floating bar.
+
+**Work area:** `Desktop/WorkArea.ts` computes what the taskbar takes from its edge (`taskbarInset` in `Shared/src/Snap.ts`: bar plus a margin for floating styles, the bar alone for docked ones, nothing when auto-hiding). `workArea()` is the viewport minus that inset; maximized and snapped windows fill it, the desktop surface shrinks to it (so the grid never runs under a top or left bar), and `DesktopGrid.surfaceOrigin()` converts pointer positions to grid cells.
+
+**Debugging:** `document.documentElement.dataset` shows the active position and style; `landscapeDebug.stores.desktop.getState().settings.taskbar` the settings. `Settings → Taskbar` renders the real component in a scaled preview (`<Taskbar preview={…}>` never touches `<html>` or the window).
+
 ## Windows
 
-The window manager is hand-written. Windows are rendered in creation order with stable React keys so iframes never remount when the z-order changes; stacking uses `z-index`. Minimized windows stay mounted with `visibility: hidden`. Drag and resize use pointer capture; while interacting, a transparent overlay covers every iframe so the frames cannot swallow pointer events. Open/close/minimize animations are driven by `Design/Spring.ts`, a frame-rate-independent spring solver with Carbon's `response`/`dampingFraction` parameters. Each app or shortcut remembers its last geometry (`window_memory` table); new windows cascade when a sibling is already open.
+The window manager is hand-written. Windows are rendered in creation order with stable React keys so iframes never remount when the z-order changes; stacking uses `z-index`. Minimized windows stay mounted with `visibility: hidden`. Drag and resize use pointer capture; while interacting, a transparent overlay covers every iframe so the frames cannot swallow pointer events. Open/close/minimize animations are driven by `Design/Spring.ts`, a frame-rate-independent spring solver with Carbon's `response`/`dampingFraction` parameters. Each app or shortcut remembers its last geometry (`window_memory` table); new windows cascade when a sibling is already open (Settings → Windows → Cascade) and open maximized when that setting is on. **Snapping:** while a window is dragged, `Shared/src/Snap.ts → snapZoneAt` turns the pointer position into a zone (left/right half, a quarter at a corner, the whole area at the top edge); `Windows/SnapOverlay.tsx` shows the translucent target, and releasing calls `useWindowStore.snapTo`. The keyboard uses the same store (`snapKeyboard`: left/right halves, up maximizes, down restores or minimizes). `Windows/WindowMotion.ts` maps Settings → Windows → Animation (normal, fast, off) onto the spring configs; reduced motion always wins. `TitleBar.tsx` renders traffic lights or Windows-style buttons on the right (`settings.windows.buttons`).
 
 ## Embed proxy
 
@@ -73,6 +83,33 @@ Widgets subscribe over `/ws/metrics` with `{ metric, intervalMs }`. `Metrics/Hub
 ## SSH
 
 `Ssh/Connection.ts` pools ssh2 clients and spreads channels (shell, exec, sftp) over them so OpenSSH's `MaxSessions` limit is never hit. Host keys are trusted on first use and pinned in `DATA_DIR/ssh/known_host`. Follow commands (`journalctl -f`) run with a pty so closing the channel ends the remote process. SFTP operations run with the SSH user's permissions; path inputs are normalised to absolute POSIX paths before use.
+
+## App platform
+
+Catalog apps are frontend-only bundles that run in sandboxed frames and reach LANdscape only through the SDK broker. The full architecture and security model are in [AppPlatform.md](AppPlatform.md); how to write one in [AppSdk.md](AppSdk.md). In short: `Server/src/Apps/` installs bundles into `DATA_DIR/apps/<id>/<version>/` and builds each frame's document with everything inlined (`FrameInjector.ts`), `Client/src/Platform/AppBroker.ts` validates and permission-checks every `postMessage` call, and `Client/src/Platform/InstalledApps.ts` registers what an app contributes into the same registries the built-ins use. The App Store (`Client/src/Apps/AppStore/`) is a core app. The catalog (`Catalog/`) is built by `npm run catalog` and read live from GitHub with the image's copy as the fallback.
+
+## Notifications, monitor, actions
+
+- **Events** (`Server/src/Events/`): `EventBus` fans server events out to every `/ws/events` client (server → client only). The client's `Api/EventsSocket.ts` keeps one socket per desktop; `Store/NotificationStore.ts` and `Store/MonitorStore.ts` subscribe and re-fetch after a reconnect.
+- **Notifications** (`Server/src/Notify/`): `NotificationService` writes the `notifications` table (500 kept) and publishes. `Watchers` run server-side: the Docker event stream (`die` with a non-zero exit code, `oom`, `stop`), and disk usage and temperatures compared with the thresholds every minute (`ThresholdTracker` fires once per crossing with a 5-point hysteresis). Settings → Notifications holds the switches and thresholds; do-not-disturb only silences the pop-ups. Per device: in-app toasts or native browser notifications (`DeviceStore.notificationMode`; `nativeNotificationSupport()` explains why native is unavailable on plain `http://<LAN-IP>` and falls back).
+- **Monitor** (`Server/src/Monitor/MonitorService.ts`): targets are every shortcut with `healthCheck` on (`http`, the shortcut's URL through the SafeFetch rules: any HTTP answer below 500 is up) plus app-registered targets (`monitor_targets` table; `ping` = TCP connect, since ICMP needs raw sockets). Checks run every `settings.monitor.intervalSeconds`, keep the last 288 samples per target in memory, publish `monitor-status` on changes and notify on down/up (not on the first result). `ShortcutIcon` shows the dot, the tray's service-health item the summary, Settings → Notifications → Service health the list.
+- **Actions** (`Client/src/Platform/Actions.ts`): `{ id, title, icon, provider, params (zod), fields, run }` in `registries.actions`; `registerAction`, `runAction(id, params)`. Core actions live in `Platform/CoreActions.ts` (container start/stop/restart, add container as shortcut, open path in Files, open file in the Text Editor, toggle theme, lock, snap left/right, open Settings, notification center). The launcher is the **command palette**: it searches apps, shortcuts and actions ("`>`" lists only actions), and `StartMenu.tsx → ActionParams` asks for parameters inline (text or a pick list from `fields[].choices`). Keyboard shortcuts and apps call `runAction`; server-backed work stays in the REST API.
+- **Docker → shortcut** (`Apps/Docker/ContainerShortcut.ts`): pure helpers for the "Add as shortcut" button and the `docker.add-shortcut` action: prettified compose/container name, `http://<location.hostname>:<publicPort>/` (port picker when several), the icon from a CasaOS or common icon label (uploaded through `/api/uploads/icon`), and the "Shortcut exists" marker (a shortcut on this host with one of the container's ports).
+
+**Debugging:** `GET /api/notifications` and `GET /api/monitor` show the state; the server logs every notification ("Notification" with source and title). `landscapeDebug.registries.actions.list()` lists actions; `POST /api/monitor/check` runs the checks now.
+
+## Lock, sessions, startup, cursor
+
+- **Lock** (`Server/src/Auth/Sessions.ts`, `Guard.ts`, `AuthRoutes.ts`): see Security.md. On the client, `Store/SessionStore.ts` keeps `status` (`locked` for both "no session" and "locked session") and `hasSession`; `LockScreen.tsx` shows username + password or password only. `Api/Http.ts` turns 401/423 into `lockedByServer`. `Lock/IdleWatcher.ts` counts activity across tabs (BroadcastChannel + localStorage), sends `POST /api/auth/activity` about once a minute while active, and calls `POST /api/auth/lock` after `settings.lock.idleMinutes`. The lock screen look (clock, date, message, blur) is public via the session probe.
+- **Startup animation** (`Client/src/Startup/`): `StartupAnimation.tsx` is a full-screen overlay that renders the preset from `registries.startupAnimations` (built-ins in `Presets.tsx`: logo fade, boot log, particles, wallpaper zoom, progress line; apps add their own), ends after `durationMs` with a hard ceiling, skips on click/key, becomes a short fade under reduced motion, and is skipped in safe mode. `App.tsx` plays it on page load when the probe returns `startup` (`when` is load/both); `AfterLoginAnimation.tsx` plays it once per login/unlock (`unlockCount`). `Sound.ts` synthesizes the chime with WebAudio or plays the upload; on page load only when the browser already saw a user gesture. Per device: the sound switch (`DeviceStore.startupSound`).
+- **Cursor** (`Client/src/Cursor/`): `CursorSets.ts` holds three hand-drawn SVG sets (system = none, soft rounded, large high-contrast); `ApplyCursor.ts` writes one `<style id="landscape-cursor">` with `cursor: url(...) x y, fallback` rules per state (default, pointer, text, move, resize, busy) and scales the SVG data URLs by the per-device `cursorScale`; `UseCursor.ts` re-applies on changes. "custom" uses the uploads in `settings.cursor.custom`. Iframes keep their own cursor (browser rule).
+- **Uploads** for these live in `DATA_DIR/startup` and `DATA_DIR/cursors` (`Desktop/MediaStore.ts`, `MediaRoutes.ts`), sniffed by magic bytes (`sniffImageType`, `sniffMediaType`).
+
+**Debugging:** `GET /api/auth/session` shows `locked`; `GET /api/auth/sessions` lists sessions with `lastSeenAt`; the server logs "Session locked" / "Session revoked". `document.getElementById('landscape-cursor')` holds the cursor CSS; `[data-startup-animation]` is the overlay.
+
+## Keyboard shortcuts
+
+`Shared/src/Keyboard.ts` lists every rebindable action (`SHORTCUT_ACTIONS`, with defaults on Ctrl+Alt because the browser reserves the Windows key and plain Ctrl combinations) and the pure helpers: `parseCombo`/`formatCombo` ("Ctrl+Alt+ArrowLeft"), `comboFromEvent`, `effectiveBindings` (overrides from `settings.keyboard.bindings`, "" unbinds), `findConflicts`, `isReservedCombo`, `matchShortcut`. `Client/src/Platform/Keyboard.ts` installs one document-level keydown listener that reads the bindings on every press and calls the handler registered for the action (`registerShortcutHandler`); `Desktop/DesktopShortcuts.ts` registers the desktop's handlers. Settings → Keyboard Shortcuts records a combo from the next key press, shows conflicts on both rows, and resets by writing the default back. Keys inside an iframe never reach the document; that is a browser limit.
 
 ## Extension points (registries)
 

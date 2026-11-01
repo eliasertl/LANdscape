@@ -1,14 +1,15 @@
 import { memo, useEffect, useRef, useState } from 'react';
-import { WINDOW_MIN_SIZE } from '@landscape/shared';
+import { WINDOW_MIN_SIZE, snapRect, snapZoneAt, type SnapZone } from '@landscape/shared';
 import { useWindowStore, type DesktopWindow } from '../Store/WindowStore';
 import { useUiStore } from '../Store/UiStore';
-import { SPRING, reducedMotion } from '../Design/Spring';
+import { SPRING } from '../Design/Spring';
 import { useSpringStyle, useSpringValue } from '../Design/UseSpring';
 import { usePointerDrag } from '../Hooks/UsePointerDrag';
 import { TitleBar } from './TitleBar';
 import { ResizeHandles } from './ResizeHandles';
 import { WindowContent } from './WindowContent';
 import { clampRect, resizeRect, workArea, type Rect } from './WindowGeometry';
+import { windowMotion } from './WindowMotion';
 import { getApp } from '../Apps/Registry';
 import { layoutViewport, toLayout } from '../Design/Scale';
 import styles from './Window.module.css';
@@ -31,7 +32,9 @@ export const Window = memo(function Window({ win, focused }: WindowProps) {
   const setRect = useWindowStore((s) => s.setRect);
   const remove = useWindowStore((s) => s.remove);
   const toggleMaximize = useWindowStore((s) => s.toggleMaximize);
+  const snapTo = useWindowStore((s) => s.snapTo);
   const setInteracting = useUiStore((s) => s.setInteracting);
+  const setSnapPreview = useUiStore((s) => s.setWindowSnapPreview);
   const [hidden, setHidden] = useState(false);
   const [resizing, setResizing] = useState(false);
   const minSize = (win.appId && getApp(win.appId)?.minSize) || WINDOW_MIN_SIZE;
@@ -47,15 +50,26 @@ export const Window = memo(function Window({ win, focused }: WindowProps) {
 
   // Opening animation.
   useEffect(() => {
-    void scale.set(1);
-    void opacity.set(1);
+    const motion = windowMotion();
+    if (motion.off) {
+      scale.jump(1);
+      opacity.jump(1);
+      return;
+    }
+    void scale.set(1, motion.open);
+    void opacity.set(1, motion.open);
   }, [scale, opacity]);
 
   // Closing animation, then removal.
   useEffect(() => {
     if (!win.closing) return;
+    const motion = windowMotion();
+    if (motion.off) {
+      remove(win.id);
+      return;
+    }
     let cancelled = false;
-    void Promise.all([scale.set(0.94), opacity.set(0)]).then(() => {
+    void Promise.all([scale.set(0.94, motion.open), opacity.set(0, motion.open)]).then(() => {
       if (!cancelled) remove(win.id);
     });
     return () => {
@@ -70,17 +84,18 @@ export const Window = memo(function Window({ win, focused }: WindowProps) {
     minimizedRef.current = win.minimized;
     const frame = frameRef.current;
     if (!frame) return;
+    const motion = windowMotion();
     const target = taskbarTarget(win.appKey);
     const center = { x: win.rect.x + win.rect.width / 2, y: win.rect.y + win.rect.height / 2 };
     const dx = target ? target.x - center.x : 0;
     const dy = target ? target.y - center.y : layoutViewport().height;
     if (win.minimized) {
-      if (reducedMotion()) {
+      if (motion.off) {
         setHidden(true);
         return;
       }
       let cancelled = false;
-      void Promise.all([tx.set(dx, SPRING.standard), ty.set(dy, SPRING.standard), scale.set(0.06, SPRING.standard), opacity.set(0, SPRING.standard)]).then(() => {
+      void Promise.all([tx.set(dx, motion.move), ty.set(dy, motion.move), scale.set(0.06, motion.move), opacity.set(0, motion.move)]).then(() => {
         if (!cancelled) setHidden(true);
       });
       return () => {
@@ -88,7 +103,7 @@ export const Window = memo(function Window({ win, focused }: WindowProps) {
       };
     }
     setHidden(false);
-    if (reducedMotion()) {
+    if (motion.off) {
       tx.jump(0);
       ty.jump(0);
       scale.jump(1);
@@ -99,29 +114,47 @@ export const Window = memo(function Window({ win, focused }: WindowProps) {
     ty.jump(dy);
     scale.jump(0.06);
     opacity.jump(0);
-    void tx.set(0, SPRING.bounce);
-    void ty.set(0, SPRING.bounce);
-    void scale.set(1, SPRING.bounce);
-    void opacity.set(1, SPRING.standard);
+    void tx.set(0, motion.bounce);
+    void ty.set(0, motion.bounce);
+    void scale.set(1, motion.bounce);
+    void opacity.set(1, motion.move);
     return undefined;
   }, [win.minimized, win.appKey, win.rect, tx, ty, scale, opacity]);
 
-  // Drag by the title bar.
+  // Drag by the title bar, with edge and corner snapping.
   const startRectRef = useRef<Rect | null>(null);
+  const zoneRef = useRef<SnapZone | null>(null);
   const onTitlePointerDown = usePointerDrag({
     disabled: win.maximized,
     onStart: () => {
       startRectRef.current = win.rect;
+      zoneRef.current = null;
       setInteracting(true);
     },
-    onMove: ({ dx, dy }) => {
+    onMove: ({ dx, dy, clientX, clientY }) => {
       const start = startRectRef.current;
       if (!start) return;
-      setRect(win.id, clampRect({ ...start, x: start.x + dx, y: start.y + dy }, workArea(), minSize));
+      const area = workArea();
+      setRect(win.id, clampRect({ ...start, x: start.x + dx, y: start.y + dy }, area, minSize));
+      const zone = snapZoneAt({ x: clientX, y: clientY }, area);
+      if (zone !== zoneRef.current) {
+        zoneRef.current = zone;
+        setSnapPreview(zone ? snapRect(zone, area) : null);
+      }
     },
     onEnd: (_info, dragged) => {
       setInteracting(false);
-      if (dragged) setRect(win.id, useWindowStore.getState().windows.find((w) => w.id === win.id)?.rect ?? win.rect, true);
+      setSnapPreview(null);
+      const zone = zoneRef.current;
+      zoneRef.current = null;
+      if (!dragged) return;
+      if (zone) {
+        // Put the window back where the drag started so "restore" after a maximize-by-snap makes sense.
+        if (startRectRef.current) setRect(win.id, startRectRef.current);
+        snapTo(win.id, zone);
+        return;
+      }
+      setRect(win.id, useWindowStore.getState().windows.find((w) => w.id === win.id)?.rect ?? win.rect, true);
     },
   });
 

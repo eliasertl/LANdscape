@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { ReactNode } from 'react';
 import type { AnchoredPosition, CellRect, Folder, Shortcut } from '@landscape/shared';
 import type { MenuItem, MenuPosition } from '../Components/Menu';
+import type { ShortcutPrefill } from '../Apps/Docker/ContainerShortcut';
 
 export interface ConfirmRequest {
   title: ReactNode;
@@ -13,7 +14,7 @@ export interface ConfirmRequest {
   onCancel?: () => void;
 }
 
-export type ShortcutDialogState = { mode: 'create' } | { mode: 'edit'; shortcut: Shortcut } | null;
+export type ShortcutDialogState = { mode: 'create'; prefill?: ShortcutPrefill } | { mode: 'edit'; shortcut: Shortcut } | null;
 
 /** "New Folder…" (optionally moving a shortcut into it right away) or "Rename…". */
 export type FolderPromptState = { mode: 'create'; position: AnchoredPosition; moveShortcutId?: string } | { mode: 'rename'; folder: Folder } | null;
@@ -31,6 +32,9 @@ interface UiState {
   /** Outline of the grid cell a dragged icon or widget will snap to. */
   snapPreview: { x: number; y: number; width: number; height: number } | null;
   setSnapPreview: (preview: UiState['snapPreview']) => void;
+  /** Translucent preview of where a dragged window will snap (layout px). */
+  windowSnapPreview: { x: number; y: number; width: number; height: number } | null;
+  setWindowSnapPreview: (rect: UiState['windowSnapPreview']) => void;
   /** Folder a dragged shortcut hovers over (highlighted as the drop target). */
   dropFolderId: string | null;
   setDropFolderId: (id: string | null) => void;
@@ -65,6 +69,11 @@ export const useUiStore = create<UiState>((set, get) => ({
   confirm: null,
   snapPreview: null,
   setSnapPreview: (preview) => set({ snapPreview: preview }),
+  windowSnapPreview: null,
+  setWindowSnapPreview: (rect) => {
+    const current = get().windowSnapPreview;
+    if (JSON.stringify(current) !== JSON.stringify(rect)) set({ windowSnapPreview: rect });
+  },
   dropFolderId: null,
   setDropFolderId: (id) => {
     if (get().dropFolderId !== id) set({ dropFolderId: id });

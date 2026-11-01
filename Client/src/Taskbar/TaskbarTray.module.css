@@ -1,0 +1,103 @@
+.tray {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+.vertical {
+  flex-direction: column;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 4px;
+  border-radius: 8px;
+  color: var(--color-secondary-label);
+}
+
+.item:hover {
+  background: var(--color-control-fill);
+}
+
+/* Built-in CPU / memory meter */
+.meter {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 18px;
+}
+
+.bar {
+  position: relative;
+  width: 5px;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--color-control-fill);
+  overflow: hidden;
+}
+
+.fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 2px;
+  background: var(--color-accent);
+  transition: height 400ms ease;
+}
+
+/* Tray buttons (bell, service health) */
+.button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 5px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-label);
+  font-size: 17px;
+}
+
+.button:hover,
+.buttonActive {
+  background: var(--color-control-fill);
+}
+
+.badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: var(--color-destructive);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+}
+
+.healthDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.healthCount {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--system-red);
+}

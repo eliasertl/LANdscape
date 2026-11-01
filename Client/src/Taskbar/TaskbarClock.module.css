@@ -17,3 +17,17 @@
   font-size: 11px;
   color: var(--color-secondary-label);
 }
+
+.vertical {
+  align-items: center;
+  padding: 4px 0;
+  text-align: center;
+}
+
+.vertical .time {
+  font-size: 11px;
+}
+
+.vertical .date {
+  font-size: 10px;
+}

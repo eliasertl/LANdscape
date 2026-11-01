@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { Cube, FileText, FolderOpen, GearSix, ListMagnifyingGlass, Pulse, TerminalWindow } from '@phosphor-icons/react';
+import { Cube, FileText, FolderOpen, GearSix, ListMagnifyingGlass, Pulse, Storefront, TerminalWindow } from '@phosphor-icons/react';
 import type { AppDefinition } from './Types';
 import { registries } from '../Platform/Registries';
 
@@ -17,6 +17,18 @@ const BUILTIN_APPS: AppDefinition[] = [
     color: '#8e8e93',
     component: lazy(() => import('./Settings/SettingsApp')),
     defaultSize: { width: 760, height: 560 },
+    minSize: { width: 420, height: 360 },
+    requires: null,
+    single: true,
+  },
+  {
+    id: 'app-store',
+    name: 'App Store',
+    description: 'Install apps, widgets and packs from the catalog',
+    icon: Storefront,
+    color: '#0a84ff',
+    component: lazy(() => import('./AppStore/AppStoreApp')),
+    defaultSize: { width: 900, height: 600 },
     minSize: { width: 420, height: 360 },
     requires: null,
     single: true,

@@ -1,0 +1,142 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: opacity 220ms ease;
+}
+
+.leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hint {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0.55;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.wordmark {
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+.logo {
+  max-width: min(60vw, 480px);
+  max-height: 40vh;
+  object-fit: contain;
+}
+
+/* Preset: logo fade */
+.fadeIn {
+  animation: fade-in var(--startup-duration, 2s) ease both;
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+}
+
+/* Preset: boot log */
+.log {
+  width: min(90vw, 720px);
+  max-height: 80vh;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  opacity: 0.9;
+}
+
+.cursorBlink {
+  animation: blink 1s steps(2) infinite;
+}
+
+@keyframes blink {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Preset: progress line */
+.progressTrack {
+  width: min(60vw, 420px);
+  height: 3px;
+  border-radius: 2px;
+  background: color-mix(in srgb, currentColor 18%, transparent);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: currentColor;
+  transform-origin: left;
+  animation: progress var(--startup-duration, 2s) cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Preset: zoom */
+.zoomWallpaper {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  animation: zoom-in var(--startup-duration, 2s) cubic-bezier(0.2, 0.6, 0.2, 1) both;
+}
+
+@keyframes zoom-in {
+  from {
+    transform: scale(1.6);
+    opacity: 0;
+    filter: blur(18px);
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}

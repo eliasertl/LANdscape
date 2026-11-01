@@ -1,0 +1,23 @@
+.overlay {
+  position: absolute;
+  z-index: 100000;
+  border-radius: var(--radius-window);
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  border: 2px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  transition: left 120ms ease, top 120ms ease, width 120ms ease, height 120ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay {
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .overlay {
+    backdrop-filter: none;
+    background: color-mix(in srgb, var(--color-accent) 30%, var(--color-background));
+  }
+}
